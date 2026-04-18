@@ -1,25 +1,33 @@
 @extends('backend.layouts.app')
 
+@section('breadcrumb')
+    @include('backend.partials._breadcrumb', ['items' => [
+        ['label' => 'Home', 'url' => route('admin.dashboard')],
+        ['label' => 'Customers'],
+    ]])
+@endsection
+
 @section('content')
 
 <div class="aiz-titlebar text-left mt-2 mb-3">
-    <div class="align-items-center">
-        <h1 class="h3">{{translate('All Customers')}}</h1>
-    </div>
-    @can('add_customer')
-        <div class="col text-right">
-            <a href="{{ route('customers.create') }}" class="btn btn-circle btn-info">
-                <span>{{translate('Add New Customer')}}</span>
-            </a>
+    <div class="row align-items-center">
+        <div class="col">
+            <h2 class="page-title">{{translate('All Customers')}}</h2>
         </div>
-    @endcan
+        @can('add_customer')
+            <div class="col-auto">
+                <a href="{{ route('customers.create') }}" class="btn btn-primary">
+                    <i class="las la-plus mr-1"></i>{{translate('Add New Customer')}}
+                </a>
+            </div>
+        @endcan
+    </div>
 </div>
 
-<p>
-    <span class="bg-danger d-inline-block h-10px rounded-2 w-10px" ></span> {{ translate('This color indicates that the customer is marked as blocked.') }}
-    <br>
-    <span class="bg-info d-inline-block h-10px rounded-2 w-10px"></span> {{ translate('This color indicates that the customer is marked as suspicious.') }}
-</p>
+<div class="d-flex flex-wrap gap-3 mb-2">
+    <span class="color-legend"><span class="legend-dot bg-danger"></span> {{ translate('Blocked') }}</span>
+    <span class="color-legend ml-3"><span class="legend-dot bg-info"></span> {{ translate('Suspicious') }}</span>
+</div>
 
 <div class="card">
     <form class="" id="sort_customers" action="" method="GET">
@@ -42,6 +50,14 @@
                     <option value="verified">{{ translate('Verified') }}</option>
                     <option value="un_verified">{{ translate('Unverified') }}</option>
                 </select>
+            </div>
+            <div class="col-lg-2">
+                <div class="form-group mb-0">
+                    <input type="text" class="aiz-date-range form-control" name="date"
+                        placeholder="{{ translate('Filter by date') }}" data-format="DD-MM-Y"
+                        data-separator=" to " data-advanced-range="true" autocomplete="off"
+                        @isset($date) value="{{ $date }}" @endisset>
+                </div>
             </div>
             <div class="col-md-3">
                 <div class="form-group mb-0">
@@ -105,11 +121,7 @@
                                 </td>
                                 <td>{{single_price($user->balance)}}</td>
                                 <td>
-                                    @if($user->email_verified_at != null)
-                                        <span class="badge badge-inline badge-success">{{translate('Verified')}}</span>
-                                    @else
-                                        <span class="badge badge-inline badge-warning">{{translate('Unverified')}}</span>
-                                    @endif
+                                    @include('backend.partials._status_badge', ['status' => $user->email_verified_at ? 'verified' : 'unverified'])
                                 </td>
                                 <td class="text-right">
                                     @if($user->email_verified_at != null && auth()->user()->can('login_as_customer'))
@@ -137,6 +149,9 @@
                             </tr>
                         @endif
                     @endforeach
+                    @if($users->isEmpty())
+                        @include('backend.partials._empty_state', ['message' => 'No customers found.', 'icon' => 'la-users'])
+                    @endif
                 </tbody>
             </table>
             <div class="aiz-pagination">

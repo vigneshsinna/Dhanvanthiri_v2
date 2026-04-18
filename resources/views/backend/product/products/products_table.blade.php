@@ -19,13 +19,13 @@
                 <th class="text-uppercase fs-10 fs-md-12 fw-700 text-secondary">{{ translate('Thumb') }}</th>
                 <th class="text-uppercase fs-10 fs-md-12 fw-700 text-secondary ml-1 ml-lg-0">{{ translate('Name / Brand') }}</th>
 
-                <th class="hide-xs text-uppercase fs-10 fs-md-12 fw-700 text-secondary">{{ translate('Owner / Category') }}</th>
-                <th class="hide-sm text-uppercase fs-12 fw-700 text-secondary">{{ translate('Ratings') }}</th>
-                <th class="hide-md text-uppercase fs-12 fw-700 text-secondary"> {{ translate('Price Details') }}
+                <th class="d-none d-sm-table-cell text-uppercase fs-10 fs-md-12 fw-700 text-secondary">{{ translate('Owner / Category') }}</th>
+                <th class="d-none d-md-table-cell text-uppercase fs-12 fw-700 text-secondary">{{ translate('Ratings') }}</th>
+                <th class="d-none d-lg-table-cell text-uppercase fs-12 fw-700 text-secondary"> {{ translate('Price') }}
                 </th>
 
-                <th class="hide-xl text-uppercase fs-12 fw-700 text-secondary">{{ translate('Info') }}</th>
-                <th class="hide-lg text-uppercase fs-12 fw-700 text-secondary">{{ translate('Status') }}</th>
+                <th class="d-none d-xl-table-cell text-uppercase fs-12 fw-700 text-secondary">{{ translate('Stock') }}</th>
+                <th class="d-none d-lg-table-cell text-uppercase fs-12 fw-700 text-secondary">{{ translate('Status') }}</th>
 
                 <th class="text-right text-uppercase fs-10 fs-md-12 fw-700 text-secondary">{{ translate('Options') }}</th>
             </tr>
@@ -76,7 +76,7 @@
                         </div>
                     </div>
                 </td>
-                <td class="hide-xs" data-label="Owner Category">
+                <td class="d-none d-sm-table-cell" data-label="Owner Category">
                      @php $shop = optional(optional($product->user)->shop); @endphp
                     <a href="{{ $shop->id ? route('sellers.profile', encrypt($shop->id)) : '#' }}" class="fs-12 fs-md-14 fw-700 d-block">
                          {{ $shop->name ?? translate('Inhouse') }}
@@ -84,7 +84,7 @@
                     <span class="fs-12 fw-200 text-secondary d-block pt-1">{{ translate('Main Category') }}</span>
                     <p class="fs-12 fs-md-14 fw-700 m-0">{{ translate(optional($product->main_category)->name ?? '') }}</p> 
                 </td>
-                <td class="hide-sm" data-label="Ratings">
+                <td class="d-none d-md-table-cell" data-label="Ratings">
                     <!--Ratting-->
                     <div class="d-flex align-items-center rattings">
                         <span class="rating rating-mr-1">
@@ -104,7 +104,7 @@
                     </p>
                 </td>
 
-                <td class="hide-md align-middle" data-label="Price Details">
+                <td class="d-none d-lg-table-cell align-middle" data-label="Price">
                     <div class="quick-edit-container border-width-3 border-left border-blue px-2 py-0 mb-1" onclick="enableQuickEdit(this, 'price', {{ $product->id }})">
                         <span class="text-secondary fs-10 fw-400 text-uppercase d-block">{{ translate('Base Price') }}</span>
                         <div class="d-flex align-items-center">
@@ -121,7 +121,7 @@
                     </div>
                     @endif
                 </td>
-                <td class="hide-xl" data-label="Info">
+                <td class="d-none d-xl-table-cell" data-label="Stock">
                     <div class="mb-2">
                         <span class="fs-10 fw-400 text-secondary text-uppercase d-block">{{ translate('Stock Status') }}</span>
                         <div class="quick-edit-container d-flex align-items-center mt-1" onclick="enableQuickEdit(this, 'stock', {{ $product->id }})">
@@ -138,7 +138,7 @@
                     @endif
                 </td>
                         
-                <td class="hide-lg align-middle" data-label="Status">
+                <td class="d-none d-lg-table-cell align-middle" data-label="Status">
                     <div class="d-flex flex-wrap" style="gap: 15px; max-width: 140px;">
                         @if (!$product->draft)
                         <div class="d-flex flex-column align-items-center" title="{{ translate('Published') }}">
@@ -243,6 +243,9 @@
                 </td>
             </tr>
             @endforeach
+            @if($products->isEmpty())
+                @include('backend.partials._empty_state', ['message' => 'No products found.', 'icon' => 'la-box-open'])
+            @endif
         </tbody>
     </table>
     <div class="aiz-pagination" id="pagination">

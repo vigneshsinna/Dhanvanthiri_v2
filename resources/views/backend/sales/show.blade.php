@@ -1,10 +1,18 @@
 @extends('backend.layouts.app')
 
+@section('breadcrumb')
+    @include('backend.partials._breadcrumb', ['items' => [
+        ['label' => 'Home', 'url' => route('admin.dashboard')],
+        ['label' => 'Orders', 'url' => route('all_orders.index')],
+        ['label' => $order->code ?? 'Order Details'],
+    ]])
+@endsection
+
 @section('content')
 
     <div class="card">
         <div class="card-header">
-            <h1 class="h2 fs-16 mb-0">{{ translate('Order Details') }}</h1>
+            <h2 class="page-title fs-16 mb-0">{{ translate('Order Details') }}</h2>
         </div>
         <div class="card-body">
             <div class="col-12 col-xl-10 ml-auto px-0">
@@ -64,7 +72,8 @@
                                 <input type="text" class="form-control" value="{{ ucfirst(str_replace('_', ' ', $delivery_status)) }}" disabled>
                             @elseif (auth()->user()->can('update_order_delivery_status') && $delivery_status != 'delivered' && $delivery_status != 'cancelled')
                                 <select class="form-control aiz-selectpicker" data-minimum-results-for-search="Infinity"
-                                    id="update_delivery_status">
+                                    id="update_delivery_status" data-prev-value="{{ $delivery_status }}"
+                                    onchange="confirmDeliveryStatusChange(this, '{{ $order->id }}')">
                                     <option value="pending" @if ($delivery_status == 'pending') selected @endif>
                                         {{ translate('Pending') }}
                                     </option>
@@ -776,18 +785,25 @@
                 AIZ.plugins.notify('success', '{{ translate('Delivery boy has been assigned') }}');
             });
         });
-        $('#update_delivery_status').on('change', function() {
-            var order_id = {{ $order->id }};
-            var status = $('#update_delivery_status').val();
-            $.post('{{ route('orders.update_delivery_status') }}', {
+        // Delivery Status — WORKFLOW-01/ACCESS-02: Confirmation-based update
+        // The onchange handler on the select calls confirmDeliveryStatusChange() from layout JS.
+        // This function is called after confirmation is granted.
+        window.updateDeliveryStatus = function(orderId, status, reason) {
+            var data = {
                 _token: '{{ @csrf_token() }}',
-                order_id: order_id,
+                order_id: orderId,
                 status: status
-            }, function(data) {
+            };
+            if (reason) {
+                data.cancellation_reason = reason;
+            }
+            $.post('{{ route('orders.update_delivery_status') }}', data, function(response) {
                 AIZ.plugins.notify('success', '{{ translate('Delivery status has been updated') }}');
                 location.reload();
+            }).fail(function() {
+                AIZ.plugins.notify('danger', '{{ translate('Failed to update delivery status') }}');
             });
-        });
+        };
 
         // Payment Status Update
         function confirm_payment_status(value){

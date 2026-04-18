@@ -45,6 +45,11 @@ class BusinessSettingsController extends Controller
         $this->middleware(['permission:business_settings'])->only('business_settings');
     }
 
+    public function settings_hub()
+    {
+        return view('backend.setup_configurations.settings_hub');
+    }
+
     public function general_setting(Request $request)
     {
         CoreComponentRepository::instantiateShopRepository();

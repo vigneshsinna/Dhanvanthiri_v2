@@ -94,6 +94,9 @@
         }
     </style>
     
+    <!-- Admin Utilities CSS -->
+    <link rel="stylesheet" href="{{ static_asset('assets/css/admin-utilities.css?v=') }}{{ rand(1000,9999) }}">
+
     <!-- Ultra Modern Admin Redesign CSS -->
     <link rel="stylesheet" href="{{ static_asset('assets/css/admin-redesign.css?v=') }}{{ rand(1000,9999) }}">
 
@@ -137,6 +140,11 @@
             @include('backend.inc.admin_nav')
             <div class="aiz-main-content">
                 <div class="px-15px px-lg-25px">
+                    @hasSection('breadcrumb')
+                        <div class="py-2">
+                            @yield('breadcrumb')
+                        </div>
+                    @endif
                     @yield('content')
                 </div>
                 <div class="bg-white text-center py-3 px-15px px-lg-25px mt-auto border-top">
@@ -161,14 +169,18 @@
     <script type="text/javascript">
         @foreach (session('flash_notification', collect())->toArray() as $message)
             AIZ.plugins.notify('{{ $message['level'] }}', '{{ $message['message'] }}');
-            @if ($message['message'] == translate('Product has been inserted successfully'))
+        @endforeach
+
+        {{-- FEEDBACK-01: Use flash_type key instead of matching translated strings --}}
+        @if (session('flash_type') === 'product_created')
+            (function() {
                 var data_type = ['digital', 'physical', 'auction', 'wholesale'];
-                data_type.forEach(element => {
+                data_type.forEach(function(element) {
                     localStorage.setItem('tempdataproduct_'+element, '{}');
                     localStorage.setItem('tempload_'+element, 'no');
                 });
-            @endif
-        @endforeach
+            })();
+        @endif
 
         $('.dropdown-menu a[data-toggle="tab"]').click(function(e) {
             e.stopPropagation()
@@ -224,6 +236,136 @@
                 $("#search-menu").html('')
             }
         }
+
+        /* ─── FEEDBACK-02: Double-submit protection ─── */
+        $(document).on('submit', 'form', function(e) {
+            var $form = $(this);
+            var $btn = $form.find('[type="submit"]:not(.no-disable)');
+            if ($btn.length && !$btn.hasClass('btn-saving')) {
+                $btn.addClass('btn-saving');
+                $btn.data('original-text', $btn.html());
+                $btn.html('<i class="las la-spinner la-spin mr-1"></i> ' + AIZ.local.saving);
+                // Re-enable after 10s in case of redirect failure
+                setTimeout(function() {
+                    $btn.removeClass('btn-saving').html($btn.data('original-text'));
+                }, 10000);
+            }
+        });
+
+        /* ─── WORKFLOW-01 / ACCESS-02: Delivery status change confirmation ─── */
+        window.confirmDeliveryStatusChange = function(selectEl, orderId) {
+            var newStatus = $(selectEl).val();
+            var destructiveStatuses = ['cancelled'];
+            if (destructiveStatuses.indexOf(newStatus) !== -1) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: '{{ translate("Confirm Status Change") }}',
+                        html: '{{ translate("Are you sure you want to change the status to") }} <strong>' + newStatus.replace('_', ' ') + '</strong>?' +
+                              '<br><br><textarea id="status-change-reason" class="form-control mt-2" placeholder="{{ translate("Reason (required)") }}" rows="2"></textarea>',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#F0416C',
+                        confirmButtonText: '{{ translate("Yes, change it") }}',
+                        cancelButtonText: '{{ translate("Cancel") }}',
+                        preConfirm: function() {
+                            var reason = document.getElementById('status-change-reason').value;
+                            if (!reason.trim()) {
+                                Swal.showValidationMessage('{{ translate("Please provide a reason") }}');
+                                return false;
+                            }
+                            return reason;
+                        }
+                    }).then(function(result) {
+                        if (result.isConfirmed) {
+                            updateDeliveryStatus(orderId, newStatus, result.value);
+                        } else {
+                            // Revert select to previous value
+                            $(selectEl).val($(selectEl).data('prev-value'));
+                            $(selectEl).selectpicker && $(selectEl).selectpicker('refresh');
+                        }
+                    });
+                } else {
+                    if (!confirm('{{ translate("Are you sure you want to cancel this order? This action cannot be undone.") }}')) {
+                        $(selectEl).val($(selectEl).data('prev-value'));
+                        return;
+                    }
+                    updateDeliveryStatus(orderId, newStatus, '');
+                }
+            } else {
+                // Non-destructive: show inline confirm
+                if (confirm('{{ translate("Change delivery status to") }} ' + newStatus.replace('_', ' ') + '?')) {
+                    updateDeliveryStatus(orderId, newStatus, '');
+                } else {
+                    $(selectEl).val($(selectEl).data('prev-value'));
+                    $(selectEl).selectpicker && $(selectEl).selectpicker('refresh');
+                }
+            }
+        };
+
+        /* ─── TABLE-01: Sort by dropdown handler ─── */
+        window.applySortBy = function(selectEl) {
+            var val = $(selectEl).val();
+            if (val) {
+                var parts = val.split('_');
+                var dir = parts.pop();
+                var col = parts.join('_');
+                var $form = $(selectEl).closest('form');
+                // Add or update hidden inputs
+                if (!$form.find('input[name="sort_col"]').length) {
+                    $form.append('<input type="hidden" name="sort_col" value="">');
+                    $form.append('<input type="hidden" name="sort_dir" value="">');
+                }
+                $form.find('input[name="sort_col"]').val(col);
+                $form.find('input[name="sort_dir"]').val(dir);
+                $form.submit();
+            }
+        };
+
+        /* ─── WORKFLOW-02: Inline quick edit for price/stock ─── */
+        $(document).on('click', '.quick-edit-trigger', function() {
+            var $container = $(this).closest('.quick-edit-container');
+            $container.addClass('editing');
+            $container.find('.quick-edit-input input').focus().select();
+        });
+        $(document).on('click', '.quick-edit-cancel', function() {
+            var $container = $(this).closest('.quick-edit-container');
+            $container.removeClass('editing');
+        });
+        $(document).on('click', '.quick-edit-save', function() {
+            var $container = $(this).closest('.quick-edit-container');
+            var $input = $container.find('.quick-edit-input input');
+            var newValue = $input.val();
+            var field = $input.data('field');
+            var productId = $input.data('product-id');
+            var $trigger = $container.find('.quick-edit-trigger');
+
+            $.ajax({
+                url: '{{ url("/admin/products/quick-update") }}/' + productId,
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    field: field,
+                    value: newValue
+                },
+                success: function() {
+                    $trigger.text(field === 'unit_price' ? '₹' + newValue : newValue);
+                    $container.removeClass('editing');
+                    AIZ.plugins.notify('success', '{{ translate("Updated successfully") }}');
+                },
+                error: function() {
+                    AIZ.plugins.notify('danger', '{{ translate("Update failed") }}');
+                    $container.removeClass('editing');
+                }
+            });
+        });
+        $(document).on('keydown', '.quick-edit-input input', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                $(this).closest('.quick-edit-container').find('.quick-edit-save').click();
+            } else if (e.key === 'Escape') {
+                $(this).closest('.quick-edit-container').find('.quick-edit-cancel').click();
+            }
+        });
     </script>
 </body>
 

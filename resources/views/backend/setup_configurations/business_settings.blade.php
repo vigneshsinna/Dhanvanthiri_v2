@@ -14,13 +14,13 @@
                 {{-- GSTIN Number --}}
                 <div class="row">
                     <div class="col-md-2">
-                        <label>
+                        <label for="gstin_number">
                             {{ translate('GSTIN Number') }}
                             <span class="text-danger">*</span>
                         </label>
                     </div>
                     <div class="col-md-10">
-                        <input type="text" class="form-control mb-3"  name="gstin_number" placeholder="{{ translate('GSTIN Number') }}" value="{{ $business_info['gstin'] ?? '' }}" required>
+                        <input type="text" class="form-control mb-3" id="gstin_number" name="gstin_number" placeholder="{{ translate('GSTIN Number') }}" value="{{ $business_info['gstin'] ?? '' }}" required>
                     </div>
                 </div>
 
@@ -34,8 +34,8 @@
                     </div>
                     <div class="col-md-10">
                         <div class="custom-file mb-3">
-                            <label class="custom-file-label">
-                                <input type="file" class="custom-file-input preview-input" data-preview="#gst_preview" name="gstin_certificate" id="gstin_certificate"  accept=".jpg,.jpeg,.png,.bmp,application/pdf" required>
+                            <label for="gstin_certificate" class="custom-file-label">
+                                <input type="file" class="custom-file-input preview-input" data-preview="#gst_preview" name="gstin_certificate" id="gstin_certificate" accept=".jpg,.jpeg,.png,.bmp,application/pdf" required>
                                 <span class="custom-file-name">{{ translate('Choose file') }}</span>
                             </label>
                         </div>
@@ -52,12 +52,12 @@
                 {{-- Certificate Number --}}
                 <div class="row">
                     <div class="col-md-2">
-                        <label>
+                        <label for="certificate_number">
                             {{ translate('VAT / TIN / BIN Number') }}
                         </label>
                     </div>
                     <div class="col-md-10">
-                        <input type="text"  class="form-control mb-3"  name="certificate_number" placeholder="{{ translate('VAT / TIN / BIN Number') }}" value="{{ $business_info['certificate_number'] ?? '' }}">
+                        <input type="text" class="form-control mb-3" id="certificate_number" name="certificate_number" placeholder="{{ translate('VAT / TIN / BIN Number') }}" value="{{ $business_info['certificate_number'] ?? '' }}">
                     </div>
                 </div>
 
@@ -87,7 +87,7 @@
                 @if (get_active_countries()->count() >1)
                 <div class="row">
                     <div class="col-md-2">
-                        <label>{{ translate('Country')}} <span class="text-danger">*</span></label>
+                        <label for="country_id">{{ translate('Country')}} <span class="text-danger">*</span></label>
                     </div>
                     <div class="col-md-10">
                         <div class="mb-3">
@@ -105,7 +105,7 @@
                 @endif
                 <div class="row">
                     <div class="col-md-2">
-                        <label>{{ translate('State')}} <span class="text-danger">*</span></label>
+                        <label for="state_id">{{ translate('State')}} <span class="text-danger">*</span></label>
                     </div>
                     <div class="col-md-10">
                         <select class="form-control mb-3 aiz-selectpicker" data-live-search="true" name="state_id" required>

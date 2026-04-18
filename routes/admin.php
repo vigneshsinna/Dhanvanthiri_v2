@@ -326,6 +326,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'admin', 'prevent-ba
 
     // Business Settings
     Route::controller(BusinessSettingsController::class)->group(function () {
+        Route::get('/settings', 'settings_hub')->name('settings.hub');
         Route::post('/business-settings/update', 'update')->name('business_settings.update');
         Route::post('/business-settings/update/activation', 'updateActivationSettings')->name('business_settings.update.activation');
         Route::post('/payment-activation', 'updatePaymentActivationSettings')->name('payment.activation');

@@ -2,7 +2,8 @@
     <div class="d-flex">
         <!-- Mobile toggler -->
         <div class="aiz-topbar-nav-toggler d-flex align-items-center justify-content-start ml-0 mr-2" data-toggle="aiz-mobile-nav">
-            <a class="btn btn-topbar has-transition btn-icon p-0 d-flex align-items-center" href="javascript:void(0)">
+            <a class="btn btn-topbar has-transition btn-icon p-0 d-flex align-items-center" href="javascript:void(0)"
+                aria-label="{{ translate('Toggle sidebar navigation') }}" aria-expanded="true" aria-controls="main-menu">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
                     <g id="Group_28009" data-name="Group 28009" transform="translate(0 16) rotate(-90)">
                       <rect id="Rectangle_18283" data-name="Rectangle 18283" width="2" height="7" rx="1" fill="#9da3ae"/>

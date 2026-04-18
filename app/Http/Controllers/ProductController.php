@@ -340,6 +340,7 @@ class ProductController extends Controller
         ]));
 
         flash(translate('Product has been inserted successfully'))->success();
+        session()->flash('flash_type', 'product_created');
 
         Artisan::call('view:clear');
         Artisan::call('cache:clear');

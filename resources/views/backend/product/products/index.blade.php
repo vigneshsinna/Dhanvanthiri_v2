@@ -14,7 +14,7 @@
                 @elseif(isset($back_to) && $back_to== 'categories')
                 <a class="fs-14 fw-400 d-inline-block" href="{{ route('categories.index') }}"><i class="las la-angle-left"></i> {{translate('Back to Categories')}} </a>
                 @else
-                <h1 class="h3 fw-bold">{{ translate('All products') }}</h1>
+                <h2 class="page-title">{{ translate('All products') }}</h2>
                 @endif
             </div>
 

@@ -1,12 +1,19 @@
 @extends('backend.layouts.app')
 
+@section('breadcrumb')
+    @include('backend.partials._breadcrumb', ['items' => [
+        ['label' => 'Home', 'url' => route('admin.dashboard')],
+        ['label' => 'Orders'],
+    ]])
+@endsection
+
 @section('content')
 
     <div class="card">
         <form class="" action="" id="sort_orders" method="GET">
-            <div class="card-header row gutters-5">
+            <div class="card-header row gutters-5 flex-wrap">
                 <div class="col">
-                    <h5 class="mb-md-0 h6">{{ translate('All Orders') }}</h5>
+                    <h2 class="page-title mb-md-0">{{ translate('All Orders') }}</h2>
                 </div>
 
                 @canany(['delete_order', 'export_order'])
@@ -67,7 +74,7 @@
                         </select>
                     </div>
                 @endif
-                <div class="col-lg-1">
+                <div class="col-md-3 col-lg-2">
                     <div class="form-group mb-0">
                         <input type="text" class="aiz-date-range form-control" value="{{ $date }}"
                             name="date" placeholder="{{ translate('Filter by date') }}" data-format="DD-MM-Y"
@@ -178,26 +185,23 @@
                                     {{ single_price($order->grand_total) }}
                                 </td>
                                 <td>
-                                    {{ translate(ucfirst(str_replace('_', ' ', $order->delivery_status))) }} <br>
+                                    @include('backend.partials._status_badge', ['status' => $order->delivery_status])
                                     @if ($order->shipping_method == 'shiprocket')
-                                        <span class="fw-bold">{{ translate('Shiprocket Status') }}:</span> {{ ucfirst(translate(str_replace('_', ' ', $order->shiprocket_status))) }}
+                                        <br><span class="fw-bold">{{ translate('Shiprocket Status') }}:</span> {{ ucfirst(translate(str_replace('_', ' ', $order->shiprocket_status))) }}
                                     @endif
                                     @if ($order->shipping_method == 'steadfast')
-                                        <span class="fw-bold">{{ translate('Steadfast Status') }}:</span> {{ ucfirst(translate(str_replace('_', ' ', $order->steadfast_status))) }}
+                                        <br><span class="fw-bold">{{ translate('Steadfast Status') }}:</span> {{ ucfirst(translate(str_replace('_', ' ', $order->steadfast_status))) }}
                                     @endif
                                     @if ($order->shipping_method == 'pathao')
-                                        <span class="fw-bold">{{ translate('Pathao Status') }}:</span> {{ ucfirst(translate(str_replace('_', ' ', $order->pathao_status))) }}
+                                        <br><span class="fw-bold">{{ translate('Pathao Status') }}:</span> {{ ucfirst(translate(str_replace('_', ' ', $order->pathao_status))) }}
                                     @endif
                                 </td>
                                 <td>
                                     {{ translate(ucfirst(str_replace('_', ' ', $order->payment_type))) }}
                                 </td>
                                 <td>
-                                    @if ($order->payment_status == 'paid')
-                                        <span class="badge badge-inline badge-success">{{ translate('Paid') }}</span>
-                                    @else
-                                        <span class="badge badge-inline badge-danger">{{ translate('Unpaid') }}</span>
-                                    @endif
+                                    @include('backend.partials._status_badge', ['status' => $order->payment_status])
+                                </td>
                                 </td>
                                 @if (addon_is_activated('refund_request'))
                                     <td>
@@ -256,6 +260,9 @@
                                 </td>
                             </tr>
                         @endforeach
+                        @if($orders->isEmpty())
+                            @include('backend.partials._empty_state', ['message' => 'No orders found.', 'icon' => 'la-shopping-cart'])
+                        @endif
                     </tbody>
                 </table>
 

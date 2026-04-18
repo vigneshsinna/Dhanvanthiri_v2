@@ -1,5 +1,12 @@
 @extends('backend.layouts.app')
 
+@section('breadcrumb')
+    @include('backend.partials._breadcrumb', ['items' => [
+        ['label' => 'Home', 'url' => route('admin.dashboard')],
+        ['label' => 'Sellers'],
+    ]])
+@endsection
+
 @section('content')
 
 @php
@@ -9,17 +16,38 @@
 <div class="aiz-titlebar text-left mt-2 mb-3">
     <div class="row align-items-center">
         <div class="col-auto">
-            <h1 class="h3">{{ $route == 'all_seller_route' ? translate('All Sellers') : translate('Sellers Review & Followers ')}}</h1>
+            <h2 class="page-title">{{ $route == 'all_seller_route' ? translate('All Sellers') : translate('Sellers Review & Followers ')}}</h2>
         </div>
         @if(auth()->user()->can('add_seller') && ($route == 'all_seller_route'))
             <div class="col text-right">
-                <a href="{{ route('sellers.create') }}" class="btn btn-circle btn-info">
-                    <span>{{ translate('Add New Seller')}}</span>
+                <a href="{{ route('sellers.create') }}" class="btn btn-primary">
+                    <i class="las la-plus mr-1"></i>{{ translate('Add New Seller')}}
                 </a>
             </div>
         @endif
     </div>
 </div>
+
+{{-- S4: Unified seller pipeline tabs --}}
+@if($route == 'all_seller_route')
+<div class="mb-3">
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link {{ Route::currentRouteName() == 'sellers.index' ? 'active' : '' }}" href="{{ route('sellers.index') }}">{{ translate('All Sellers') }}</a>
+        </li>
+        @if(Route::has('sellers.pending'))
+        <li class="nav-item">
+            <a class="nav-link {{ Route::currentRouteName() == 'sellers.pending' ? 'active' : '' }}" href="{{ route('sellers.pending') }}">{{ translate('Pending Approval') }}</a>
+        </li>
+        @endif
+        @if(Route::has('sellers.verification'))
+        <li class="nav-item">
+            <a class="nav-link {{ Route::currentRouteName() == 'sellers.verification' ? 'active' : '' }}" href="{{ route('sellers.verification') }}">{{ translate('Verification') }}</a>
+        </li>
+        @endif
+    </ul>
+</div>
+@endif
 
 <div class="card">
     <form class="" id="sort_sellers" action="" method="GET">
@@ -287,6 +315,9 @@
                         
                     </tr>
                 @endforeach
+                @if($shops->isEmpty())
+                    @include('backend.partials._empty_state', ['message' => 'No sellers found.', 'icon' => 'la-store'])
+                @endif
                 </tbody>
             </table>
             <div class="aiz-pagination">

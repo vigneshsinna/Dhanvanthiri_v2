@@ -72,7 +72,10 @@
                     @endif
                     @can('earning_report')
                         <a class="aiz-topbar-menu fs-13 fw-600 d-flex align-items-center justify-content-center {{ areActiveRoutes(['earning_payout_report.index']) }}"
-                            href="{{ route('earning_payout_report.index') }}">{{ translate('Earnings') }}</a>
+                            href="{{ route('earning_payout_report.index') }}">
+                            <i class="las la-money-bill-wave mr-1 fs-16"></i>
+                            {{ translate('Earnings') }}
+                        </a>
                     @endcan
                     @can('edit_website_page')
                         <a class="aiz-topbar-menu fs-13 fw-600 d-flex align-items-center justify-content-center {{ (url()->current() == url('/admin/website/custom-pages/edit/home')) ? 'active' : '' }}"

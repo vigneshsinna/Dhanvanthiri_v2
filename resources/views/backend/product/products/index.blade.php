@@ -550,6 +550,19 @@
 
         var duplicateProductUrl = "{{ route('products.duplicate', ':id') }}";
         
+        function duplicateProduct(id, type) {
+            $.get(duplicateProductUrl.replace(':id', id), { type: type }, function(data) {
+                if(data.success) {
+                    AIZ.plugins.notify('success', data.message);
+                    if(data.redirect) {
+                        location.href = data.redirect;
+                    }
+                } else {
+                    AIZ.plugins.notify('danger', data.message || '{{ translate('Something went wrong') }}');
+                }
+            });
+        }
+
         function singleDelete(productId) {
             showBulkActionModal();
             $('#confirmation-title').text('{{ translate('Delete Confirmation') }}');
@@ -558,11 +571,8 @@
             $('#conform-yes-btn').attr("onclick", "single_delete(" + productId + ")");
             $('.confirmation-icon').addClass('d-none');
             $('#delete-confirm-icon').removeClass('d-none');
-           
         }
 
-
-        var duplicateProductUrl = "{{ route('products.duplicate', ':id') }}";
         
         function bulkDelete() {
             if ($('.check-one:checked').length == 0) {
@@ -638,8 +648,10 @@
                 data: { type: type, product_type: slug, search: keyword, seller_type: seller_type, selected_filter:selected_filter, user_id: user_id, brand_id: brand_id, category_id: category_id },
                 success: function(response) {
                     $('#tab-content').html(response.html);
-                    initFooTable();
-
+                    AIZ.plugins.fooTable();
+                    AIZ.plugins.bootstrapSelect('refresh');
+                    AIZ.plugins.initTooltip();
+                    AIZ.plugins.initDropdown();
                 },
                 error: function() {
                     $('#tab-content').html('<div class="text-danger p-4">{{ translate("Failed to load data.") }}</div>');

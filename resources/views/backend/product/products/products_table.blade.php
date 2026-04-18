@@ -25,7 +25,11 @@
                 </th>
 
                 <th class="d-none d-xl-table-cell text-uppercase fs-12 fw-700 text-secondary">{{ translate('Stock') }}</th>
-                <th class="d-none d-lg-table-cell text-uppercase fs-12 fw-700 text-secondary">{{ translate('Status') }}</th>
+                <th class="d-none d-lg-table-cell text-uppercase fs-12 fw-700 text-secondary">
+                    <span data-toggle="tooltip" title="{{ translate('Published') }}">{{ translate('Pub') }}</span> /
+                    <span data-toggle="tooltip" title="{{ translate('Featured') }}">{{ translate('Feat') }}</span> /
+                    <span data-toggle="tooltip" title="{{ translate('Todays Deal') }}">{{ translate('Deal') }}</span>
+                </th>
 
                 <th class="text-right text-uppercase fs-10 fs-md-12 fw-700 text-secondary">{{ translate('Options') }}</th>
             </tr>
@@ -44,7 +48,7 @@
                     @if (auth()->user()->can('product_delete'))
                     <div class="form-group d-inline-block">
                         <label class="aiz-checkbox">
-                            <input type="checkbox" class="check-one" name="id[]"value="{{ $product->id }}">
+                            <input type="checkbox" class="check-one" name="id[]" value="{{ $product->id }}">
                             <span class="aiz-square-check"></span>
                         </label>
                     </div>
@@ -139,48 +143,42 @@
                 </td>
                         
                 <td class="d-none d-lg-table-cell align-middle" data-label="Status">
-                    <div class="d-flex flex-wrap" style="gap: 15px; max-width: 140px;">
+                    <div class="d-flex flex-wrap" style="gap: 10px; min-width: 120px;">
                         @if (!$product->draft)
-                        <div class="d-flex flex-column align-items-center" title="{{ translate('Published') }}">
-                            <span class="fs-10 fw-400 text-secondary mb-1">{{translate('Pub')}}</span>
-                            <label class="aiz-switch aiz-switch-blue mb-0">
-                                <input onchange="update_published(this)" value="{{ $product->id }}"type="checkbox" <?php if ($product->published == 1) {
-                                        echo 'checked';
-                                    } ?>>
-                                <span class="slider round"></span>
-                            </label>
-                        </div>
-                        @if (get_setting('product_approve_by_admin') == 1 && $type == 'seller')
-                        <div class="d-flex flex-column align-items-center" title="{{ translate('Approved') }}">
-                            <span class="fs-10 fw-400 text-secondary mb-1">{{translate('App')}}</span>
-                            <label class="aiz-switch aiz-switch-blue mb-0">
-                                <input onchange="update_approved(this)" value="{{ $product->id }}" type="checkbox" <?php if ($product->approved == 1) {
-                                        echo 'checked';
-                                    } ?>>
-                                <span class="slider round"></span>
-                            </label>
-                        </div>
-                        @endif
-                        <div class="d-flex flex-column align-items-center" title="{{ translate('Featured') }}">
-                            <span class="fs-10 fw-400 text-secondary mb-1">{{translate('Feat')}}</span>
-                            <label class="aiz-switch aiz-switch-blue mb-0">
-                                <input onchange="update_featured(this)" value="{{ $product->id }}" type="checkbox" <?php if ($product->featured == 1) {
-                                        echo 'checked';
-                                    } ?>>
-                                <span class="slider round"></span>
-                            </label>
-                        </div>
-                        <div class="d-flex flex-column align-items-center" title="{{ translate('Todays Deal') }}">
-                            <span class="fs-10 fw-400 text-secondary mb-1">{{translate('Deal')}}</span>
-                            <label class="aiz-switch aiz-switch-blue mb-0">
-                                <input onchange="update_todays_deal(this)" value="{{ $product->id }}" type="checkbox" <?php if ($product->todays_deal == 1) {
-                                        echo 'checked';
-                                    } ?>>
-                                <span class="slider round"></span>
-                            </label>
-                        </div>
+                            {{-- Published --}}
+                            <div class="status-indicator">
+                                <label class="aiz-switch aiz-switch-blue mb-0" data-toggle="tooltip" title="{{ translate('Published Status') }}">
+                                    <input onchange="update_published(this)" value="{{ $product->id }}" type="checkbox" {{ $product->published == 1 ? 'checked' : '' }}>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            
+                            {{-- Featured --}}
+                            <div class="status-indicator">
+                                <label class="aiz-switch aiz-switch-success mb-0" data-toggle="tooltip" title="{{ translate('Featured Status') }}">
+                                    <input onchange="update_featured(this)" value="{{ $product->id }}" type="checkbox" {{ $product->featured == 1 ? 'checked' : '' }}>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+
+                            {{-- Todays Deal --}}
+                            <div class="status-indicator">
+                                <label class="aiz-switch aiz-switch-warning mb-0" data-toggle="tooltip" title="{{ translate('Today\'s Deal') }}">
+                                    <input onchange="update_todays_deal(this)" value="{{ $product->id }}" type="checkbox" {{ $product->todays_deal == 1 ? 'checked' : '' }}>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+
+                            @if (get_setting('product_approve_by_admin') == 1 && $type == 'seller')
+                                <div class="status-indicator">
+                                    <label class="aiz-switch aiz-switch-info mb-0" data-toggle="tooltip" title="{{ translate('Admin Approval') }}">
+                                        <input onchange="update_approved(this)" value="{{ $product->id }}" type="checkbox" {{ $product->approved == 1 ? 'checked' : '' }}>
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+                            @endif
                         @else
-                            <span class="badge badge-inline badge-danger">{{ translate('Draft') }}</span>
+                            <span class="badge badge-inline badge-soft-danger uppercase fs-10 fw-700 p-2">{{ translate('Draft') }}</span>
                         @endif
                     </div>
                 </td>
@@ -197,46 +195,49 @@
                         @endif
 
                         <!--Edit-->
-                        @can('product_edit')
+                        @if(auth()->user()->can('product_edit'))
                         <a href="@if ($type == 'seller'){{ route('products.seller.edit', ['id' => $product->id, 'lang' => env('DEFAULT_LANGUAGE')]) }}@else{{ route('products.admin.edit', ['id' => $product->id, 'lang' => env('DEFAULT_LANGUAGE')]) }}@endif"
-                            class="btn btn-soft-success btn-icon btn-circle btn-sm hov-svg-white mr-2 focus-edit"
+                            class="btn btn-soft-success btn-icon btn-circle btn-sm hov-svg-white mr-2"
                             title="{{ translate('Edit Product') }}" data-toggle="tooltip">
                             <i class="las la-edit fs-16"></i>
                         </a>
-                        @endcan
+                        @endif
 
                         <!--Delete-->
-                        @can('product_delete')
+                        @if(auth()->user()->can('product_delete'))
                         <a href="javascript:void(0)" onclick="singleDelete({{ $product->id }})"
                             class="btn btn-soft-danger btn-icon btn-circle btn-sm hov-svg-white mr-2"
                             title="{{ translate('Delete') }}" data-toggle="tooltip">
                             <i class="las la-trash fs-16"></i>
                         </a>
-                        @endcan
+                        @endif
 
-                        <!-- More Menu -->
+                        <!-- More Menu (Clone, Download, etc) -->
                         <div class="dropdown">
                             <button class="btn btn-light btn-icon btn-circle btn-sm d-flex align-items-center justify-content-center p-0" type="button"
-                                data-toggle="dropdown" aria-haspopup="false" aria-expanded="false" data-boundary="window">
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-boundary="viewport" title="{{ translate('More Options') }}" data-toggle="tooltip">
                                 <i class="las la-ellipsis-v fs-16"></i>
                             </button>
-                            <div class="dropdown-menu dropdown-menu-right dropdown-menu-xs p-2">
-                                @if($product->digital)
-                                    @can('add_digital_product')
-                                    <a class="dropdown-item d-flex align-items-center px-2 py-2 rounded hov-bg-soft-primary" href="{{route('digitalproducts.download', encrypt($product->id))}}">
-                                        <i class="las la-download mr-2 fs-16 text-muted"></i>
-                                        <span class="fs-13 text-secondary fw-500">{{translate('Download')}}</span>
-                                    </a>
-                                    @endcan
-                                @else
-                                    @can('product_duplicate')
-                                    <a class="dropdown-item d-flex align-items-center px-2 py-2 rounded hov-bg-soft-primary" onclick="duplicateProduct({{$product->id}},'{{ $type }}')">
-                                        <i class="las la-copy mr-2 fs-16 text-muted"></i>
-                                        <span class="fs-13 text-secondary fw-500">{{translate('Make a Clone')}}</span>
-                                    </a>
-                                    @endcan
+                            <div class="dropdown-menu dropdown-menu-right dropdown-menu-xs p-2 shadow-lg" style="min-width: 160px; z-index: 1040;">
+                                <!-- Clone/Duplicate -->
+                                @if(auth()->user()->can('product_duplicate'))
+                                <a class="dropdown-item d-flex align-items-center px-2 py-2 rounded hov-bg-soft-primary" onclick="duplicateProduct({{$product->id}},'{{ $type }}')" href="javascript:void(0);">
+                                    <i class="las la-copy mr-2 fs-16 text-muted"></i>
+                                    <span class="fs-13 text-secondary fw-500">{{translate('Make a Clone')}}</span>
+                                </a>
                                 @endif
-                                <!-- Add other low frequency actions here if needed -->
+
+                                <!-- Digital Download -->
+                                @if($product->digital && auth()->user()->can('add_digital_product'))
+                                <a class="dropdown-item d-flex align-items-center px-2 py-2 rounded hov-bg-soft-primary" href="{{route('digitalproducts.download', encrypt($product->id))}}">
+                                    <i class="las la-download mr-2 fs-16 text-muted"></i>
+                                    <span class="fs-13 text-secondary fw-500">{{translate('Download')}}</span>
+                                </a>
+                                @endif
+                                
+                                @if(!$product->digital && !auth()->user()->can('product_duplicate'))
+                                    <span class="dropdown-item-text fs-12 text-muted">{{ translate('No more options') }}</span>
+                                @endif
                             </div>
                         </div>
                     </div>

@@ -1,0 +1,142 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Currency;
+use App\Models\Language;
+use App\Models\Order;
+use Session;
+use PDF;
+use Config;
+
+class InvoiceController extends Controller
+{
+    //download invoice
+    public function invoice_download($id)
+    {
+        $default_currency = Currency::find(get_setting('system_default_currency')) ?? Currency::query()->first();
+        $currency_code = Session::get('currency_code', $default_currency?->code ?? 'USD');
+        $language_code = Session::get('locale', Config::get('app.locale'));
+        $language = Language::where('code', $language_code)->first()
+            ?? Language::where('code', Config::get('app.locale'))->first()
+            ?? Language::query()->first();
+
+        if (($language?->rtl ?? 0) == 1) {
+            $direction = 'rtl';
+            $text_align = 'right';
+            $not_text_align = 'left';
+        } else {
+            $direction = 'ltr';
+            $text_align = 'left';
+            $not_text_align = 'right';
+        }
+
+        if (
+            $currency_code == 'BDT' ||
+            $language_code == 'bd'
+        ) {
+            // bengali font
+            $font_family = "'Hind Siliguri','freeserif'";
+        } elseif (
+            $currency_code == 'KHR' ||
+            $language_code == 'kh'
+        ) {
+            // khmer font
+            $font_family = "'Hanuman','sans-serif'";
+        } elseif ($currency_code == 'AMD') {
+            // Armenia font
+            $font_family = "'arnamu','sans-serif'";
+            // }elseif($currency_code == 'ILS'){
+            //     // Israeli font
+            //     $font_family = "'Varela Round','sans-serif'";
+        } elseif (
+            $currency_code == 'AED' ||
+            $currency_code == 'EGP' ||
+            $language_code == 'sa' ||
+            $currency_code == 'IQD' ||
+            $language_code == 'ir' ||
+            $language_code == 'om' ||
+            $currency_code == 'ROM' ||
+            $currency_code == 'SDG' ||
+            $currency_code == 'ILS' ||
+            $language_code == 'jo'
+        ) {
+            // middle east/arabic/Israeli font
+            $font_family = "xbriyaz";
+        } elseif ($currency_code == 'THB') {
+            // thai font
+            $font_family = "'Kanit','sans-serif'";
+        } elseif (
+            $currency_code == 'CNY' ||
+            $language_code == 'zh'
+        ) {
+            // Chinese font
+            $font_family = "'sun-exta','gb'";
+        } elseif (
+            $currency_code == 'MMK' ||
+            $language_code == 'mm'
+        ) {
+            // Myanmar font
+            $font_family = 'tharlon';
+        } elseif (
+            $currency_code == 'THB' ||
+            $language_code == 'th'
+        ) {
+            // Thai font
+            $font_family = "'zawgyi-one','sans-serif'";
+        } elseif (
+            $currency_code == 'USD'
+        ) {
+            // Thai font
+            $font_family = "'Roboto','sans-serif'";
+        } else {
+            // general for all
+            $font_family = "freeserif";
+        }
+
+        // $config = ['instanceConfigurator' => function($mpdf) {
+        //     $mpdf->showImageErrors = true;
+        // }];
+        // mpdf config will be used in 4th params of loadview
+
+        $config = [];
+
+        $order = Order::findOrFail($id);
+        $userType = auth()->user()?->user_type;
+        $ownsOrder = in_array(auth()->id(), [$order->user_id, $order->seller_id]);
+        if (in_array($userType, ['admin', 'staff', 'super_admin'], true) || $ownsOrder) {
+            return PDF::loadView('backend.invoices.invoice', [
+                'order' => $order,
+                'font_family' => $font_family,
+                'direction' => $direction,
+                'text_align' => $text_align,
+                'not_text_align' => $not_text_align
+            ], [], $config)->download('order-' . $order->code . '.pdf');
+        }
+        flash(translate("You do not have the right permission to access this invoice."))->error();
+        return redirect(storefront_url());
+    }
+
+    public function invoice_print($id)
+    {
+        $order = Order::findOrFail($id);
+
+        // You may want to apply the same font logic here too if needed
+        $language_code = Session::get('locale', Config::get('app.locale'));
+        $language = Language::where('code', $language_code)->first()
+            ?? Language::where('code', Config::get('app.locale'))->first()
+            ?? Language::query()->first();
+        $direction = (($language?->rtl ?? 0) == 1) ? 'rtl' : 'ltr';
+        $text_align = $direction == 'rtl' ? 'right' : 'left';
+        $not_text_align = $direction == 'rtl' ? 'left' : 'right';
+
+        return view('backend.invoices.invoice', [
+            'order' => $order,
+            'font_family' => "'Roboto', sans-serif", // or reuse your logic
+            'direction' => $direction,
+            'text_align' => $text_align,
+            'not_text_align' => $not_text_align
+        ]);
+    }
+
+}

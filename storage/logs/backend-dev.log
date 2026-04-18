@@ -1,0 +1,109 @@
+PHP Deprecated:  Carbon\Traits\Date::getDaysFromStartOfWeek(): Implicitly marking parameter $weekStartsAt as nullable is deprecated, the explicit nullable type must be used instead in V:\pers\Freelance\Dhanvathiri_v2\vendor\nesbot\carbon\src\Carbon\Traits\Date.php on line 1394
+
+Deprecated: Carbon\Traits\Date::getDaysFromStartOfWeek(): Implicitly marking parameter $weekStartsAt as nullable is deprecated, the explicit nullable type must be used instead in V:\pers\Freelance\Dhanvathiri_v2\vendor\nesbot\carbon\src\Carbon\Traits\Date.php on line 1394
+PHP Deprecated:  Carbon\Traits\Date::setDaysFromStartOfWeek(): Implicitly marking parameter $weekStartsAt as nullable is deprecated, the explicit nullable type must be used instead in V:\pers\Freelance\Dhanvathiri_v2\vendor\nesbot\carbon\src\Carbon\Traits\Date.php on line 1412
+
+Deprecated: Carbon\Traits\Date::setDaysFromStartOfWeek(): Implicitly marking parameter $weekStartsAt as nullable is deprecated, the explicit nullable type must be used instead in V:\pers\Freelance\Dhanvathiri_v2\vendor\nesbot\carbon\src\Carbon\Traits\Date.php on line 1412
+PHP Deprecated:  Carbon\Traits\Date::utcOffset(): Implicitly marking parameter $minuteOffset as nullable is deprecated, the explicit nullable type must be used instead in V:\pers\Freelance\Dhanvathiri_v2\vendor\nesbot\carbon\src\Carbon\Traits\Date.php on line 1481
+
+Deprecated: Carbon\Traits\Date::utcOffset(): Implicitly marking parameter $minuteOffset as nullable is deprecated, the explicit nullable type must be used instead in V:\pers\Freelance\Dhanvathiri_v2\vendor\nesbot\carbon\src\Carbon\Traits\Date.php on line 1481
+PHP Deprecated:  Carbon\Traits\Localization::locale(): Implicitly marking parameter $locale as nullable is deprecated, the explicit nullable type must be used instead in V:\pers\Freelance\Dhanvathiri_v2\vendor\nesbot\carbon\src\Carbon\Traits\Localization.php on line 447
+
+Deprecated: Carbon\Traits\Localization::locale(): Implicitly marking parameter $locale as nullable is deprecated, the explicit nullable type must be used instead in V:\pers\Freelance\Dhanvathiri_v2\vendor\nesbot\carbon\src\Carbon\Traits\Localization.php on line 447
+PHP Deprecated:  Carbon\Traits\Test::setDefaultTimezone(): Implicitly marking parameter $date as nullable is deprecated, the explicit nullable type must be used instead in V:\pers\Freelance\Dhanvathiri_v2\vendor\nesbot\carbon\src\Carbon\Traits\Test.php on line 203
+
+Deprecated: Carbon\Traits\Test::setDefaultTimezone(): Implicitly marking parameter $date as nullable is deprecated, the explicit nullable type must be used instead in V:\pers\Freelance\Dhanvathiri_v2\vendor\nesbot\carbon\src\Carbon\Traits\Test.php on line 203
+PHP Deprecated:  Return type of Carbon\Traits\Date::createFromTimestamp($timestamp, $tz = null) should either be compatible with DateTime::createFromTimestamp(int|float $timestamp): static, or the #[\ReturnTypeWillChange] attribute should be used to temporarily suppress the notice in V:\pers\Freelance\Dhanvathiri_v2\vendor\nesbot\carbon\src\Carbon\Traits\Timestamp.php on line 29
+
+Deprecated: Return type of Carbon\Traits\Date::createFromTimestamp($timestamp, $tz = null) should either be compatible with DateTime::createFromTimestamp(int|float $timestamp): static, or the #[\ReturnTypeWillChange] attribute should be used to temporarily suppress the notice in V:\pers\Freelance\Dhanvathiri_v2\vendor\nesbot\carbon\src\Carbon\Traits\Timestamp.php on line 29
+PHP Deprecated:  Carbon\CarbonTimeZone::toOffsetName(): Implicitly marking parameter $date as nullable is deprecated, the explicit nullable type must be used instead in V:\pers\Freelance\Dhanvathiri_v2\vendor\nesbot\carbon\src\Carbon\CarbonTimeZone.php on line 158
+
+Deprecated: Carbon\CarbonTimeZone::toOffsetName(): Implicitly marking parameter $date as nullable is deprecated, the explicit nullable type must be used instead in V:\pers\Freelance\Dhanvathiri_v2\vendor\nesbot\carbon\src\Carbon\CarbonTimeZone.php on line 158
+PHP Deprecated:  Carbon\CarbonTimeZone::toOffsetTimeZone(): Implicitly marking parameter $date as nullable is deprecated, the explicit nullable type must be used instead in V:\pers\Freelance\Dhanvathiri_v2\vendor\nesbot\carbon\src\Carbon\CarbonTimeZone.php on line 172
+
+Deprecated: Carbon\CarbonTimeZone::toOffsetTimeZone(): Implicitly marking parameter $date as nullable is deprecated, the explicit nullable type must be used instead in V:\pers\Freelance\Dhanvathiri_v2\vendor\nesbot\carbon\src\Carbon\CarbonTimeZone.php on line 172
+PHP Deprecated:  Carbon\CarbonTimeZone::toRegionName(): Implicitly marking parameter $date as nullable is deprecated, the explicit nullable type must be used instead in V:\pers\Freelance\Dhanvathiri_v2\vendor\nesbot\carbon\src\Carbon\CarbonTimeZone.php on line 188
+
+Deprecated: Carbon\CarbonTimeZone::toRegionName(): Implicitly marking parameter $date as nullable is deprecated, the explicit nullable type must be used instead in V:\pers\Freelance\Dhanvathiri_v2\vendor\nesbot\carbon\src\Carbon\CarbonTimeZone.php on line 188
+PHP Deprecated:  Carbon\CarbonTimeZone::toRegionTimeZone(): Implicitly marking parameter $date as nullable is deprecated, the explicit nullable type must be used instead in V:\pers\Freelance\Dhanvathiri_v2\vendor\nesbot\carbon\src\Carbon\CarbonTimeZone.php on line 230
+
+Deprecated: Carbon\CarbonTimeZone::toRegionTimeZone(): Implicitly marking parameter $date as nullable is deprecated, the explicit nullable type must be used instead in V:\pers\Freelance\Dhanvathiri_v2\vendor\nesbot\carbon\src\Carbon\CarbonTimeZone.php on line 230
+
+   INFO  Server running on [http://127.0.0.1:8000].  
+
+  Press Ctrl+C to stop the server
+
+  2026-04-16 10:08:13 ........................................................................................... ~ 9s
+  2026-04-16 10:08:22 ........................................................................................... ~ 9s
+  2026-04-16 10:08:22 .......................................................................................... ~ 18s
+  2026-04-16 10:08:31 .......................................................................................... ~ 18s
+  2026-04-16 10:08:40 .......................................................................................... ~ 18s
+  2026-04-16 10:08:13 /favicon.ico ............................................................................. ~ 45s
+  2026-04-16 10:08:49 .......................................................................................... ~ 18s
+  2026-04-16 10:08:58 .......................................................................................... ~ 18s
+  2026-04-16 10:09:07 ........................................................................................... ~ 9s
+  2026-04-16 10:09:16 ........................................................................................... ~ 9s
+  2026-04-16 10:09:16 .......................................................................................... ~ 18s
+  2026-04-16 10:09:25 .......................................................................................... ~ 18s
+  2026-04-16 10:09:34 .......................................................................................... ~ 18s
+  2026-04-16 10:09:43 .......................................................................................... ~ 18s
+  2026-04-16 10:09:52 .......................................................................................... ~ 18s
+  2026-04-16 10:10:01 .......................................................................................... ~ 17s
+  2026-04-16 10:10:10 .......................................................................................... ~ 17s
+  2026-04-16 10:10:18 .......................................................................................... ~ 18s
+  2026-04-16 10:10:27 .......................................................................................... ~ 18s
+  2026-04-16 10:10:36 .......................................................................................... ~ 17s
+  2026-04-16 10:10:45 .......................................................................................... ~ 16s
+  2026-04-16 10:11:01 ........................................................................................... ~ 1s
+  2026-04-16 10:11:01 .......................................................................................... ~ 10s
+  2026-04-16 10:10:53 /favicon.ico ............................................................................. ~ 18s
+  2026-04-16 10:11:02 .......................................................................................... ~ 17s
+  2026-04-16 10:11:11 .......................................................................................... ~ 16s
+  2026-04-16 10:11:28 /favicon.ico .............................................................................. ~ 0s
+  2026-04-16 10:13:31 ........................................................................................... ~ 9s
+  2026-04-16 10:13:31 /favicon.ico ............................................................................. ~ 10s
+  2026-04-16 10:14:29 ........................................................................................... ~ 9s
+  2026-04-16 10:14:29 /favicon.ico ............................................................................. ~ 10s
+  2026-04-16 10:15:35 ........................................................................................... ~ 9s
+  2026-04-16 10:15:35 /favicon.ico ............................................................................. ~ 10s
+  2026-04-16 10:17:11 ........................................................................................... ~ 9s
+  2026-04-16 10:17:11 /favicon.ico ............................................................................. ~ 10s
+
+   INFO  Environment modified. Restarting server...  
+
+   INFO  Server running on [http://127.0.0.1:8000].  
+
+  Press Ctrl+C to stop the server
+
+  2026-04-16 10:18:51 ........................................................................................... ~ 1s
+  2026-04-16 10:18:51 /favicon.ico .............................................................................. ~ 2s
+  2026-04-16 10:19:05 ........................................................................................... ~ 0s
+  2026-04-16 10:19:05 ........................................................................................... ~ 1s
+  2026-04-16 10:19:05 ........................................................................................... ~ 2s
+  2026-04-16 10:19:05 ........................................................................................... ~ 2s
+  2026-04-16 10:19:07 ........................................................................................... ~ 0s
+  2026-04-16 10:19:07 ........................................................................................... ~ 1s
+  2026-04-16 10:19:08 ........................................................................................... ~ 1s
+  2026-04-16 10:19:09 ........................................................................................... ~ 1s
+  2026-04-16 10:19:12 ........................................................................................... ~ 1s
+  2026-04-16 10:19:12 /favicon.ico .............................................................................. ~ 1s
+  2026-04-16 10:19:39 ........................................................................................... ~ 1s
+  2026-04-16 10:19:39 /favicon.ico .............................................................................. ~ 1s
+  2026-04-16 10:19:49 ........................................................................................... ~ 1s
+  2026-04-16 10:19:49 /favicon.ico .............................................................................. ~ 1s
+
+   INFO  Environment modified. Restarting server...  
+
+   INFO  Server running on [http://127.0.0.1:8000].  
+
+  Press Ctrl+C to stop the server
+
+  2026-04-16 10:23:15 ........................................................................................... ~ 1s
+  2026-04-16 10:23:15 /favicon.ico .............................................................................. ~ 2s
+
+   INFO  Environment modified. Restarting server...  
+
+   INFO  Server running on [http://127.0.0.1:8000].  
+
+  Press Ctrl+C to stop the server
+

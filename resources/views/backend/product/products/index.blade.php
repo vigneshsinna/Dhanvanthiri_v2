@@ -1,5 +1,12 @@
 @extends('backend.layouts.app')
 
+@section('breadcrumb')
+    @include('backend.partials._breadcrumb', ['items' => [
+        ['label' => 'Home', 'url' => route('admin.dashboard')],
+        ['label' => 'Products'],
+    ]])
+@endsection
+
 @section('content')
     @php
         CoreComponentRepository::instantiateShopRepository();
@@ -9,12 +16,13 @@
     <div class="aiz-titlebar text-left pb-5px">
         <div class="row align-items-center">
             <div class="col-auto">
+                <h2 class="page-title">{{ translate('All products') }}</h2>
+            </div>
+            <div class="col-auto">
                 @if(isset($back_to) && $back_to== 'brands')
                 <a class="fs-14 fw-400 d-inline-block" href="{{ route('brands.index') }}"> <i class="las la-angle-left"></i> {{translate('Back to Brands')}}</a>
                 @elseif(isset($back_to) && $back_to== 'categories')
                 <a class="fs-14 fw-400 d-inline-block" href="{{ route('categories.index') }}"><i class="las la-angle-left"></i> {{translate('Back to Categories')}} </a>
-                @else
-                <h2 class="page-title">{{ translate('All products') }}</h2>
                 @endif
             </div>
 

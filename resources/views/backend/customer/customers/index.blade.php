@@ -52,6 +52,14 @@
                 </select>
             </div>
             <div class="col-lg-2">
+                <select class="form-control aiz-selectpicker" name="status" onchange="sort_customers()" data-selected="{{ $status ?? '' }}">
+                    <option value="">{{ translate('Filter by Status') }}</option>
+                    <option value="active">{{ translate('Active') }}</option>
+                    <option value="banned">{{ translate('Blocked') }}</option>
+                    <option value="suspicious">{{ translate('Suspicious') }}</option>
+                </select>
+            </div>
+            <div class="col-lg-2">
                 <div class="form-group mb-0">
                     <input type="text" class="aiz-date-range form-control" name="date"
                         placeholder="{{ translate('Filter by date') }}" data-format="DD-MM-Y"

@@ -202,7 +202,6 @@
                                 <td>
                                     @include('backend.partials._status_badge', ['status' => $order->payment_status])
                                 </td>
-                                </td>
                                 @if (addon_is_activated('refund_request'))
                                     <td>
                                         @if (count($order->refund_requests) > 0)
@@ -350,6 +349,23 @@
             $('#sort_orders').submit();
             $("#sort_orders").attr("action", '');
         }
+
+        window.updateDeliveryStatus = function(orderId, status, reason) {
+            var data = {
+                _token: '{{ @csrf_token() }}',
+                order_id: orderId,
+                status: status
+            };
+            if (reason) {
+                data.cancellation_reason = reason;
+            }
+            $.post('{{ route('orders.update_delivery_status') }}', data, function(response) {
+                AIZ.plugins.notify('success', '{{ translate('Delivery status has been updated') }}');
+                location.reload();
+            }).fail(function() {
+                AIZ.plugins.notify('danger', '{{ translate('Failed to update delivery status') }}');
+            });
+        };
 
         // Unpaid Order Payment Notification
         function unpaid_order_payment_notification(order_id){

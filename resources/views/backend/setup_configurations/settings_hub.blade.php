@@ -122,6 +122,9 @@
                 @can('whatsapp_chat')
                     <a href="{{ route('whatsapp_chat.index') }}" class="list-group-item list-group-item-action">{{ translate('WhatsApp Chat') }}</a>
                 @endcan
+                @can('facebook_chat')
+                    <a href="{{ route('facebook_chat.index') }}" class="list-group-item list-group-item-action">{{ translate('Facebook Chat') }}</a>
+                @endcan
                 @can('facebook_comment')
                     <a href="{{ route('facebook-comment') }}" class="list-group-item list-group-item-action">{{ translate('Facebook Comment') }}</a>
                 @endcan

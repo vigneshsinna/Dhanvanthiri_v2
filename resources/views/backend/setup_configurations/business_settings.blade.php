@@ -1,11 +1,22 @@
 @extends('backend.layouts.app')
 
+@section('breadcrumb')
+    @include('backend.partials._breadcrumb', ['items' => [
+        ['label' => 'Home', 'url' => route('admin.dashboard')],
+        ['label' => 'Settings', 'url' => route('settings.hub')],
+        ['label' => 'Business Settings'],
+    ]])
+@endsection
+
 @section('content')
-    <!-- GST  -->
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0 h6">{{ translate('Business Settings') }}</h5>
-        </div>
+    <div class="row">
+        <div class=\"col-lg-10 mx-auto\">
+            <h2 class="page-title">{{ translate('Business Settings') }}</h2>
+            <!-- GST  -->
+            <div class="card">
+                <div class="card-header border-bottom-0\">
+                    <h5 class="mb-0 h6">{{ translate('GST Configuration') }}</h5>
+                </div>
 
         <div class="card-body">
             <form action="{{ route('business_info.update') }}" method="POST" enctype="multipart/form-data">

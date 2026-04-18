@@ -191,7 +191,7 @@
                        
 
                         <div class="form-group mb-0 text-right">
-                            <button type="button" class="btn btn-primary" id="carrier-submit-btn">{{translate('Update Carrier Informations')}}</button>
+                            <button type="submit" class="btn btn-primary" id="carrier-submit-btn">{{translate('Update Carrier')}}</button>
                         </div>
                     </form>
 

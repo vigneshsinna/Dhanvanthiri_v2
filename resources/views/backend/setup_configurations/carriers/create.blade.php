@@ -156,9 +156,7 @@
 
 
                         <div class="form-group mb-0 text-right">
-                            <button type="button" class="btn btn-primary" id="carrier-submit-btn">
-                                {{ translate('Save') }}
-                            </button>
+                            <button type="submit" class="btn btn-primary" id="carrier-submit-btn">{{translate('Save')}}</button>
                         </div>
                     </form>
 

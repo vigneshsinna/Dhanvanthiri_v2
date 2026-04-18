@@ -2,7 +2,7 @@
     <div class="aiz-sidebar left c-scrollbar">
         <div class="aiz-side-nav-logo-wrap">
             <a href="{{ route('admin.dashboard') }}" class="d-block text-left">
-                <h3 class="font-weight-bold mb-0 mt-2" style="color: var(--primary) !important; letter-spacing: 1px;">Dhanvathiri</h3>
+                <h3 class="brand-text mb-0 mt-2">Dhanvathiri</h3>
             </a>
         </div>
         <div class="aiz-side-nav-wrap">
@@ -2262,7 +2262,7 @@
                         <div class="aiz-side-nav-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="#575b6a"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
                         </div>
-                        <span class="aiz-side-nav-text">{{translate('System')}}</span>
+                        <span class="aiz-side-nav-text">{{translate('Administration')}}</span>
                         <span class="aiz-side-nav-arrow"></span>
                     </a>
                     <ul class="aiz-side-nav-list level-2">
@@ -2360,7 +2360,7 @@
                                 </g>
                             </svg>
                         </div>
-                        <span class="aiz-side-nav-text">{{translate('System')}}</span>
+                        <span class="aiz-side-nav-text">{{translate('Maintenance')}}</span>
                         <span class="aiz-side-nav-arrow"></span>
                     </a>
                     <ul class="aiz-side-nav-list level-2">
@@ -2543,9 +2543,6 @@
                         </div>
                         <span class="aiz-side-nav-text">{{ translate('Uploaded Files') }}</span>
                     </a>
-                </li>
-
-                    </ul>
                 </li>
 
             </ul><!-- .aiz-side-nav -->

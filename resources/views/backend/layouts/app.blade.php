@@ -321,51 +321,6 @@
             }
         };
 
-        /* ─── WORKFLOW-02: Inline quick edit for price/stock ─── */
-        $(document).on('click', '.quick-edit-trigger', function() {
-            var $container = $(this).closest('.quick-edit-container');
-            $container.addClass('editing');
-            $container.find('.quick-edit-input input').focus().select();
-        });
-        $(document).on('click', '.quick-edit-cancel', function() {
-            var $container = $(this).closest('.quick-edit-container');
-            $container.removeClass('editing');
-        });
-        $(document).on('click', '.quick-edit-save', function() {
-            var $container = $(this).closest('.quick-edit-container');
-            var $input = $container.find('.quick-edit-input input');
-            var newValue = $input.val();
-            var field = $input.data('field');
-            var productId = $input.data('product-id');
-            var $trigger = $container.find('.quick-edit-trigger');
-
-            $.ajax({
-                url: '{{ url("/admin/products/quick-update") }}/' + productId,
-                method: 'POST',
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    field: field,
-                    value: newValue
-                },
-                success: function() {
-                    $trigger.text(field === 'unit_price' ? '₹' + newValue : newValue);
-                    $container.removeClass('editing');
-                    AIZ.plugins.notify('success', '{{ translate("Updated successfully") }}');
-                },
-                error: function() {
-                    AIZ.plugins.notify('danger', '{{ translate("Update failed") }}');
-                    $container.removeClass('editing');
-                }
-            });
-        });
-        $(document).on('keydown', '.quick-edit-input input', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                $(this).closest('.quick-edit-container').find('.quick-edit-save').click();
-            } else if (e.key === 'Escape') {
-                $(this).closest('.quick-edit-container').find('.quick-edit-cancel').click();
-            }
-        });
     </script>
 </body>
 

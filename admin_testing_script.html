@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dhanvathiri — Complete QA Testing Script</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --c-bg:#0f1117;--c-surface:#181c27;--c-surface2:#1e2333;--c-border:#2a3045;
+    --c-text:#e8eaf0;--c-muted:#7c849a;--c-accent:#4f8ef7;--c-accent2:#6c63ff;
+    --c-pass:#22c55e;--c-fail:#f43f5e;--c-skip:#f59e0b;--c-block:#a78bfa;
+    --c-warn:#fb923c;--c-critical:#ff4d6d;--c-high:#f97316;--c-medium:#facc15;--c-low:#86efac;
+    --radius:8px;--radius-lg:12px;
+    font-family:'Segoe UI',system-ui,sans-serif;
+  }
+  body{background:var(--c-bg);color:var(--c-text);min-height:100vh;font-size:14px;line-height:1.6}
+
+  /* TOP BAR */
+  .topbar{background:var(--c-surface);border-bottom:1px solid var(--c-border);padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:100}
+  .topbar-logo{font-size:15px;font-weight:700;color:var(--c-accent);letter-spacing:.5px;flex-shrink:0}
+  .topbar-title{font-size:13px;color:var(--c-muted);flex-shrink:0}
+  .topbar-spacer{flex:1}
+  .progress-wrap{display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .progress-bar-bg{width:160px;height:6px;background:var(--c-border);border-radius:99px;overflow:hidden}
+  .progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--c-accent),var(--c-pass));border-radius:99px;transition:width .4s}
+  .progress-label{font-size:12px;color:var(--c-muted);min-width:60px;text-align:right}
+  .btn-export{background:var(--c-accent);color:#fff;border:none;border-radius:var(--radius);padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;letter-spacing:.3px}
+  .btn-export:hover{background:#3d7de8}
+
+  /* LAYOUT */
+  .layout{display:flex;height:calc(100vh - 56px)}
+  .sidebar{width:260px;flex-shrink:0;background:var(--c-surface);border-right:1px solid var(--c-border);overflow-y:auto;padding:12px 0}
+  .main{flex:1;overflow-y:auto;padding:24px}
+
+  /* SIDEBAR NAV */
+  .sidebar-section{padding:4px 12px;margin-top:8px}
+  .sidebar-section-label{font-size:10px;font-weight:700;color:var(--c-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;padding:0 4px}
+  .nav-item{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:var(--radius);cursor:pointer;font-size:13px;color:var(--c-muted);transition:all .15s;border:none;background:none;width:100%;text-align:left}
+  .nav-item:hover{background:var(--c-surface2);color:var(--c-text)}
+  .nav-item.active{background:rgba(79,142,247,.12);color:var(--c-accent);font-weight:600}
+  .nav-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .nav-count{margin-left:auto;font-size:11px;background:var(--c-surface2);border-radius:99px;padding:1px 7px;color:var(--c-muted)}
+  .nav-item.active .nav-count{background:rgba(79,142,247,.2);color:var(--c-accent)}
+
+  /* SUMMARY CHIPS */
+  .summary-bar{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+  .chip{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:99px;font-size:12px;font-weight:600;border:1px solid;cursor:pointer;transition:all .15s}
+  .chip:hover{opacity:.8}
+  .chip.pass{color:var(--c-pass);border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.08)}
+  .chip.fail{color:var(--c-fail);border-color:rgba(244,63,94,.3);background:rgba(244,63,94,.08)}
+  .chip.skip{color:var(--c-skip);border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.08)}
+  .chip.all{color:var(--c-text);border-color:var(--c-border);background:var(--c-surface2)}
+  .chip.active-filter{box-shadow:0 0 0 2px currentColor}
+
+  /* SECTION */
+  .section-header{margin-bottom:16px}
+  .section-title{font-size:20px;font-weight:700;color:var(--c-text);margin-bottom:4px}
+  .section-desc{font-size:13px;color:var(--c-muted)}
+  .section-stats{display:flex;gap:16px;margin-top:12px}
+  .stat-item{font-size:12px;color:var(--c-muted)}
+  .stat-item strong{color:var(--c-text)}
+
+  /* TEST GROUPS */
+  .test-group{margin-bottom:24px}
+  .group-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;cursor:pointer;user-select:none}
+  .group-title{font-size:13px;font-weight:700;color:var(--c-text);text-transform:uppercase;letter-spacing:.6px}
+  .group-badge{font-size:11px;color:var(--c-muted);background:var(--c-surface2);border-radius:99px;padding:2px 8px}
+  .group-toggle{margin-left:auto;color:var(--c-muted);font-size:12px;transition:transform .2s}
+  .group-toggle.collapsed{transform:rotate(-90deg)}
+  .group-progress{height:3px;background:var(--c-border);border-radius:99px;margin-bottom:10px;overflow:hidden}
+  .group-progress-fill{height:100%;background:var(--c-accent);border-radius:99px;transition:width .3s}
+
+  /* TEST CARDS */
+  .test-card{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:8px;transition:border-color .15s}
+  .test-card:hover{border-color:var(--c-accent)}
+  .test-card.status-pass{border-left:3px solid var(--c-pass)}
+  .test-card.status-fail{border-left:3px solid var(--c-fail)}
+  .test-card.status-skip{border-left:3px solid var(--c-skip)}
+  .test-top{display:flex;align-items:flex-start;gap:12px}
+  .test-id{font-size:10px;font-weight:700;color:var(--c-muted);letter-spacing:.8px;min-width:72px;padding-top:2px;font-family:monospace}
+  .test-content{flex:1;min-width:0}
+  .test-title{font-size:13px;font-weight:600;color:var(--c-text);margin-bottom:3px;line-height:1.4}
+  .test-desc{font-size:12px;color:var(--c-muted);line-height:1.5}
+  .test-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+  .sev-badge{font-size:10px;font-weight:700;border-radius:4px;padding:2px 7px;letter-spacing:.4px}
+  .sev-critical{background:rgba(255,77,109,.15);color:var(--c-critical);border:1px solid rgba(255,77,109,.25)}
+  .sev-high{background:rgba(249,115,22,.15);color:var(--c-high);border:1px solid rgba(249,115,22,.25)}
+  .sev-medium{background:rgba(250,204,21,.15);color:var(--c-medium);border:1px solid rgba(250,204,21,.25)}
+  .sev-low{background:rgba(134,239,172,.15);color:var(--c-low);border:1px solid rgba(134,239,172,.25)}
+  .status-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--c-border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;flex-shrink:0}
+  .status-btn:hover{border-color:var(--c-accent)}
+  .status-btn.pass{background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.4)}
+  .status-btn.fail{background:rgba(244,63,94,.15);border-color:rgba(244,63,94,.4)}
+  .status-btn.skip{background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.4)}
+  .test-meta{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
+  .test-tag{font-size:11px;color:var(--c-muted);background:var(--c-surface2);border-radius:4px;padding:1px 7px}
+  .test-note-wrap{margin-top:8px;display:none}
+  .test-note-wrap.open{display:block}
+  .test-note{width:100%;background:var(--c-surface2);border:1px solid var(--c-border);border-radius:6px;color:var(--c-text);font-size:12px;padding:7px 10px;resize:vertical;min-height:52px;font-family:inherit}
+  .test-note:focus{outline:none;border-color:var(--c-accent)}
+  .note-toggle{font-size:11px;color:var(--c-accent);cursor:pointer;margin-top:6px;display:inline-block}
+  .note-toggle:hover{text-decoration:underline}
+  .steps-list{margin-top:8px;padding-left:0;list-style:none}
+  .step-item{font-size:12px;color:var(--c-muted);padding:2px 0 2px 14px;position:relative}
+  .step-item::before{content:'→';position:absolute;left:0;color:var(--c-accent);font-size:11px}
+  .expected{margin-top:6px;font-size:11px;color:var(--c-muted);background:rgba(79,142,247,.07);border:1px solid rgba(79,142,247,.15);border-radius:6px;padding:5px 10px}
+  .expected strong{color:var(--c-accent);font-weight:600}
+  .steps-toggle{font-size:11px;color:var(--c-muted);cursor:pointer;margin-top:5px;display:inline-block}
+  .steps-toggle:hover{color:var(--c-text)}
+  .steps-body{display:none}
+  .steps-body.open{display:block}
+
+  /* SEARCH */
+  .search-bar{display:flex;gap:10px;margin-bottom:16px}
+  .search-input{flex:1;background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--radius);color:var(--c-text);font-size:13px;padding:8px 14px}
+  .search-input:focus{outline:none;border-color:var(--c-accent)}
+  .filter-select{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--radius);color:var(--c-text);font-size:13px;padding:8px 12px;cursor:pointer}
+  .filter-select:focus{outline:none;border-color:var(--c-accent)}
+
+  /* HIDDEN */
+  .hidden{display:none!important}
+
+  /* PRINT */
+  @media print{
+    .topbar,.sidebar,.btn-export,.status-btn,.note-toggle,.steps-toggle{display:none}
+    .layout{display:block}.main{padding:0}
+    .test-card{break-inside:avoid;border:1px solid #ccc;margin-bottom:6px}
+    body{background:#fff;color:#111}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-logo">Dhanvathiri QA</span>
+  <span class="topbar-title">Complete Testing Script v1.0</span>
+  <div class="topbar-spacer"></div>
+  <div class="progress-wrap">
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="global-bar" style="width:0%"></div></div>
+    <span class="progress-label" id="global-label">0 / 0</span>
+  </div>
+  <button class="btn-export" onclick="exportReport()">Export Report</button>
+</div>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar"></nav>
+  <main class="main" id="main-content"></main>
+</div>
+
+<script>
+const SECTIONS = [
+  {
+    id:'auth', label:'Authentication', color:'#4f8ef7', desc:'Login, registration, session management, password flows',
+    groups:[
+      {
+        title:'Admin Login',
+        tests:[
+          {id:'AUTH-01',title:'Admin login with valid credentials',sev:'critical',tags:['admin','auth'],
+           steps:['Go to /admin/login','Enter valid admin email and password','Click Login'],
+           expected:'Redirected to /admin/dashboard. Session cookie set. No JS errors in console.'},
+          {id:'AUTH-02',title:'Admin login with wrong password',sev:'high',tags:['admin','auth'],
+           steps:['Go to /admin/login','Enter valid email, wrong password','Click Login'],
+           expected:'Error message shown. No redirect. Rate limit after 5 attempts.'},
+          {id:'AUTH-03',title:'Admin logout clears session',sev:'high',tags:['admin','auth'],
+           steps:['Login as admin','Click logout','Navigate back to /admin/dashboard'],
+           expected:'Redirected to login page. Session cookie cleared.'},
+          {id:'AUTH-04',title:'Session timeout and redirect',sev:'medium',tags:['admin','auth'],
+           steps:['Login as admin','Wait for session to expire (or manually expire in DB)','Try to access any admin page'],
+           expected:'Redirected to /admin/login with "Session expired" message.'},
+          {id:'AUTH-05',title:'Remember me token persists across browser restart',sev:'low',tags:['admin','auth'],
+           steps:['Login with Remember Me checked','Close and reopen browser','Go to /admin'],
+           expected:'Auto-logged in. No need to re-enter credentials.'},
+        ]
+      },
+      {
+        title:'Customer Auth (Storefront)',
+        tests:[
+          {id:'AUTH-06',title:'Customer registration with email',sev:'critical',tags:['storefront','auth'],
+           steps:['Go to /register','Fill name, email, password, confirm password','Submit'],
+           expected:'Account created. Verification email sent. Redirected to home or verification notice.'},
+          {id:'AUTH-07',title:'Duplicate email registration blocked',sev:'high',tags:['storefront','auth'],
+           steps:['Register with an existing email address'],
+           expected:'Inline validation error: "Email already in use." Form not submitted.'},
+          {id:'AUTH-08',title:'Social login (Google/Facebook)',sev:'high',tags:['storefront','auth'],
+           steps:['Click Google login on storefront','Complete OAuth flow'],
+           expected:'Account created or linked. Redirected to homepage. Name shown in navbar.'},
+          {id:'AUTH-09',title:'Password reset email flow',sev:'high',tags:['storefront','auth'],
+           steps:['Click Forgot Password','Enter email','Check email for reset link','Click link and set new password'],
+           expected:'New password accepted. Old password invalidated. User logged in.'},
+          {id:'AUTH-10',title:'OTP phone verification',sev:'medium',tags:['storefront','auth'],
+           steps:['Register with phone number','Receive OTP SMS','Enter OTP in verification field'],
+           expected:'Phone verified. Account activated. OTP cannot be reused.'},
+        ]
+      }
+    ]
+  },
+  {
+    id:'storefront', label:'React Storefront', color:'#22d3ee', desc:'Homepage, search, product pages, cart, checkout flow',
+    groups:[
+      {
+        title:'Homepage & Navigation',
+        tests:[
+          {id:'SF-01',title:'Homepage loads with all sections visible',sev:'critical',tags:['storefront','ui'],
+           steps:['Open homepage','Check hero banner, featured products, categories, flash deals'],
+           expected:'All sections render. No broken images. Page load < 3s. No console errors.'},
+          {id:'SF-02',title:'Hero banner slideshow auto-advances',sev:'medium',tags:['storefront','ui'],
+           steps:['Observe homepage banner slider','Wait 5 seconds'],
+           expected:'Slides advance automatically. Clicking arrows manually works. Dots match current slide.'},
+          {id:'SF-03',title:'Category navigation links to correct listing',sev:'high',tags:['storefront','nav'],
+           steps:['Click any category from homepage or navbar','Check URL and page content'],
+           expected:'URL changes to /category/{slug}. Products shown match selected category.'},
+          {id:'SF-04',title:'Search returns relevant results',sev:'critical',tags:['storefront','search'],
+           steps:['Type "shirt" in search bar','Press Enter or click search icon'],
+           expected:'Results page loads with shirt-related products. Filters visible. Result count shown.'},
+          {id:'SF-05',title:'Search with no results shows empty state',sev:'medium',tags:['storefront','search'],
+           steps:['Search for a random nonsense string like "xkjqztest123"'],
+           expected:'Empty state message shown. Suggestions or popular products offered.'},
+          {id:'SF-06',title:'Navbar cart icon updates on add',sev:'high',tags:['storefront','cart'],
+           steps:['Add a product to cart','Observe navbar cart icon'],
+           expected:'Cart count badge increments by 1 immediately without page reload.'},
+        ]
+      },
+      {
+        title:'Product Detail Page',
+        tests:[
+          {id:'SF-07',title:'Product images gallery works',sev:'high',tags:['storefront','ui'],
+           steps:['Open any product page','Click on thumbnail images'],
+           expected:'Main image updates. Zoom on hover works. No broken images.'},
+          {id:'SF-08',title:'Variant selection (size/color) updates price and stock',sev:'critical',tags:['storefront','product'],
+           steps:['Open a product with variants','Select a size','Select a color'],
+           expected:'Price updates if variant price differs. Stock count updates. "Out of stock" shown if zero.'},
+          {id:'SF-09',title:'Quantity selector limits to available stock',sev:'high',tags:['storefront','product'],
+           steps:['Set quantity above stock limit'],
+           expected:'Quantity capped at max stock. Error message or button disabled if exceeds limit.'},
+          {id:'SF-10',title:'Add to cart without selecting required variant shows error',sev:'high',tags:['storefront','product'],
+           steps:['On a product with variants','Click "Add to Cart" without selecting size/color'],
+           expected:'Validation error: "Please select size" etc. Product not added to cart.'},
+          {id:'SF-11',title:'Product reviews display and pagination',sev:'medium',tags:['storefront','product'],
+           steps:['Scroll to reviews section on product page','Click "Load more" or next page'],
+           expected:'Reviews load. Star ratings display correctly. Pagination works.'},
+          {id:'SF-12',title:'Flash deal countdown timer is accurate',sev:'high',tags:['storefront','marketing'],
+           steps:['Open a product that is part of a flash deal','Observe the countdown timer'],
+           expected:'Timer counts down in real time. Discounted price is shown. Timer synced with server end time.'},
+          {id:'SF-13',title:'Out-of-stock product cannot be added to cart',sev:'critical',tags:['storefront','product'],
+           steps:['Find a product with zero stock','Attempt to add to cart'],
+           expected:'"Out of Stock" displayed. Add to cart button disabled or removed.'},
+          {id:'SF-14',title:'Wishlist add/remove works when logged in',sev:'medium',tags:['storefront','wishlist'],
+           steps:['Login as customer','Click wishlist heart icon on product page','Go to /wishlist'],
+           expected:'Product appears in wishlist. Clicking again removes it. Count updates in navbar.'},
+        ]
+      },
+      {
+        title:'Cart & Checkout',
+        tests:[
+          {id:'SF-15',title:'Cart persists across page reload',sev:'critical',tags:['storefront','cart'],
+           steps:['Add items to cart','Reload the page','Return to cart'],
+           expected:'Cart items preserved. Quantities match. For guest: uses local storage or session.'},
+          {id:'SF-16',title:'Remove item from cart works',sev:'high',tags:['storefront','cart'],
+           steps:['Add multiple items to cart','Go to cart','Click remove on one item'],
+           expected:'Item removed. Cart total recalculated immediately. Page does not reload.'},
+          {id:'SF-17',title:'Coupon code applies correctly',sev:'critical',tags:['storefront','checkout'],
+           steps:['Add items to cart','Enter valid coupon code','Apply coupon'],
+           expected:'Discount shown. Cart total reduced correctly. Coupon code displayed with remove option.'},
+          {id:'SF-18',title:'Invalid coupon code shows error',sev:'high',tags:['storefront','checkout'],
+           steps:['Enter expired or non-existent coupon code'],
+           expected:'Error message: "Invalid or expired coupon." Total unchanged.'},
+          {id:'SF-19',title:'Checkout address form validation',sev:'critical',tags:['storefront','checkout'],
+           steps:['Proceed to checkout','Submit address form with empty required fields'],
+           expected:'Inline validation errors shown per field. Form not submitted. Focus jumps to first error.'},
+          {id:'SF-20',title:'Shipping method selection updates total',sev:'high',tags:['storefront','checkout'],
+           steps:['On checkout, select different shipping methods'],
+           expected:'Shipping cost updates in order summary. Grand total recalculates.'},
+          {id:'SF-21',title:'Payment page loads correct gateway',sev:'critical',tags:['storefront','payment'],
+           steps:['Select Razorpay/Stripe as payment method','Proceed to payment'],
+           expected:'Correct payment gateway SDK loads. No CORS errors. Amount shown matches order total.'},
+          {id:'SF-22',title:'Successful payment redirects to order confirmation',sev:'critical',tags:['storefront','payment'],
+           steps:['Complete a test payment with gateway sandbox credentials'],
+           expected:'Order created in DB. Confirmation page with order code shown. Confirmation email sent.'},
+          {id:'SF-23',title:'Failed payment shows retry option',sev:'high',tags:['storefront','payment'],
+           steps:['Use invalid card number in payment','Submit'],
+           expected:'"Payment failed" message. Option to retry with different card. Order NOT created.'},
+          {id:'SF-24',title:'Guest checkout works without account',sev:'high',tags:['storefront','checkout'],
+           steps:['Add item to cart without logging in','Proceed to checkout','Enter guest details','Complete order'],
+           expected:'Order placed as guest. Guest order visible in admin. Confirmation email sent to guest.'},
+        ]
+      },
+      {
+        title:'My Account (Customer)',
+        tests:[
+          {id:'SF-25',title:'Order history lists all orders',sev:'high',tags:['storefront','account'],
+           steps:['Login as customer','Go to My Account > Orders'],
+           expected:'All past orders shown with status, date, amount. Clicking opens order detail.'},
+          {id:'SF-26',title:'Customer can reorder from order history',sev:'medium',tags:['storefront','account'],
+           steps:['Go to order history','Click "Reorder" on a past order'],
+           expected:'Items added to cart. Notification shown. Cart badge updates.'},
+          {id:'SF-27',title:'Address book add/edit/delete',sev:'medium',tags:['storefront','account'],
+           steps:['Go to My Account > Addresses','Add a new address','Edit it','Delete it'],
+           expected:'All CRUD operations work. Default address can be set. Shows in checkout.'},
+          {id:'SF-28',title:'Wallet balance shows and can be used at checkout',sev:'high',tags:['storefront','account'],
+           steps:['Go to My Account > Wallet','Check balance','Apply wallet balance at checkout'],
+           expected:'Balance shown. Partial or full payment from wallet deducts correctly.'},
+        ]
+      }
+    ]
+  },
+  {
+    id:'admin-dashboard', label:'Admin Dashboard', color:'#a78bfa', desc:'Dashboard KPIs, charts, top products/sellers',
+    groups:[
+      {
+        title:'Dashboard Overview',
+        tests:[
+          {id:'DB-01',title:'Dashboard KPI cards show correct data',sev:'critical',tags:['admin','dashboard'],
+           steps:['Login as admin','Go to dashboard','Check Total Orders, Revenue, Customers, Sellers cards'],
+           expected:'Numbers are non-zero for a populated store. Values match database counts.'},
+          {id:'DB-02',title:'Revenue chart renders without error',sev:'high',tags:['admin','dashboard'],
+           steps:['Observe the revenue/orders chart','Switch between weekly/monthly/yearly views'],
+           expected:'Chart renders. Data changes on view switch. No JS errors. Loading state shown during fetch.'},
+          {id:'DB-03',title:'Top sellers table is populated',sev:'medium',tags:['admin','dashboard'],
+           steps:['Scroll to Top Sellers section on dashboard'],
+           expected:'Sellers listed with product count and earnings. Links to seller profiles work.'},
+          {id:'DB-04',title:'Top products section renders',sev:'medium',tags:['admin','dashboard'],
+           steps:['Scroll to Top Products section on dashboard'],
+           expected:'Products shown with thumbnails, sales count, revenue. Images load correctly.'},
+          {id:'DB-05',title:'Low stock alert widget is accurate',sev:'high',tags:['admin','dashboard'],
+           steps:['Check if low stock widget is visible','Compare with actual product stock in Products list'],
+           expected:'Products with stock below threshold are listed. Clicking links to product edit.'},
+        ]
+      }
+    ]
+  },
+  {
+    id:'admin-products', label:'Admin: Products', color:'#f97316', desc:'Product create/edit, categories, brands, attributes, bulk ops',
+    groups:[
+      {
+        title:'Product List',
+        tests:[
+          {id:'PRD-01',title:'All Products page loads and paginates',sev:'critical',tags:['admin','products'],
+           steps:['Go to Products > All Products','Scroll to bottom or navigate pages'],
+           expected:'Products list loads. Pagination works. Page 2+ shows different products.'},
+          {id:'PRD-02',title:'Product search by name works',sev:'critical',tags:['admin','products'],
+           steps:['Type a product name in search field','Press Enter or wait for auto-search'],
+           expected:'List filtered to matching products only. Clearing search restores full list.'},
+          {id:'PRD-03',title:'Filter by category narrows results',sev:'high',tags:['admin','products'],
+           steps:['Select a category from the category filter dropdown'],
+           expected:'Only products in selected category shown. Count updates in table.'},
+          {id:'PRD-04',title:'Tab switching (All/In-House/Seller) works',sev:'high',tags:['admin','products'],
+           steps:['Click each tab: All Products, In House Products, Seller Products'],
+           expected:'Product list changes per tab. Active tab highlighted. URL updates with type parameter.'},
+          {id:'PRD-05',title:'Inline price quick-edit saves via AJAX',sev:'critical',tags:['admin','products'],
+           steps:['Click price cell on a product row','Edit the value','Press Enter or click Save icon'],
+           expected:'Price updates without page reload. Success toast shown. Price change persists on page refresh.'},
+          {id:'PRD-06',title:'Inline stock quick-edit saves via AJAX',sev:'critical',tags:['admin','products'],
+           steps:['Click stock cell on a product row','Edit the value','Press Enter'],
+           expected:'Stock updates without page reload. Success toast shown.'},
+          {id:'PRD-07',title:'Bulk publish/unpublish changes status',sev:'high',tags:['admin','products'],
+           steps:['Select 3 products via checkboxes','Click Bulk Action > Publish'],
+           expected:'Selected products status changes to published. Toast confirmation. List refreshes.'},
+          {id:'PRD-08',title:'Bulk delete with confirmation',sev:'high',tags:['admin','products'],
+           steps:['Select 2 products','Click Bulk Action > Delete'],
+           expected:'Confirmation modal appears. Confirming deletes. Products gone from list.'},
+          {id:'PRD-09',title:'Single product delete with confirmation',sev:'high',tags:['admin','products'],
+           steps:['Click delete (trash) icon on one product row'],
+           expected:'Confirmation modal appears. Confirming deletes. Product removed from list.'},
+          {id:'PRD-10',title:'Empty state shows when filter has no results',sev:'medium',tags:['admin','products'],
+           steps:['Search for a string that matches no products'],
+           expected:'Empty state message shown inside table body. No blank rows or broken layout.'},
+          {id:'PRD-11',title:'Breadcrumb not shown on products index — BUG-06',sev:'medium',tags:['admin','bug'],
+           steps:['Go to All Products page','Check for breadcrumb trail below topbar'],
+           expected:'Should show: Home > Products. (Currently missing — BUG-06)'},
+        ]
+      },
+      {
+        title:'Product Create/Edit Form',
+        tests:[
+          {id:'PRD-12',title:'Product create form submits and saves',sev:'critical',tags:['admin','products'],
+           steps:['Go to Products > Add New Product','Fill all required fields','Click Save'],
+           expected:'Product created. Redirected to product list with success toast. Product appears in list.'},
+          {id:'PRD-13',title:'Validation errors shown inline on save failure',sev:'high',tags:['admin','products'],
+           steps:['Submit product form with empty required fields (name, price, category)'],
+           expected:'Inline error shown under each invalid field. Form stays on page. First error focused.'},
+          {id:'PRD-14',title:'Submit button disables after single click (no double-submit)',sev:'high',tags:['admin','products'],
+           steps:['Fill form','Click Save quickly twice in succession'],
+           expected:'Button disables after first click. Shows "Saving..." spinner. Only one product created.'},
+          {id:'PRD-15',title:'Image upload and preview works',sev:'high',tags:['admin','products'],
+           steps:['Click the thumbnail image upload area','Select a JPG image','Check preview'],
+           expected:'Preview renders. Image stored and URL returned. No upload errors.'},
+          {id:'PRD-16',title:'SKU combinations generate correctly',sev:'critical',tags:['admin','products'],
+           steps:['Add attributes (Size: S,M,L and Color: Red,Blue)','Click generate SKU combinations'],
+           expected:'6 SKU rows generated (S×Red, S×Blue, M×Red, M×Blue, L×Red, L×Blue). Each editable.'},
+          {id:'PRD-17',title:'Digital product file upload works',sev:'high',tags:['admin','products'],
+           steps:['Go to Add Digital Product','Upload a ZIP file','Save'],
+           expected:'File stored. Download link generated. Customers receive download link on purchase.'},
+          {id:'PRD-18',title:'SEO fields save and appear on storefront meta',sev:'medium',tags:['admin','products'],
+           steps:['Add Meta Title and Meta Description in product edit','Save','Check product page source'],
+           expected:'<meta name="description"> and <title> on storefront match saved values.'},
+          {id:'PRD-19',title:'Category-wise discount applies on storefront',sev:'high',tags:['admin','products'],
+           steps:['Set 10% discount for "Electronics" category','Open an Electronics product on storefront'],
+           expected:'Discounted price shown. Original price struck through. Discount percentage badge shown.'},
+        ]
+      },
+      {
+        title:'Categories, Brands & Attributes',
+        tests:[
+          {id:'PRD-20',title:'Category create with parent nesting works',sev:'high',tags:['admin','categories'],
+           steps:['Go to Products > Category > Add New','Set a parent category','Save'],
+           expected:'Sub-category appears under parent in category list. Breadcrumb shows nesting.'},
+          {id:'PRD-21',title:'Category icon/banner image uploads',sev:'medium',tags:['admin','categories'],
+           steps:['Edit a category','Upload icon image','Upload banner image','Save'],
+           expected:'Images stored. Shown in category listing page and storefront category header.'},
+          {id:'PRD-22',title:'Brand create and assign to product',sev:'high',tags:['admin','brands'],
+           steps:['Create a brand with logo','Assign it to a product','Open product on storefront'],
+           expected:'Brand name and logo show on product page. Brand filter works on product listing.'},
+          {id:'PRD-23',title:'Product attribute add option works',sev:'high',tags:['admin','attributes'],
+           steps:['Go to Products > Attribute','Create attribute "Material" with values "Cotton, Polyester"'],
+           expected:'Attribute saved. Appears in product create form attribute dropdown.'},
+        ]
+      },
+      {
+        title:'Bulk Import/Export',
+        tests:[
+          {id:'PRD-24',title:'Product CSV bulk import succeeds with valid file',sev:'high',tags:['admin','products'],
+           steps:['Download CSV template','Fill in 3 product rows','Upload CSV in Bulk Import'],
+           expected:'3 products created. Success count shown. No error rows.'},
+          {id:'PRD-25',title:'Bulk import with invalid rows shows error report',sev:'high',tags:['admin','products'],
+           steps:['Upload CSV with one row missing required "name" field'],
+           expected:'Error row highlighted in report. Valid rows still imported. Error message downloadable.'},
+          {id:'PRD-26',title:'Product bulk export generates CSV',sev:'medium',tags:['admin','products'],
+           steps:['Go to Products > Bulk Export','Click Export'],
+           expected:'CSV file downloads. Contains all current products with correct column headers.'},
+        ]
+      }
+    ]
+  },
+  {
+    id:'admin-orders', label:'Admin: Orders', color:'#22c55e', desc:'Order list, detail, status updates, invoices',
+    groups:[
+      {
+        title:'Order List',
+        tests:[
+          {id:'ORD-01',title:'All Orders page lists orders with correct columns',sev:'critical',tags:['admin','orders'],
+           steps:['Go to Sales > All Orders'],
+           expected:'Columns: #, Order Code, # Products, Customer, Seller, Amount, Delivery Status, Payment Method, Payment Status, Options. All data populated.'},
+          {id:'ORD-02',title:'Stray closing </td> tag does not break table layout — BUG-01',sev:'critical',tags:['admin','bug'],
+           steps:['Go to All Orders','Inspect table alignment of header vs rows'],
+           expected:'Columns align exactly between header and data rows. (BUG-01: stray </td> on line 205 must be removed)'},
+          {id:'ORD-03',title:'Filter by delivery status works',sev:'high',tags:['admin','orders'],
+           steps:['Select "Pending" from Delivery Status filter','Click Filter'],
+           expected:'Only pending orders shown. Count matches. Clearing filter restores all.'},
+          {id:'ORD-04',title:'Date range filter works and shows selected range',sev:'high',tags:['admin','orders'],
+           steps:['Click date filter field','Select a date range (e.g. last 7 days)','Apply'],
+           expected:'Orders filtered to selected range. Date field shows selected range text (not truncated). Width ≥ col-md-3.'},
+          {id:'ORD-05',title:'Search by order code works',sev:'high',tags:['admin','orders'],
+           steps:['Type a known order code in search field','Press Enter'],
+           expected:'Exact order found and shown. Partial codes also return relevant results.'},
+          {id:'ORD-06',title:'Status badges use correct colors via _status_badge partial',sev:'medium',tags:['admin','orders'],
+           steps:['Observe delivery status and payment status badges in order list'],
+           expected:'Pending=yellow, Confirmed=blue, Delivered=green, Cancelled=red, Paid=green, Unpaid=red.'},
+          {id:'ORD-07',title:'Empty state shown when no orders match filter',sev:'medium',tags:['admin','orders'],
+           steps:['Apply a date range with no orders'],
+           expected:'Empty state with cart icon and "No orders found." message shown inside table body.'},
+          {id:'ORD-08',title:'Bulk delete requires confirmation',sev:'high',tags:['admin','orders'],
+           steps:['Select 3 orders via checkbox','Click Bulk Action > Delete selection'],
+           expected:'Confirmation modal shows count of selected orders. Confirming deletes all 3.'},
+          {id:'ORD-09',title:'Bulk export downloads CSV of selected orders',sev:'medium',tags:['admin','orders'],
+           steps:['Select 5 orders','Click Bulk Action > Export'],
+           expected:'CSV downloads with correct order data. Column headers present.'},
+        ]
+      },
+      {
+        title:'Order Detail (show.blade)',
+        tests:[
+          {id:'ORD-10',title:'Order detail shows all order information',sev:'critical',tags:['admin','orders'],
+           steps:['Click View on any order','Check: customer info, items, amounts, addresses, payment info'],
+           expected:'All sections populated. Item images show. Taxes and shipping broken down. Total matches.'},
+          {id:'ORD-11',title:'Delivery status change fires confirmation for "cancelled" — WORKFLOW-01',sev:'critical',tags:['admin','orders','bug'],
+           steps:['Open an order in "pending" status','Change delivery status dropdown to "Cancel"'],
+           expected:'SweetAlert confirmation appears. Reason textarea required. Cancelling without reason blocked. Confirm changes status.'},
+          {id:'ORD-12',title:'updateDeliveryStatus() function exists in show.blade script — BUG-11',sev:'critical',tags:['admin','bug'],
+           steps:['Open order detail page','Open browser DevTools Console','Type: updateDeliveryStatus'],
+           expected:'Function is defined (not undefined). confirmDeliveryStatusChange() can call it without ReferenceError.'},
+          {id:'ORD-13',title:'Payment status change to Paid triggers confirmation',sev:'high',tags:['admin','orders'],
+           steps:['Open an unpaid order','Change Payment Status to Paid'],
+           expected:'Confirmation dialog appears. Confirming sends AJAX request. Page updates payment status without reload.'},
+          {id:'ORD-14',title:'Delivery boy assignment works when order is pending',sev:'medium',tags:['admin','orders'],
+           steps:['Open a pending order with delivery boy addon active','Select a delivery boy from dropdown'],
+           expected:'Delivery boy saved via AJAX or form. Confirmation shown. Delivery boy name shows in order.'},
+          {id:'ORD-15',title:'Invoice download generates correct PDF',sev:'high',tags:['admin','orders'],
+           steps:['Click invoice download icon on order detail page'],
+           expected:'PDF opens/downloads. Contains order code, items, totals, customer address, invoice date.'},
+          {id:'ORD-16',title:'Previous value restored if status change cancelled',sev:'high',tags:['admin','orders'],
+           steps:['Open order detail','Change delivery status','Click Cancel in the confirmation dialog'],
+           expected:'Dropdown reverts to previous status value. No API call made.'},
+        ]
+      }
+    ]
+  },
+  {
+    id:'admin-customers', label:'Admin: Customers', color:'#06b6d4', desc:'Customer list, create, blocking, packages',
+    groups:[
+      {
+        title:'Customer List',
+        tests:[
+          {id:'CUS-01',title:'Customer list loads with all columns',sev:'critical',tags:['admin','customers'],
+           steps:['Go to Customers > All Customers'],
+           expected:'Columns: Name, Email, Phone, Package, Wallet Balance, Verification Status, Options. All populated.'},
+          {id:'CUS-02',title:'Breadcrumb shows Home > Customers',sev:'low',tags:['admin','customers'],
+           steps:['Go to All Customers','Check breadcrumb area below topbar'],
+           expected:'Breadcrumb: Home › Customers'},
+          {id:'CUS-03',title:'Search by email finds correct customer',sev:'high',tags:['admin','customers'],
+           steps:['Type a customer email in search field','Press Enter'],
+           expected:'Matching customer shown. Partial email also works.'},
+          {id:'CUS-04',title:'Filter by verification status works',sev:'high',tags:['admin','customers'],
+           steps:['Select "Verified" from filter dropdown'],
+           expected:'Only verified customers shown.'},
+          {id:'CUS-05',title:'Filter by date range works — NEW FEATURE',sev:'medium',tags:['admin','customers'],
+           steps:['Select a date range in the date filter','Apply'],
+           expected:'Customers registered in that period shown only.'},
+          {id:'CUS-06',title:'Blocked/Suspicious filter missing — BUG-09',sev:'medium',tags:['admin','bug'],
+           steps:['Look for a filter to show only blocked or suspicious customers'],
+           expected:'Status filter dropdown should exist with: All / Active / Blocked / Suspicious options. (BUG-09: not yet implemented)'},
+          {id:'CUS-07',title:'Blocked customer row shown in red with icon',sev:'medium',tags:['admin','customers'],
+           steps:['Find a blocked customer in the list'],
+           expected:'Row text in danger color. Ban icon shown next to name. Legend chips explain colors.'},
+          {id:'CUS-08',title:'Empty state shown when no customers match filter',sev:'low',tags:['admin','customers'],
+           steps:['Apply a date range with no registrations'],
+           expected:'"No customers found." empty state inside table body.'},
+        ]
+      },
+      {
+        title:'Customer Create/Edit',
+        tests:[
+          {id:'CUS-09',title:'Add new customer form validates all fields',sev:'high',tags:['admin','customers'],
+           steps:['Go to Customers > Add New','Submit empty form'],
+           expected:'Inline validation errors per required field.'},
+          {id:'CUS-10',title:'Customer wallet manual top-up works',sev:'high',tags:['admin','customers'],
+           steps:['Open customer detail page','Add wallet balance','Save'],
+           expected:'Wallet balance updates. Transaction recorded in wallet history.'},
+          {id:'CUS-11',title:'Block/unblock customer changes login ability',sev:'high',tags:['admin','customers'],
+           steps:['Block a customer account','Try to log in as that customer on storefront'],
+           expected:'Login rejected with "Account suspended" message.'},
+        ]
+      }
+    ]
+  },
+  {
+    id:'admin-sellers', label:'Admin: Sellers', color:'#f59e0b', desc:'Seller pipeline, profiles, commissions, withdrawals',
+    groups:[
+      {
+        title:'Seller Pipeline',
+        tests:[
+          {id:'SEL-01',title:'Seller tabs render (All / Pending / Verification)',sev:'high',tags:['admin','sellers'],
+           steps:['Go to Sellers','Check for tabs at top: All Sellers, Pending Approval, Verification'],
+           expected:'3 tabs visible. Clicking each changes the list. Active tab highlighted.'},
+          {id:'SEL-02',title:'Pending seller approval/rejection works',sev:'critical',tags:['admin','sellers'],
+           steps:['Go to Sellers > Pending Approval','Click Approve or Reject on a seller'],
+           expected:'Seller status changes. Email notification sent. Seller moved out of pending list.'},
+          {id:'SEL-03',title:'Seller verification document review',sev:'high',tags:['admin','sellers'],
+           steps:['Go to Sellers > Verification tab','Open a seller needing verification','Review documents'],
+           expected:'Document images viewable. Approve/Reject buttons work. Status updated on action.'},
+          {id:'SEL-04',title:'Seller profile shows all tabs (Overview/Products/Orders/Payments)',sev:'high',tags:['admin','sellers'],
+           steps:['Click View on any approved seller'],
+           expected:'Profile page shows tabs: Overview, Products, Orders, Payments, Documents. All tabs load data.'},
+          {id:'SEL-05',title:'Seller commission set per seller',sev:'high',tags:['admin','sellers'],
+           steps:['Go to seller profile > Commission tab','Set a custom commission %','Save'],
+           expected:'Commission saved. Applies to future orders from that seller.'},
+          {id:'SEL-06',title:'Seller withdrawal request approve/reject',sev:'critical',tags:['admin','sellers'],
+           steps:['Go to Sellers > Withdrawal Requests','Approve a pending request'],
+           expected:'Request marked as paid. Seller notified. Balance deducted from due amount.'},
+        ]
+      }
+    ]
+  },
+  {
+    id:'admin-marketing', label:'Admin: Marketing', color:'#ec4899', desc:'Coupons, flash deals, banners, popups, notifications',
+    groups:[
+      {
+        title:'Coupons',
+        tests:[
+          {id:'MKT-01',title:'Create coupon with percentage discount',sev:'critical',tags:['admin','marketing'],
+           steps:['Go to Marketing > Coupons > Add New','Set 10% discount, min cart ₹500, expiry 30 days','Save'],
+           expected:'Coupon saved. Applying on storefront gives 10% off orders ≥ ₹500.'},
+          {id:'MKT-02',title:'Expired coupon rejected on storefront',sev:'high',tags:['admin','marketing'],
+           steps:['Create a coupon with past expiry date','Apply it on storefront checkout'],
+           expected:'"Coupon expired" error. Discount not applied.'},
+          {id:'MKT-03',title:'Coupon usage limit enforced',sev:'high',tags:['admin','marketing'],
+           steps:['Create coupon with max 1 use per user','Use it once as a customer','Try to use again'],
+           expected:'Second use rejected: "Coupon usage limit reached."'},
+          {id:'MKT-04',title:'Coupon delete with confirmation',sev:'medium',tags:['admin','marketing'],
+           steps:['Click delete on a coupon'],
+           expected:'Confirmation dialog appears. Confirming removes coupon.'},
+        ]
+      },
+      {
+        title:'Flash Deals',
+        tests:[
+          {id:'MKT-05',title:'Create flash deal and assign products',sev:'critical',tags:['admin','marketing'],
+           steps:['Go to Marketing > Flash Deals > Add New','Set title, start/end time','Add products with discounts'],
+           expected:'Flash deal saved. Products show countdown timer and discounted price on storefront.'},
+          {id:'MKT-06',title:'Flash deal does not accept past end date',sev:'high',tags:['admin','marketing'],
+           steps:['Create flash deal with end date in the past'],
+           expected:'Validation error. Flash deal not saved or immediately expired.'},
+          {id:'MKT-07',title:'Flash deal countdown is consistent with server time',sev:'high',tags:['admin','marketing'],
+           steps:['Create a flash deal ending in 2 hours','Check countdown on storefront'],
+           expected:'Countdown matches server time difference (not client clock). Refreshing page shows correct remaining time.'},
+        ]
+      },
+      {
+        title:'Banners & Popups',
+        tests:[
+          {id:'MKT-08',title:'Top banner create and display on storefront',sev:'high',tags:['admin','marketing'],
+           steps:['Go to Website Settings > Top Banner > Add Banner','Set text and link','Activate'],
+           expected:'Banner appears at top of storefront homepage within 1 page reload.'},
+          {id:'MKT-09',title:'Dynamic popup triggers on storefront',sev:'medium',tags:['admin','marketing'],
+           steps:['Create a dynamic popup with trigger: "on first visit"','Open storefront in incognito'],
+           expected:'Popup appears. Dismiss closes it. Does not reappear on second visit.'},
+          {id:'MKT-10',title:'Custom notification sent to all customers',sev:'high',tags:['admin','marketing'],
+           steps:['Go to Notifications > Custom Notification','Send a push notification to all users'],
+           expected:'Notification queued/sent. Appears in notification history. Customers receive it.'},
+        ]
+      }
+    ]
+  },
+  {
+    id:'admin-settings', label:'Admin: Settings', color:'#64748b', desc:'Settings hub, business settings, SMTP, carriers, tax',
+    groups:[
+      {
+        title:'Settings Hub',
+        tests:[
+          {id:'SET-01',title:'Settings hub shows all group cards',sev:'high',tags:['admin','settings'],
+           steps:['Go to Setup Configurations > Settings (hub page)'],
+           expected:'Cards shown: General, Localization, Payment & Shipping, Email & Notifications, Integrations, System. Each card has working links.'},
+          {id:'SET-02',title:'Facebook Chat missing from Integrations card — BUG-14',sev:'low',tags:['admin','bug'],
+           steps:['Go to Settings Hub > Integrations card','Look for Facebook Chat link'],
+           expected:'Facebook Chat link should appear in Integrations card. (BUG-14: currently missing)'},
+          {id:'SET-03',title:'Business settings form saves correctly',sev:'critical',tags:['admin','settings'],
+           steps:['Go to Setup Configurations > Business Settings','Update store name','Save'],
+           expected:'Success toast shown. Store name updates in admin header and storefront footer.'},
+          {id:'SET-04',title:'Business settings breadcrumb not updated — BUG-05',sev:'low',tags:['admin','bug'],
+           steps:['Go to Setup Configurations > Business Settings','Check page title and breadcrumb'],
+           expected:'Should show h2.page-title and breadcrumb. (BUG-05: not yet updated)'},
+          {id:'SET-05',title:'SMTP settings test email works',sev:'high',tags:['admin','settings'],
+           steps:['Go to Setup Configurations > SMTP','Fill SMTP credentials','Click Send Test Email'],
+           expected:'Test email received at the specified address. No timeout or SMTP connection error.'},
+        ]
+      },
+      {
+        title:'Carrier & Shipping',
+        tests:[
+          {id:'SET-06',title:'Carrier create Save button works — BUG-07',sev:'critical',tags:['admin','bug'],
+           steps:['Go to Shipping > Carriers > Add New','Fill carrier name and details','Click Save button'],
+           expected:'Carrier saved. (BUG-07: Save button uses type="button" not type="submit" — must be fixed first)'},
+          {id:'SET-07',title:'Carrier edit Update button works — BUG-07',sev:'critical',tags:['admin','bug'],
+           steps:['Edit an existing carrier','Modify a field','Click Update Carrier'],
+           expected:'Changes saved. (Same bug — type="button" in edit.blade.php)'},
+          {id:'SET-08',title:'Shipping zone assign countries',sev:'high',tags:['admin','settings'],
+           steps:['Go to Shipping > Zones','Edit a zone','Add India as a country'],
+           expected:'India added to zone. Zone rates apply at checkout for Indian customers.'},
+          {id:'SET-09',title:'Tax create and apply to products',sev:'high',tags:['admin','settings'],
+           steps:['Go to VAT & Tax > Add Tax','Create 18% GST rule','Assign to Electronics category'],
+           expected:'18% tax shown in product price breakdown at checkout for Electronics.'},
+        ]
+      },
+      {
+        title:'Payment Methods',
+        tests:[
+          {id:'SET-10',title:'Razorpay enable/disable toggle works',sev:'high',tags:['admin','settings'],
+           steps:['Go to Payment Methods','Toggle Razorpay on/off'],
+           expected:'Razorpay appears/disappears in storefront checkout payment method list.'},
+          {id:'SET-11',title:'COD enable only for specific zones',sev:'medium',tags:['admin','settings'],
+           steps:['Enable COD, restrict to specific shipping zones'],
+           expected:'COD shown only for addresses in permitted zones at checkout.'},
+        ]
+      }
+    ]
+  },
+  {
+    id:'admin-reports', label:'Admin: Reports', color:'#10b981', desc:'Sales, stock, wallet, commission, earnings reports',
+    groups:[
+      {
+        title:'Reports',
+        tests:[
+          {id:'RPT-01',title:'In-house sale report filters by date',sev:'high',tags:['admin','reports'],
+           steps:['Go to Reports > In-house Sale Report','Set a date range','Apply'],
+           expected:'Table shows only sales in that range. Total revenue matches sum of shown orders.'},
+          {id:'RPT-02',title:'Stock report shows low-stock items',sev:'high',tags:['admin','reports'],
+           steps:['Go to Reports > Stock Report'],
+           expected:'Products below minimum stock threshold listed. Columns: Name, SKU, Current Stock, Threshold.'},
+          {id:'RPT-03',title:'Earning report shows seller payout breakdown',sev:'high',tags:['admin','reports'],
+           steps:['Go to Reports > Earning Report','Select a seller','Set date range'],
+           expected:'Sales, admin commission, and seller payout shown with correct math.'},
+          {id:'RPT-04',title:'Reports export as CSV',sev:'medium',tags:['admin','reports'],
+           steps:['On any report page','Click Export CSV button'],
+           expected:'CSV downloads with report data matching what is shown on screen.'},
+          {id:'RPT-05',title:'Wallet history report shows transactions',sev:'medium',tags:['admin','reports'],
+           steps:['Go to Reports > Wallet History Report'],
+           expected:'Customer wallet credits/debits listed with date, amount, type.'},
+        ]
+      }
+    ]
+  },
+  {
+    id:'admin-support', label:'Admin: Support', color:'#8b5cf6', desc:'Tickets, conversations, product queries, contact forms',
+    groups:[
+      {
+        title:'Support Tickets & Conversations',
+        tests:[
+          {id:'SUP-01',title:'Support ticket list shows open tickets',sev:'high',tags:['admin','support'],
+           steps:['Go to Support > Support Tickets'],
+           expected:'Open tickets listed. Status badges: Open/Pending/Solved.'},
+          {id:'SUP-02',title:'Reply to support ticket works',sev:'critical',tags:['admin','support'],
+           steps:['Open a ticket','Type a reply','Click Submit'],
+           expected:'Reply posted. Customer notified via email. Ticket status updates.'},
+          {id:'SUP-03',title:'Ticket status change to Solved closes it',sev:'high',tags:['admin','support'],
+           steps:['Open a ticket','Change status to Solved','Submit'],
+           expected:'Ticket moved to Solved. No longer in Open list. Customer notified.'},
+          {id:'SUP-04',title:'Product query reply works',sev:'medium',tags:['admin','support'],
+           steps:['Go to Support > Product Queries','Open a query','Reply'],
+           expected:'Reply saved. Shows in conversation thread. Customer sees reply on product page.'},
+          {id:'SUP-05',title:'Contact form messages can be replied to',sev:'medium',tags:['admin','support'],
+           steps:['Go to Support > Contact Messages','Open a message','Send reply'],
+           expected:'Reply email sent to customer. Reply logged in admin.'},
+        ]
+      }
+    ]
+  },
+  {
+    id:'visual-ui', label:'Visual & UI', color:'#f43f5e', desc:'CSS conflicts, buttons, badges, typography, consistency',
+    groups:[
+      {
+        title:'CSS & Theme Conflicts',
+        tests:[
+          {id:'UI-01',title:'admin-redesign.css !important overrides theme color — BUG-13',sev:'high',tags:['admin','bug','css'],
+           steps:['Go to General Settings','Change primary color to blue','Save','Open admin panel'],
+           expected:'Admin primary color should change to blue. (BUG-13: admin-redesign.css forces green with !important, blocking theme changes)'},
+          {id:'UI-02',title:'Sidenav logo uses brand-text class not inline style — BUG-03',sev:'medium',tags:['admin','bug','css'],
+           steps:['Inspect the sidebar logo <h3> element','Check if it has class="brand-text" or style="color:..."'],
+           expected:'Should have class="brand-text" (BUG-03: currently has hardcoded style attribute)'},
+          {id:'UI-03',title:'Page titles use h2.page-title consistently',sev:'medium',tags:['admin','ui'],
+           steps:['Check page titles on: Orders, Products, Customers, Sellers pages'],
+           expected:'All use <h2 class="page-title"> consistently. No mix of h5.h6 or h1.h3.'},
+          {id:'UI-04',title:'Add New buttons use btn-primary style across all sections',sev:'medium',tags:['admin','ui'],
+           steps:['Check Add New buttons on: Customers, Sellers, Blog, Categories, Coupons'],
+           expected:'All use btn btn-primary with la-plus icon. No btn-circle btn-info variations.'},
+        ]
+      },
+      {
+        title:'Status Badges',
+        tests:[
+          {id:'UI-05',title:'Status badges use _status_badge partial in orders list',sev:'high',tags:['admin','ui'],
+           steps:['Go to All Orders','Check Delivery Status and Payment Status badge colors'],
+           expected:'Pending=yellow, Delivered=green, Cancelled=red, Paid=green, Unpaid=red. Consistent across all order rows.'},
+          {id:'UI-06',title:'Status badges consistent in seller list',sev:'medium',tags:['admin','ui'],
+           steps:['Go to Sellers list','Check seller verification and approval status badges'],
+           expected:'Verified=green, Unverified=yellow, Rejected=red. Using same badge class system.'},
+        ]
+      },
+      {
+        title:'Responsiveness',
+        tests:[
+          {id:'UI-07',title:'Admin panel usable at 1280x800 (laptop resolution)',sev:'high',tags:['admin','responsive'],
+           steps:['Set browser to 1280x800','Test: Orders list filters, Products table, Settings hub'],
+           expected:'No horizontal overflow. All filter dropdowns visible and usable. Date picker not truncated.'},
+          {id:'UI-08',title:'Admin sidebar collapses cleanly on tablet (768px)',sev:'medium',tags:['admin','responsive'],
+           steps:['Set browser to 768px width','Test sidebar toggle'],
+           expected:'Sidebar collapses. Hamburger menu shows. Content area uses full width.'},
+          {id:'UI-09',title:'Products table responsive column hiding works',sev:'medium',tags:['admin','responsive'],
+           steps:['Resize browser to 992px','Check which product table columns are hidden'],
+           expected:'Non-essential columns hidden gracefully using d-none d-*-table-cell pattern. No overflow.'},
+          {id:'UI-10',title:'Storefront homepage responsive at 375px (mobile)',sev:'high',tags:['storefront','responsive'],
+           steps:['Open storefront on mobile or 375px viewport','Check header, nav, product grid'],
+           expected:'Mobile nav (hamburger) works. Product grid stacks to 2 or 1 column. Images resize. No horizontal scroll.'},
+        ]
+      },
+      {
+        title:'Accessibility',
+        tests:[
+          {id:'UI-11',title:'Form labels have for= attribute linking to inputs',sev:'high',tags:['admin','accessibility'],
+           steps:['Open Business Settings page','Click on label text next to GSTIN Number field'],
+           expected:'Input field gains focus when label is clicked. (63 bare labels were identified — verify fixed)'},
+          {id:'UI-12',title:'Sidebar search input has aria-label',sev:'medium',tags:['admin','accessibility'],
+           steps:['Inspect #menu-search input in sidebar','Check for aria-label attribute'],
+           expected:'aria-label="Search navigation menu" present on input.'},
+          {id:'UI-13',title:'Destructive delete buttons have accessible title',sev:'medium',tags:['admin','accessibility'],
+           steps:['Hover over delete (trash) icon buttons in any list'],
+           expected:'Tooltip shows "Delete". title="Delete" attribute present. Icon has aria context.'},
+          {id:'UI-14',title:'Color contrast meets WCAG AA (4.5:1) for text',sev:'medium',tags:['admin','accessibility'],
+           steps:['Use browser DevTools Accessibility Inspector','Check main body text and muted labels'],
+           expected:'Contrast ratio ≥ 4.5:1 for normal text. ≥ 3:1 for large text/UI components.'},
+        ]
+      }
+    ]
+  },
+  {
+    id:'api-backend', label:'API & Backend', color:'#84cc16', desc:'Route integrity, AJAX endpoints, security, data validation',
+    groups:[
+      {
+        title:'Route Integrity',
+        tests:[
+          {id:'API-01',title:'products.quick_update route exists in admin.php — BUG-08',sev:'critical',tags:['admin','api','bug'],
+           steps:['Run: php artisan route:list | grep quick-update','Or test: POST /admin/products/quick-update'],
+           expected:'Route exists as POST, named "products.quick_update". Returns JSON {success: true, message: "..."}.'},
+          {id:'API-02',title:'Seller tab routes sellers.pending and sellers.verification exist — BUG-12',sev:'high',tags:['admin','api','bug'],
+           steps:['Run: php artisan route:list | grep sellers','Check for sellers.pending and sellers.verification'],
+           expected:'Both route names exist. Route::has() checks in sellers/index.blade.php evaluate to true.'},
+          {id:'API-03',title:'All admin.php routes return correct HTTP status for valid requests',sev:'high',tags:['admin','api'],
+           steps:['Login as admin','Test 20 random admin routes (GET requests)','Check for 200 or 302 status'],
+           expected:'No unexpected 404, 500, or 419 responses. No routes pointing to non-existent controllers.'},
+          {id:'API-04',title:'CSRF token included in all POST forms and AJAX calls',sev:'critical',tags:['admin','security'],
+           steps:['Submit any admin form','Check network tab for X-CSRF-TOKEN header or _token field'],
+           expected:'_token hidden input in all forms. X-CSRF-TOKEN meta tag set. AJAX uses $.ajaxSetup or meta tag.'},
+        ]
+      },
+      {
+        title:'Security',
+        tests:[
+          {id:'API-05',title:'Direct admin URL access blocked for non-admin users',sev:'critical',tags:['admin','security'],
+           steps:['Login as a regular customer','Try to access /admin/dashboard directly'],
+           expected:'Redirected to login or shown 403 Forbidden. Not able to access admin area.'},
+          {id:'API-06',title:'Seller cannot access another seller\'s data',sev:'critical',tags:['admin','security'],
+           steps:['Login as Seller A','Try to access /admin/sellers/{seller_B_id}/profile URL'],
+           expected:'403 or redirect. Seller A cannot view Seller B\'s private data.'},
+          {id:'API-07',title:'XSS: product name rendered safely in admin',sev:'high',tags:['admin','security'],
+           steps:['Create a product with name: <script>alert(1)</script>','Go to product list'],
+           expected:'Script tag displayed as text, not executed. Alert does not appear.'},
+          {id:'API-08',title:'SQL injection in product search is blocked',sev:'critical',tags:['admin','security'],
+           steps:['Enter in search field: \' OR 1=1 --','Press Enter'],
+           expected:'No DB error. Query safely escaped. Returns no results or normal results. No data leak.'},
+          {id:'API-09',title:'File upload only accepts allowed MIME types',sev:'high',tags:['admin','security'],
+           steps:['Try to upload a .php file as a product image'],
+           expected:'Upload rejected with validation error. PHP file not stored on server.'},
+          {id:'API-10',title:'Admin routes respect @can permission gates',sev:'critical',tags:['admin','security'],
+           steps:['Create an admin user with limited role (no delete_order permission)','Verify Delete button absent from orders'],
+           expected:'Delete button not shown. Attempting DELETE request directly returns 403.'},
+        ]
+      },
+      {
+        title:'Data Validation',
+        tests:[
+          {id:'API-11',title:'Product price cannot be negative',sev:'high',tags:['admin','validation'],
+           steps:['Try to save a product with unit_price = -100'],
+           expected:'Validation error: "Price must be a positive number."'},
+          {id:'API-12',title:'Order total matches items sum + shipping - discount',sev:'critical',tags:['backend','validation'],
+           steps:['Place an order with: 2 items, 1 coupon, 1 shipping method','Check order total in admin'],
+           expected:'Grand total = sum of item prices + shipping - coupon discount. No rounding errors.'},
+          {id:'API-13',title:'Stock decrements on order placement',sev:'critical',tags:['backend','validation'],
+           steps:['Note product stock = 10','Place an order for 3 units','Check product stock in admin'],
+           expected:'Stock is now 7. Stock cannot go below 0 (oversell protection).'},
+          {id:'API-14',title:'Concurrent order placement does not oversell',sev:'critical',tags:['backend','validation'],
+           steps:['Set product stock to 1','Simulate 2 simultaneous checkout requests for that product'],
+           expected:'Only 1 order succeeds. Other returns "Out of stock." Uses DB transaction lock.'},
+        ]
+      },
+      {
+        title:'Performance',
+        tests:[
+          {id:'API-15',title:'Admin dashboard loads under 3 seconds',sev:'high',tags:['admin','performance'],
+           steps:['Login as admin','Navigate to dashboard','Measure with browser DevTools Network tab'],
+           expected:'DOMContentLoaded < 3s. No single request > 2s. Verify N+1 queries not present.'},
+          {id:'API-16',title:'Products list page loads with 1000+ products in < 4 seconds',sev:'high',tags:['admin','performance'],
+           steps:['Ensure 1000+ products exist','Load /admin/products/all','Measure load time'],
+           expected:'Page renders paginated results. Eager loading applied. No memory timeout errors.'},
+          {id:'API-17',title:'Storefront product search returns under 1.5 seconds',sev:'high',tags:['storefront','performance'],
+           steps:['Search for a common term on storefront','Measure AJAX or page response time'],
+           expected:'Search results appear < 1.5s. Results paginated. Search indexed in DB.'},
+          {id:'API-18',title:'Image serving uses CDN or optimized URLs',sev:'medium',tags:['performance','infrastructure'],
+           steps:['Inspect product image URLs in browser network tab'],
+           expected:'Images served from CDN or storage URL (not /public/uploads). Cache headers present.'},
+        ]
+      }
+    ]
+  }
+];
+
+let states = {};
+let notes = {};
+let activeSection = 'auth';
+let statusFilter = 'all';
+let searchQuery = '';
+
+function getAllTests(){
+  let all=[];
+  SECTIONS.forEach(s=>s.groups.forEach(g=>g.tests.forEach(t=>all.push({...t,sectionId:s.id}))));
+  return all;
+}
+
+function getStats(){
+  const all=getAllTests();
+  const pass=all.filter(t=>states[t.id]==='pass').length;
+  const fail=all.filter(t=>states[t.id]==='fail').length;
+  const skip=all.filter(t=>states[t.id]==='skip').length;
+  return {total:all.length,pass,fail,skip,done:pass+fail+skip};
+}
+
+function getSectionStats(sectionId){
+  let tests=[];
+  SECTIONS.find(s=>s.id===sectionId)?.groups.forEach(g=>tests.push(...g.tests));
+  const pass=tests.filter(t=>states[t.id]==='pass').length;
+  const fail=tests.filter(t=>states[t.id]==='fail').length;
+  const skip=tests.filter(t=>states[t.id]==='skip').length;
+  return {total:tests.length,pass,fail,skip,done:pass+fail+skip};
+}
+
+function setStatus(id, status){
+  if(states[id]===status) delete states[id];
+  else states[id]=status;
+  renderAll();
+  saveLocal();
+}
+
+function saveLocal(){
+  localStorage.setItem('qa_states', JSON.stringify(states));
+  localStorage.setItem('qa_notes', JSON.stringify(notes));
+}
+
+function loadLocal(){
+  try{states=JSON.parse(localStorage.getItem('qa_states')||'{}');}catch(e){states={};}
+  try{notes=JSON.parse(localStorage.getItem('qa_notes')||'{}');}catch(e){notes={};}
+}
+
+function renderSidebar(){
+  const sidebar=document.getElementById('sidebar');
+  const stats=getStats();
+  let html='';
+  html+=`<div class="sidebar-section"><div class="sidebar-section-label">Overview</div>`;
+  html+=`<button class="nav-item ${activeSection==='overview'?'active':''}" onclick="setSection('overview')"><span class="nav-dot" style="background:#4f8ef7"></span>All Tests<span class="nav-count">${stats.total}</span></button>`;
+  html+=`</div>`;
+  html+=`<div class="sidebar-section"><div class="sidebar-section-label">Sections</div>`;
+  SECTIONS.forEach(s=>{
+    const ss=getSectionStats(s.id);
+    const pct=ss.total>0?Math.round(ss.done/ss.total*100):0;
+    html+=`<button class="nav-item ${activeSection===s.id?'active':''}" onclick="setSection('${s.id}')">
+      <span class="nav-dot" style="background:${s.color}"></span>${s.label}
+      <span class="nav-count">${ss.done}/${ss.total}</span>
+    </button>`;
+  });
+  html+=`</div>`;
+  sidebar.innerHTML=html;
+}
+
+function renderGlobalProgress(){
+  const stats=getStats();
+  const pct=stats.total>0?Math.round(stats.done/stats.total*100):0;
+  document.getElementById('global-bar').style.width=pct+'%';
+  document.getElementById('global-label').textContent=`${stats.done} / ${stats.total}`;
+}
+
+function renderMain(){
+  const container=document.getElementById('main-content');
+  const stats=getStats();
+
+  if(activeSection==='overview'){
+    let html=`<div class="section-header">
+      <div class="section-title">All Tests — Overview</div>
+      <div class="section-desc">Complete QA coverage: ${stats.total} test cases across ${SECTIONS.length} areas</div>
+      <div class="section-stats">
+        <div class="stat-item"><strong style="color:var(--c-pass)">${stats.pass}</strong> Passed</div>
+        <div class="stat-item"><strong style="color:var(--c-fail)">${stats.fail}</strong> Failed</div>
+        <div class="stat-item"><strong style="color:var(--c-skip)">${stats.skip}</strong> Skipped</div>
+        <div class="stat-item"><strong>${stats.total-stats.done}</strong> Not run</div>
+      </div>
+    </div>`;
+
+    html+=`<div class="summary-bar">
+      <div class="chip all ${statusFilter==='all'?'active-filter':''}" onclick="setFilter('all')">All (${stats.total})</div>
+      <div class="chip pass ${statusFilter==='pass'?'active-filter':''}" onclick="setFilter('pass')">✓ Pass (${stats.pass})</div>
+      <div class="chip fail ${statusFilter==='fail'?'active-filter':''}" onclick="setFilter('fail')">✗ Fail (${stats.fail})</div>
+      <div class="chip skip ${statusFilter==='skip'?'active-filter':''}" onclick="setFilter('skip')">— Skip (${stats.skip})</div>
+    </div>`;
+
+    html+=`<div class="search-bar">
+      <input class="search-input" type="text" placeholder="Search test ID or title..." value="${searchQuery}" oninput="setSearch(this.value)">
+      <select class="filter-select" onchange="setFilter(this.value)">
+        <option value="all" ${statusFilter==='all'?'selected':''}>All Status</option>
+        <option value="pass" ${statusFilter==='pass'?'selected':''}>Passed</option>
+        <option value="fail" ${statusFilter==='fail'?'selected':''}>Failed</option>
+        <option value="skip" ${statusFilter==='skip'?'selected':''}>Skipped</option>
+        <option value="none" ${statusFilter==='none'?'selected':''}>Not Run</option>
+      </select>
+    </div>`;
+
+    SECTIONS.forEach(sec=>{
+      const filtered=sec.groups.map(g=>({...g,tests:g.tests.filter(t=>matchFilter(t))})).filter(g=>g.tests.length>0);
+      if(!filtered.length) return;
+      filtered.forEach(g=>{
+        html+=renderGroup(g, sec.color);
+      });
+    });
+
+    container.innerHTML=html;
+    return;
+  }
+
+  const section=SECTIONS.find(s=>s.id===activeSection);
+  if(!section) return;
+  const ss=getSectionStats(section.id);
+
+  let html=`<div class="section-header">
+    <div class="section-title" style="border-left:3px solid ${section.color};padding-left:12px">${section.label}</div>
+    <div class="section-desc">${section.desc}</div>
+    <div class="section-stats">
+      <div class="stat-item"><strong style="color:var(--c-pass)">${ss.pass}</strong> Passed</div>
+      <div class="stat-item"><strong style="color:var(--c-fail)">${ss.fail}</strong> Failed</div>
+      <div class="stat-item"><strong style="color:var(--c-skip)">${ss.skip}</strong> Skipped</div>
+      <div class="stat-item"><strong>${ss.total-ss.done}</strong> Not run</div>
+    </div>
+  </div>`;
+
+  html+=`<div class="summary-bar">
+    <div class="chip all ${statusFilter==='all'?'active-filter':''}" onclick="setFilter('all')">All (${ss.total})</div>
+    <div class="chip pass ${statusFilter==='pass'?'active-filter':''}" onclick="setFilter('pass')">✓ Pass (${ss.pass})</div>
+    <div class="chip fail ${statusFilter==='fail'?'active-filter':''}" onclick="setFilter('fail')">✗ Fail (${ss.fail})</div>
+    <div class="chip skip ${statusFilter==='skip'?'active-filter':''}" onclick="setFilter('skip')">— Skip (${ss.skip})</div>
+  </div>`;
+
+  html+=`<div class="search-bar">
+    <input class="search-input" type="text" placeholder="Search test ID or title..." value="${searchQuery}" oninput="setSearch(this.value)">
+  </div>`;
+
+  section.groups.forEach(g=>{
+    const filteredTests=g.tests.filter(t=>matchFilter(t));
+    if(!filteredTests.length&&(statusFilter!=='all'||searchQuery)) return;
+    html+=renderGroup({...g,tests:filteredTests.length?filteredTests:(statusFilter==='all'&&!searchQuery?g.tests:[])}, section.color);
+  });
+
+  container.innerHTML=html;
+}
+
+function matchFilter(t){
+  const statusOk = statusFilter==='all'||(statusFilter==='none'&&!states[t.id])||states[t.id]===statusFilter;
+  const searchOk = !searchQuery||(t.id+' '+t.title).toLowerCase().includes(searchQuery.toLowerCase())||t.tags.some(tag=>tag.includes(searchQuery.toLowerCase()));
+  return statusOk && searchOk;
+}
+
+function renderGroup(g, color){
+  const passCount=g.tests.filter(t=>states[t.id]==='pass').length;
+  const pct=g.tests.length>0?Math.round(passCount/g.tests.length*100):0;
+  const gid='grp-'+g.title.replace(/\s+/g,'-').replace(/[^a-zA-Z0-9-]/g,'');
+  let html=`<div class="test-group">
+    <div class="group-header" onclick="toggleGroup('${gid}')">
+      <span class="group-title" style="color:${color}">${g.title}</span>
+      <span class="group-badge">${g.tests.length} tests</span>
+      <span style="font-size:11px;color:var(--c-muted);margin-left:4px">${passCount}/${g.tests.length} passed</span>
+      <span class="group-toggle" id="${gid}-toggle">▾</span>
+    </div>
+    <div class="group-progress"><div class="group-progress-fill" style="width:${pct}%;background:${color}"></div></div>
+    <div id="${gid}-body">`;
+  g.tests.forEach(t=>{
+    html+=renderTestCard(t);
+  });
+  html+=`</div></div>`;
+  return html;
+}
+
+function renderTestCard(t){
+  const st=states[t.id]||'';
+  const note=notes[t.id]||'';
+  const stepsHtml=t.steps?t.steps.map(s=>`<li class="step-item">${s}</li>`).join(''):'';
+  const expHtml=t.expected?`<div class="expected"><strong>Expected:</strong> ${t.expected}</div>`:'';
+  const tagsHtml=t.tags.map(tag=>`<span class="test-tag">${tag}</span>`).join('');
+  const noteId=`note-${t.id}`;
+  const stepsId=`steps-${t.id}`;
+  const noteVal=note.replace(/"/g,'&quot;');
+
+  return `<div class="test-card ${st?'status-'+st:''}" id="card-${t.id}">
+    <div class="test-top">
+      <span class="test-id">${t.id}</span>
+      <div class="test-content">
+        <div class="test-title">${t.title}</div>
+        <div class="test-desc">${t.tags.includes('bug')?'<span style="color:var(--c-fail);font-size:11px;font-weight:700;margin-right:4px">⚠ KNOWN BUG</span>':''}</div>
+        <div class="test-meta">
+          <span class="sev-badge sev-${t.sev}">${t.sev.toUpperCase()}</span>
+          ${tagsHtml}
+        </div>
+        ${t.steps&&t.steps.length?`<span class="steps-toggle" onclick="toggleSteps('${stepsId}')">Show steps (${t.steps.length})</span>
+        <div class="steps-body" id="${stepsId}">
+          <ul class="steps-list">${stepsHtml}</ul>
+          ${expHtml}
+        </div>`:''}
+        <span class="note-toggle" onclick="toggleNote('${noteId}')">+ Note</span>
+        <div class="test-note-wrap" id="${noteId}">
+          <textarea class="test-note" placeholder="Add test notes, observed behavior, bug details..." oninput="saveNote('${t.id}',this.value)">${noteVal}</textarea>
+        </div>
+      </div>
+      <div class="test-actions">
+        <button class="status-btn pass ${st==='pass'?'pass':''}" onclick="setStatus('${t.id}','pass')" title="Mark Pass">✓</button>
+        <button class="status-btn fail ${st==='fail'?'fail':''}" onclick="setStatus('${t.id}','fail')" title="Mark Fail">✗</button>
+        <button class="status-btn skip ${st==='skip'?'skip':''}" onclick="setStatus('${t.id}','skip')" title="Skip">—</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toggleGroup(gid){
+  const body=document.getElementById(gid+'-body');
+  const toggle=document.getElementById(gid+'-toggle');
+  if(body.style.display==='none'){body.style.display='';toggle.textContent='▾';toggle.classList.remove('collapsed');}
+  else{body.style.display='none';toggle.textContent='▸';toggle.classList.add('collapsed');}
+}
+
+function toggleSteps(id){
+  const el=document.getElementById(id);
+  el.classList.toggle('open');
+  const btn=el.previousElementSibling;
+  if(btn&&btn.classList.contains('steps-toggle')){
+    const isOpen=el.classList.contains('open');
+    btn.textContent=isOpen?'Hide steps':'Show steps ('+el.querySelectorAll('.step-item').length+')';
+  }
+}
+
+function toggleNote(id){
+  const el=document.getElementById(id);
+  el.classList.toggle('open');
+}
+
+function saveNote(id,val){
+  notes[id]=val;
+  saveLocal();
+}
+
+function setSection(id){
+  activeSection=id;
+  statusFilter='all';
+  searchQuery='';
+  renderAll();
+  document.getElementById('main-content').scrollTop=0;
+}
+
+function setFilter(f){
+  statusFilter=f;
+  renderMain();
+}
+
+function setSearch(v){
+  searchQuery=v;
+  renderMain();
+}
+
+function renderAll(){
+  renderGlobalProgress();
+  renderSidebar();
+  renderMain();
+}
+
+function exportReport(){
+  const stats=getStats();
+  const all=getAllTests();
+  let rows=[['ID','Section','Title','Severity','Tags','Status','Notes']];
+  SECTIONS.forEach(s=>s.groups.forEach(g=>g.tests.forEach(t=>{
+    rows.push([t.id,s.label,t.title,t.sev,t.tags.join(';'),states[t.id]||'not_run',(notes[t.id]||'').replace(/"/g,'""')]);
+  })));
+  const csv=rows.map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`dhanvathiri-qa-report-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+loadLocal();
+renderAll();
+</script>
+</body>
+</html>

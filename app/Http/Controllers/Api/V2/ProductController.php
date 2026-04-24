@@ -282,7 +282,9 @@ class ProductController extends Controller
                 $category_ids = array_merge($category_ids, $n_cid);
             }
 
-            $products->whereIn('category_id', $category_ids);
+            $products->whereHas('categories', function($q) use ($category_ids) {
+                $q->whereIn('categories.id', $category_ids);
+            });
         }
 
         if ($name != null && $name != "") {
@@ -371,7 +373,10 @@ class ProductController extends Controller
     public function relatedProducts($id)
     {
         $product = Product::findOrFail($id);
-        $related = Product::where('category_id', $product->category_id)
+        $category_ids = $product->categories()->pluck('categories.id')->toArray();
+        $related = Product::whereHas('categories', function($q) use ($category_ids) {
+            $q->whereIn('categories.id', $category_ids);
+        })
             ->where('id', '!=', $product->id)
             ->where('published', 1)
             ->limit(10)

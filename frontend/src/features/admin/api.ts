@@ -146,7 +146,7 @@ export function useAdminOrderTrackingQuery(id: number, enabled = true) {
   return useQuery({
     queryKey: queryKeys.admin.orderTracking(id),
     queryFn: async () => {
-      const res = await api.get(`/admin/orders/${id}/tracking`);
+      const res = await api.get(`/orders/${id}/tracking`);
       return res.data;
     },
     enabled,

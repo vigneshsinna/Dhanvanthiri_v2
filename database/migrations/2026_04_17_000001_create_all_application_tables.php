@@ -1444,7 +1444,8 @@ return new class extends Migration
             Schema::create('frequently_bought_products', function (Blueprint $table) {
                 $table->id();
                 $table->integer('product_id');
-                $table->integer('frequently_bought_product_id');
+                $table->integer('frequently_bought_product_id')->nullable();
+                $table->integer('category_id')->nullable();
                 $table->timestamps();
             });
         }

@@ -10,7 +10,9 @@
 		</div>
 	</div>
 
-	@include('header.' .get_element_type_by_id(get_setting('header_element')))
+    @if (get_setting('header_element') && get_element_type_by_id(get_setting('header_element')))
+	    @include('header.' .get_element_type_by_id(get_setting('header_element')))
+    @endif
 	<br>
 
 	<div class="row">

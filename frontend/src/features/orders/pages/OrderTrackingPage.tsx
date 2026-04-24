@@ -72,34 +72,14 @@ export function OrderTrackingPage() {
           grand_total: orderData.grand_total || 0,
           currency: 'INR',
           created_at: orderData.created_at || new Date().toISOString(),
-          items: (data?.data?.items || []).map((item: any) => ({
-            product_name: item.product_name || item.name || '',
-            sku: item.sku || '',
-            quantity: item.quantity || 1,
-            unit_price: item.unit_price || item.price || 0,
-            line_total: item.line_total || item.total || (item.unit_price || 0) * (item.quantity || 1),
-            product_image_url: item.product_image_url || item.thumbnail || null,
-          })),
-          shipping_address: data?.data?.shipping_address || null,
-          shipments: (data?.data?.shipments || []).map((s: any) => ({
-            carrier: s.carrier || '',
-            tracking_number: s.tracking_number || '',
-            tracking_url: s.tracking_url || null,
-            status: s.status || '',
-            shipped_at: s.shipped_at || null,
-            estimated_delivery_at: s.estimated_delivery_at || null,
-            delivered_at: s.delivered_at || null,
-            events: (s.events || []).map((ev: any) => ({
-              description: ev.description || '',
-              location: ev.location || null,
-              occurred_at: ev.occurred_at || ev.created_at || new Date().toISOString(),
-            })),
-          })),
-          status_history: (data?.data?.status_history || []).map((entry: any) => ({
-            from_status: entry.from_status || null,
-            to_status: entry.to_status || entry.status || '',
-            note: entry.note || null,
-            created_at: entry.created_at || new Date().toISOString(),
+          items: [],
+          shipping_address: null,
+          shipments: [],
+          status_history: (data?.data?.items || []).map((ev: any) => ({
+            from_status: null,
+            to_status: ev.description || '',
+            note: null,
+            created_at: ev.occurred_at || ev.created_at || new Date().toISOString(),
           })),
         });
         setError('');

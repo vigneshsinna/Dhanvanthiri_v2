@@ -49,7 +49,9 @@
         </button>
     </div>
     @endif
-	@include('header.' .get_element_type_by_id(get_setting('header_element')))
+    @if (get_setting('header_element') && get_element_type_by_id(get_setting('header_element')))
+	    @include('header.' .get_element_type_by_id(get_setting('header_element')))
+    @endif
 <!-- Top Menu Sidebar -->
 <div class="aiz-top-menu-sidebar collapse-sidebar-wrap sidebar-xl sidebar-left d-lg-none z-1035">
     <div class="overlay overlay-fixed dark c-pointer" data-toggle="class-toggle" data-target=".aiz-top-menu-sidebar"

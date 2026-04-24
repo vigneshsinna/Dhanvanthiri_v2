@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useProductsQuery, useCategoriesQuery } from '@/features/catalog/api';
 import { useAddCartItemMutation } from '@/features/cart/api';
@@ -89,12 +89,14 @@ const trustIcons: Record<string, string> = {
 
 export function CatalogPage() {
   const currentLocale = getStorefrontLocale();
+  const [searchParams] = useSearchParams();
+  const searchTerm = (searchParams.get('search') ?? '').trim();
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('all');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   // API data (used when backend is available)
-  const { data } = useProductsQuery({ perPage: 100 });
+  const { data } = useProductsQuery({ perPage: 100, search: searchTerm || undefined });
   const { data: _catData } = useCategoriesQuery();
   const addToCart = useAddCartItemMutation();
 
@@ -123,6 +125,28 @@ export function CatalogPage() {
   const filteredProducts = useMemo(() => {
     let products = mergedProducts;
 
+    if (searchTerm) {
+      const needle = searchTerm.toLowerCase();
+      products = products.filter((p) => {
+        const canonicalSlug = p.slug.replace(/-[0-9a-f]{8,}$/i, '');
+        const detail = productCatalogData.find((d) => d.slug === canonicalSlug);
+        const haystack = [
+          p.name,
+          p.slug,
+          p.short_description,
+          p.description,
+          p.tamil_name,
+          detail?.title,
+          detail?.short_description,
+          detail?.category,
+          ...(p.tags?.map((t) => t.name) ?? []),
+          ...(detail?.chips ?? []),
+        ].filter(Boolean).join(' ').toLowerCase();
+
+        return haystack.includes(needle);
+      });
+    }
+
     if (activeCategory !== 'all') {
       products = products.filter((p) => {
         const canonicalSlug = p.slug.replace(/-[0-9a-f]{8,}$/i, '');
@@ -149,7 +173,7 @@ export function CatalogPage() {
     }
 
     return sorted;
-  }, [mergedProducts, activeCategory, sortBy]);
+  }, [mergedProducts, activeCategory, sortBy, searchTerm]);
 
   const handleAddToCart = (product: Product) => {
     const variant = product.variants?.[0];
@@ -280,6 +304,11 @@ export function CatalogPage() {
           {activeCategory !== 'all' && categoryDescriptions[activeCategory] && (
             <p className="catalog-category-desc">{categoryDescriptions[activeCategory]}</p>
           )}
+          {searchTerm && (
+            <p className="catalog-category-desc" role="status">
+              Search results for "{searchTerm}"
+            </p>
+          )}
         </div>
       </section>
 
@@ -289,7 +318,9 @@ export function CatalogPage() {
           {filteredProducts.length === 0 ? (
             <div className="catalog-empty">
               <div className="catalog-empty-icon">🔍</div>
-              <p className="catalog-empty-text">{PAGE.empty_state}</p>
+              <p className="catalog-empty-text">
+                {searchTerm ? `No products found for "${searchTerm}".` : PAGE.empty_state}
+              </p>
               <button
                 className="catalog-empty-btn"
                 onClick={() => { setActiveCategory('all'); setSortBy('newest'); }}
@@ -318,7 +349,7 @@ export function CatalogPage() {
                 const reviewSnapshot = getProductReviewSnapshot(product);
 
                 return (
-                  <article key={product.id} className="catalog-card group animate-on-scroll scale-in">
+                  <article key={product.id} className="catalog-card group animate-on-scroll scale-in" data-testid="storefront-product-card">
                     <Link to={`/products/${product.slug}`} className="block">
                       <div className="catalog-card-img">
                         <img
@@ -377,6 +408,7 @@ export function CatalogPage() {
                         {inStock ? (
                           <button
                             className="catalog-btn-cart"
+                            data-testid="storefront-add-to-cart"
                             onClick={(e) => {
                               e.preventDefault();
                               handleAddToCart(product);

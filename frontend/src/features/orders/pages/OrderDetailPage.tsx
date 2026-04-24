@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useOrderQuery, useOrderTrackingQuery, useCancelOrderMutation, useReturnRequestMutation, useReOrderMutation, useDownloadInvoiceMutation } from '@/features/orders/api';
-import { accountAdapter } from '@/lib/headless';
-import { useAppSelector } from '@/lib/utils/hooks';
+import { useSubmitReviewMutation } from '@/features/catalog/api';
 import { PageLoader } from '@/components/ui/Spinner';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -23,6 +21,7 @@ const statusVariant = (status: string) => {
 
 interface OrderItem {
   id: number;
+  product_id?: number;
   product_name: string;
   variant_name?: string;
   sku: string;
@@ -46,35 +45,9 @@ export function OrderDetailPage() {
   const t = (en: string, ta: string) => getLocalizedText(currentLocale, { en, ta });
   const navigate = useNavigate();
   const { orderNumber } = useParams();
-  const [searchParams] = useSearchParams();
-  const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
-
-  // Guest access tokens from URL
-  const guestCheckoutToken = searchParams.get('guest_checkout_token') || undefined;
-  const orderAccessToken = searchParams.get('order_access_token') || undefined;
-  const isGuestAccess = !isAuthenticated && (!!guestCheckoutToken || !!orderAccessToken);
-
-  // Authenticated order query
-  const authQuery = useOrderQuery(isAuthenticated ? (orderNumber || '') : '');
-
-  // Guest order query
-  const guestQuery = useQuery({
-    queryKey: ['guestOrder', orderNumber, guestCheckoutToken, orderAccessToken],
-    enabled: isGuestAccess && !!orderNumber,
-    queryFn: async () => {
-      return accountAdapter.guestGetOrder(orderNumber!, {
-        guest_checkout_token: guestCheckoutToken,
-        order_access_token: orderAccessToken,
-      });
-    },
-  });
-
-  const activeQuery = isGuestAccess ? guestQuery : authQuery;
-  const data = activeQuery.data;
-  const isLoading = activeQuery.isLoading;
-
+  const { data, isLoading } = useOrderQuery(orderNumber || '');
   const order = data?.data;
-  const { data: trackingData } = useOrderTrackingQuery(isAuthenticated && order?.id ? order.id : 0);
+  const { data: trackingData } = useOrderTrackingQuery(order?.id ?? 0);
   const cancelMut = useCancelOrderMutation();
   const returnMut = useReturnRequestMutation();
   const reOrderMut = useReOrderMutation();
@@ -84,6 +57,12 @@ export function OrderDetailPage() {
   const [showReturn, setShowReturn] = useState(false);
   const [returnReason, setReturnReason] = useState('');
   const [returnDescription, setReturnDescription] = useState('');
+  const [reviewingItem, setReviewingItem] = useState<OrderItem | null>(null);
+  const [reviewRating, setReviewRating] = useState('5');
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewMessage, setReviewMessage] = useState('');
+  const [reviewError, setReviewError] = useState('');
+  const submitReview = useSubmitReviewMutation(reviewingItem?.product_id ?? 0);
 
   const tracking: TrackingEvent[] = trackingData?.data ?? [];
 
@@ -93,11 +72,7 @@ export function OrderDetailPage() {
     return (
       <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center">
         <h1 className="text-xl font-semibold">{t('Order not found', 'ஆர்டர் கிடைக்கவில்லை')}</h1>
-        {isAuthenticated ? (
-          <Link to="/account/orders" className="mt-4 inline-block text-brand-700 hover:underline">{t('Back to Orders', 'ஆர்டர்களுக்கு திரும்பு')}</Link>
-        ) : (
-          <Link to="/track-order" className="mt-4 inline-block text-brand-700 hover:underline">{t('Track Another Order', 'வேறு ஆர்டரை கண்காணி')}</Link>
-        )}
+        <Link to="/account/orders" className="mt-4 inline-block text-brand-700 hover:underline">{t('Back to Orders', 'ஆர்டர்களுக்கு திரும்பு')}</Link>
       </div>
     );
   }
@@ -106,6 +81,7 @@ export function OrderDetailPage() {
   const meta = data?.meta ?? {};
   const canCancel = meta.can_cancel ?? ['pending_payment', 'paid', 'placed', 'confirmed', 'processing', 'packed'].includes(order.status);
   const canReturn = meta.can_return ?? ['delivered', 'completed'].includes(order.status);
+  const canReview = ['delivered', 'completed'].includes(order.status);
 
   const handleReOrder = async () => {
     try {
@@ -143,6 +119,42 @@ export function OrderDetailPage() {
       setReturnReason('');
       setReturnDescription('');
     } catch { /* handled */ }
+  };
+
+  const handleOpenReview = (item: OrderItem) => {
+    setReviewingItem(item);
+    setReviewRating('5');
+    setReviewComment('');
+    setReviewMessage('');
+    setReviewError('');
+  };
+
+  const handleSubmitReview = async () => {
+    setReviewMessage('');
+    setReviewError('');
+
+    if (!reviewingItem?.product_id) {
+      setReviewError('This product is not eligible for review.');
+      return;
+    }
+
+    if (!reviewComment.trim()) {
+      setReviewError('Review comment is required.');
+      return;
+    }
+
+    const payload = new FormData();
+    payload.append('rating', reviewRating);
+    payload.append('comment', reviewComment.trim());
+
+    try {
+      const res = await submitReview.mutateAsync(payload);
+      setReviewMessage(res?.data?.message || 'Review submitted successfully');
+      setReviewingItem(null);
+      setReviewComment('');
+    } catch (err: unknown) {
+      setReviewError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Review could not be submitted.');
+    }
   };
 
   return (
@@ -240,19 +252,63 @@ export function OrderDetailPage() {
             <h2 className="mb-3 font-semibold">{t('Items', 'பொருட்கள்')}</h2>
             <div className="divide-y">
               {items.map((item) => (
-                <div key={item.id} className="flex items-center justify-between py-3">
-                  <div>
-                    <p className="font-medium text-slate-900">{item.product_name}</p>
-                    {item.variant_name && <p className="text-xs text-slate-500">{item.variant_name}</p>}
-                    <p className="text-xs text-slate-400">SKU: {item.sku} | Qty: {item.quantity}</p>
+                <div key={item.id} className="py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-medium text-slate-900">{item.product_name}</p>
+                      {item.variant_name && <p className="text-xs text-slate-500">{item.variant_name}</p>}
+                      <p className="text-xs text-slate-400">SKU: {item.sku} | Qty: {item.quantity}</p>
+                      {canReview && item.product_id && (
+                        <Button variant="outline" size="sm" className="mt-2" onClick={() => handleOpenReview(item)}>
+                          Review Product
+                        </Button>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold">₹{item.total_price}</p>
+                      <p className="text-xs text-slate-500">₹{item.unit_price} each</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold">₹{item.total_price}</p>
-                    <p className="text-xs text-slate-500">₹{item.unit_price} each</p>
-                  </div>
+                  {reviewingItem?.id === item.id && (
+                    <div className="mt-3 rounded-lg border border-brand-100 bg-brand-50/40 p-3">
+                      <div className="grid gap-3 sm:grid-cols-[120px_1fr]">
+                        <label className="text-sm font-medium text-slate-700">
+                          Rating
+                          <select
+                            aria-label="Rating"
+                            value={reviewRating}
+                            onChange={(event) => setReviewRating(event.target.value)}
+                            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                          >
+                            <option value="5">5</option>
+                            <option value="4">4</option>
+                            <option value="3">3</option>
+                            <option value="2">2</option>
+                            <option value="1">1</option>
+                          </select>
+                        </label>
+                        <label className="text-sm font-medium text-slate-700">
+                          Review Comment
+                          <textarea
+                            aria-label="Review Comment"
+                            value={reviewComment}
+                            onChange={(event) => setReviewComment(event.target.value)}
+                            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                            rows={3}
+                          />
+                        </label>
+                      </div>
+                      {reviewError && <p className="mt-2 text-sm text-red-700">{reviewError}</p>}
+                      <div className="mt-3 flex gap-2">
+                        <Button size="sm" onClick={handleSubmitReview} loading={submitReview.isPending}>Submit Review</Button>
+                        <Button variant="ghost" size="sm" onClick={() => setReviewingItem(null)}>Cancel</Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
+            {reviewMessage && <p className="mt-3 rounded-lg bg-green-50 p-3 text-sm text-green-700">{reviewMessage}</p>}
           </div>
 
           {/* Tracking Timeline */}

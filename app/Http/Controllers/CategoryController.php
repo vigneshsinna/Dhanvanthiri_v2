@@ -237,10 +237,7 @@ class CategoryController extends Controller
             $category_translation->delete();
         }
 
-        foreach (Product::where('category_id', $category->id)->get() as $product) {
-            $product->category_id = null;
-            $product->save();
-        }
+        $category->products()->detach();
 
         CategoryUtility::delete_category($id);
         Cache::forget('featured_categories');
@@ -403,10 +400,7 @@ class CategoryController extends Controller
                 foreach ($category->category_translations as $key => $category_translation) {
                     $category_translation->delete();
                 }
-                foreach (Product::where('category_id', $category->id)->get() as $product) {
-                    $product->category_id = null;
-                    $product->save();
-                }
+                $category->products()->detach();
 
                 CategoryUtility::delete_category($category_id);
             }

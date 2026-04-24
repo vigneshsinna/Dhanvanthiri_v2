@@ -104,7 +104,7 @@ export function useWebsiteSettingsQuery() {
       const res = await cmsAdapter.websiteSettings();
       return res.data;
     },
-    staleTime: 1000 * 60 * 30, // cache for 30 minutes
+    staleTime: 1000 * 60,
   });
 }
 
@@ -124,7 +124,7 @@ export function usePolicyQuery(type: 'seller' | 'support' | 'return') {
       const res = await cmsAdapter.policy(type);
       return res.data;
     },
-    staleTime: 1000 * 60 * 30,
+    staleTime: 1000 * 60,
   });
 }
 

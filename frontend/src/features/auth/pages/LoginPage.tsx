@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { loginSchema, type LoginInput } from '@/features/auth/schemas/loginSchema';
 import { useAppDispatch } from '@/lib/utils/hooks';
 import { setCredentials } from '@/features/auth/store/authSlice';
-import { useLoginMutation } from '@/features/auth/api';
+import { getSocialLoginRedirectUrl, useLoginMutation, useSocialProvidersQuery } from '@/features/auth/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useState } from 'react';
@@ -28,6 +28,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const loginMut = useLoginMutation();
+  const { data: socialProviders = [] } = useSocialProvidersQuery();
   const [serverError, setServerError] = useState('');
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
   const currentLocale = getStorefrontLocale();
@@ -75,6 +76,21 @@ export function LoginPage() {
             </div>
             <Button type="submit" className="w-full" loading={isSubmitting}>{t('Sign in', 'உள்நுழைய')}</Button>
           </form>
+          {socialProviders.length > 0 && (
+            <div className="mt-5 border-t border-slate-200 pt-5">
+              <div className="grid gap-2">
+                {socialProviders.map((provider) => (
+                  <a
+                    key={provider}
+                    href={getSocialLoginRedirectUrl(provider)}
+                    className="inline-flex w-full items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold capitalize text-slate-700 transition-colors hover:bg-slate-50"
+                  >
+                    {t(`Continue with ${provider}`, `${provider} மூலம் தொடரவும்`)}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
           <p className="mt-6 text-center text-sm text-slate-600">
             {t("Don't have an account?", 'கணக்கு இல்லையா?')}{' '}
             <Link to="/register" className="font-medium text-brand-700 hover:underline">{t('Create one', 'புதிய கணக்கு')}</Link>

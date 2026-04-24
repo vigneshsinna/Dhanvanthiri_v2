@@ -31,7 +31,9 @@ class ReportController extends Controller
         $products = Product::orderBy('created_at', 'desc');
         if ($request->has('category_id')) {
             $sort_by = $request->category_id;
-            $products = $products->where('category_id', $sort_by);
+            $products = $products->whereHas('categories', function($q) use ($sort_by) {
+                $q->where('categories.id', $sort_by);
+            });
         }
         $products = $products->paginate(15);
         return view('backend.reports.stock_report', compact('products', 'sort_by'));
@@ -43,7 +45,9 @@ class ReportController extends Controller
         $products = Product::orderBy('num_of_sale', 'desc')->where('added_by', 'admin');
         if ($request->has('category_id')) {
             $sort_by = $request->category_id;
-            $products = $products->where('category_id', $sort_by);
+            $products = $products->whereHas('categories', function($q) use ($sort_by) {
+                $q->where('categories.id', $sort_by);
+            });
         }
         $products = $products->paginate(15);
         return view('backend.reports.in_house_sale_report', compact('products', 'sort_by'));
@@ -68,7 +72,9 @@ class ReportController extends Controller
         $products = Product::orderBy('created_at', 'desc');
         if ($request->has('category_id')) {
             $sort_by = $request->category_id;
-            $products = $products->where('category_id', $sort_by);
+            $products = $products->whereHas('categories', function($q) use ($sort_by) {
+                $q->where('categories.id', $sort_by);
+            });
         }
         $products = $products->paginate(10);
         return view('backend.reports.wish_report', compact('products', 'sort_by'));

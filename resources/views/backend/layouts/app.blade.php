@@ -209,7 +209,10 @@
             filter = $("#menu-search").val().toUpperCase();
             items = $("#main-menu").find("a");
             items = items.filter(function(i, item) {
-                if ($(item).find(".aiz-side-nav-text")[0].innerText.toUpperCase().indexOf(filter) > -1 && $(item)
+                var label = $(item).find(".aiz-side-nav-text")[0].innerText;
+                var aliases = $(item).data('search-alias') || '';
+                var searchableText = (label + ' ' + aliases).toUpperCase();
+                if (searchableText.indexOf(filter) > -1 && $(item)
                     .attr('href') !== '#') {
                     return item;
                 }
@@ -220,7 +223,7 @@
                 $("#search-menu").html('')
                 if (items.length > 0) {
                     for (i = 0; i < items.length; i++) {
-                        const text = $(items[i]).find(".aiz-side-nav-text")[0].innerText;
+                        const text = $(items[i]).data('search-result') || $(items[i]).find(".aiz-side-nav-text")[0].innerText;
                         const link = $(items[i]).attr('href');
                         $("#search-menu").append(
                             `<li class="aiz-side-nav-item"><a href="${link}" class="aiz-side-nav-link"><i class="las la-ellipsis-h aiz-side-nav-icon"></i><span>${text}</span></a></li`

@@ -44,6 +44,11 @@ interface V2SignupResponse {
   user: V2User;
 }
 
+interface SocialLoginSetting {
+  type: string;
+  value: string | number | boolean | null;
+}
+
 function normalizeUser(v2User: V2User): AuthUser {
   const role = v2User.role ?? (v2User.type === 'admin' ? 'admin' : 'customer');
   return {
@@ -55,6 +60,23 @@ function normalizeUser(v2User: V2User): AuthUser {
 }
 
 export const authAdapter: any = {
+  async socialProviders() {
+    const res = await headlessApi.get<SocialLoginSetting[]>('/activated-social-login');
+    const rows = Array.isArray(res.data) ? res.data : [];
+    const enabled = new Set(['1', 'true', 'yes', 'on', 'enabled']);
+
+    return rows
+      .filter((row) => enabled.has(String(row.value ?? '').toLowerCase()))
+      .map((row) => String(row.type).replace(/_login$/i, ''))
+      .filter((provider) => ['google', 'facebook', 'twitter'].includes(provider));
+  },
+
+  socialLoginRedirectUrl(provider: string) {
+    const env = ((import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {});
+    const base = (env.VITE_LARAVEL_APP_URL || env.VITE_APP_URL || '').replace(/\/+$/, '');
+    return `${base}/social-login/redirect/${provider}`;
+  },
+
   async login(payload: { email: string; password: string }) {
     const res = await headlessApi.post<V2LoginResponse>('/auth/login', {
       ...payload,

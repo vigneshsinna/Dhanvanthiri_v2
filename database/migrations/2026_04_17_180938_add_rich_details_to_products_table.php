@@ -21,6 +21,7 @@ return new class extends Migration
             $table->text('why_love')->nullable()->after('about'); // JSON
             $table->string('storage')->nullable()->after('why_love');
             $table->boolean('is_premium')->default(false)->after('storage');
+            $table->text('custom_labels')->nullable()->after('is_premium'); // JSON
         });
     }
 

@@ -186,7 +186,7 @@ export function HomePage() {
       </Helmet>
 
       {/* HERO */}
-      <header className="home-hero hero-gradient-bg">
+      <header className="home-hero hero-gradient-bg" data-testid="storefront-home-hero">
         <div className="heroFloatOrb heroFloatOrb--one float-up" aria-hidden="true" />
         <div className="heroFloatOrb heroFloatOrb--two float-diag" aria-hidden="true" />
         <div className="heroOverlay" />
@@ -219,7 +219,7 @@ export function HomePage() {
             </div>
           </div>
 
-          <div className="heroVisual animate-on-scroll fade-up" data-animate-delay="200ms" aria-hidden="true">
+          <div className="heroVisual animate-on-scroll fade-up" data-animate-delay="200ms" aria-hidden="true" data-testid="storefront-home-banner">
             {heroBanner ? (
               <a href={heroBanner.cta_url || heroBanner.link_url || '/products'}>
                 <img
@@ -267,7 +267,7 @@ export function HomePage() {
               const weight = p.variants?.[0]?.name || '200g Jar';
               const reviewSnapshot = getProductReviewSnapshot(p);
               return (
-                <div key={p.id} className="home-card group animate-on-scroll fade-up">
+                <div key={p.id} className="home-card group animate-on-scroll fade-up" data-testid="storefront-product-card">
                   <Link to={`/products/${p.slug}`} className="block">
                     <div className="cardImg">
                       <img src={imageUrl || ''} alt={p.name} loading="lazy" />

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Addon;
 use App\Models\EmailTemplate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class EmailTemplateController extends Controller
 {
@@ -20,20 +21,28 @@ class EmailTemplateController extends Controller
      */
     public function index(Request $request, $emailReceiver)
     {
-        $addons = Addon::where('activated', 1)->pluck('unique_identifier')->toArray();
         $email_template_sort_search = (isset($request->email_template_sort_search) && $request->email_template_sort_search) ? $request->email_template_sort_search : null;
-        $emailTemplates = EmailTemplate::where('receiver', $emailReceiver);
+        $columns = Schema::getColumnListing('email_templates');
+        $emailTemplates = EmailTemplate::query();
 
-        // If email templated for addons, check addons are insatalled and activated.
-        $emailTemplates->where(function ($query) use ($addons) {
+        if (in_array('receiver', $columns)) {
+            $emailTemplates->where('receiver', $emailReceiver);
+        }
+
+        // Older installs may not have addon-scoped email template columns.
+        if (in_array('addon', $columns)) {
+            $addons = Addon::where('activated', 1)->pluck('unique_identifier')->toArray();
+            $emailTemplates->where(function ($query) use ($addons) {
                 $query->whereAddon(null)
                     ->orWhere(function ($query) use ($addons) {
                         $query->whereIn('addon', $addons);
                     });
-        });
+            });
+        }
 
         if ($email_template_sort_search != null){
-            $notificationTypes = $emailTemplates->where('email_type', 'like', '%' . $email_template_sort_search . '%');
+            $searchColumn = in_array('email_type', $columns) ? 'email_type' : (in_array('name', $columns) ? 'name' : 'subject');
+            $emailTemplates->where($searchColumn, 'like', '%' . $email_template_sort_search . '%');
         }
         $emailTemplates = $emailTemplates->paginate(10);
         return view('backend.setup_configurations.email_templates.index', compact('emailTemplates', 'email_template_sort_search', 'emailReceiver'));

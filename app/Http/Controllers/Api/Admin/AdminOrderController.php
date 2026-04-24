@@ -406,31 +406,6 @@ class AdminOrderController extends Controller
         ]);
     }
 
-    public function shipmentsShow(Request $request, int $id): JsonResponse
-    {
-        return $this->shipmentShow($request, $id);
-    }
-
-    public function shipmentsUpdate(Request $request, int $id): JsonResponse
-    {
-        return $this->shipmentUpdate($request, $id);
-    }
-
-    public function shipmentsAddEvent(Request $request, int $id): JsonResponse
-    {
-        return $this->shipmentAddEvent($request, $id);
-    }
-
-    public function returnsShow(Request $request, int $id): JsonResponse
-    {
-        return $this->returnShow($request, $id);
-    }
-
-    public function returnsUpdate(Request $request, int $id): JsonResponse
-    {
-        return $this->returnUpdate($request, $id);
-    }
-
     // ── Private helpers ──
 
     private function serializeOrder(Order $o): array

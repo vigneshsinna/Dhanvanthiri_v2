@@ -21,12 +21,8 @@ use Illuminate\Validation\Rule;
 use Laravel\Sanctum\PersonalAccessToken;
 use Mail;
 
-use App\Traits\ApiResponseTrait;
-
 class AuthController extends Controller
 {
-    use ApiResponseTrait;
-
     public function signup(Request $request)
     {
         $messages = array(
@@ -53,7 +49,10 @@ class AuthController extends Controller
         ], $messages);
 
         if ($validator->fails()) {
-            return $this->failedResponse($validator->errors()->all(), 'Validation failed', 422);
+            return response()->json([
+                'result' => false,
+                'message' => $validator->errors()->all()
+            ]);
         }
 
         $user = new User();
@@ -114,7 +113,10 @@ class AuthController extends Controller
 
         $user->save();
 
-        return $this->successResponse(null, translate('Verification code is sent again'));
+        return response()->json([
+            'result' => true,
+            'message' => translate('Verification code is sent again'),
+        ], 200);
     }
 
     public function confirmCode(Request $request)
@@ -125,9 +127,15 @@ class AuthController extends Controller
             $user->email_verified_at = date('Y-m-d H:i:s');
             $user->verification_code = null;
             $user->save();
-            return $this->successResponse(null, translate('Your account is now verified'));
+            return response()->json([
+                'result' => true,
+                'message' => translate('Your account is now verified'),
+            ], 200);
         } else {
-            return $this->failedResponse(null, translate('Code does not match, you can request for resending the code'), 422);
+            return response()->json([
+                'result' => false,
+                'message' => translate('Code does not match, you can request for resending the code'),
+            ], 200);
         }
     }
 
@@ -153,7 +161,10 @@ class AuthController extends Controller
         ], $messages);
 
         if ($validator->fails()) {
-            return $this->failedResponse($validator->errors()->all(), 'Validation failed', 422);
+            return response()->json([
+                'result' => false,
+                'message' => $validator->errors()->all()
+            ]);
         }
         $delivery_boy_condition = $request->has('user_type') && $request->user_type == 'delivery_boy';
         $seller_condition = $request->has('user_type') && $request->user_type == 'seller';
@@ -182,14 +193,9 @@ class AuthController extends Controller
                 ->first();
         }
 
-        if (
-            !$delivery_boy_condition
-            && !$seller_condition
-            && $user !== null
-            && $user->user_type === 'customer'
-        ) {
+        if (!$delivery_boy_condition && !$seller_condition) {
             if (\App\Utility\PayhereUtility::create_wallet_reference($request->identity_matrix) == false) {
-                return $this->failedResponse(null, 'Identity matrix error', 401);
+                return response()->json(['result' => false, 'message' => 'Identity matrix error', 'user' => null], 401);
             }
         }
 
@@ -197,20 +203,20 @@ class AuthController extends Controller
             if (!$user->banned) {
                 if (Hash::check($request->password, $user->password)) {
                     if($user->user_type=='seller' && $user->shop->registration_approval  == 0){
-                        return $this->failedResponse(null, translate('Your seller account is under review. We will notify you once approved.'), 401);
+                        return response()->json(['result' => false, 'message' => translate('Your seller account is under review. We will notify you once approved.'), 'user' => null], 401);
                     }else{
                         $tempUserId = $request->has('temp_user_id') ? $request->temp_user_id : null;
                         return $this->loginSuccess($user,'', $tempUserId);
                     }
 
                 } else {
-                    return $this->failedResponse(null, translate('Unauthorized'), 401);
+                    return response()->json(['result' => false, 'message' => translate('Unauthorized'), 'user' => null], 401);
                 }
             } else {
-                return $this->failedResponse(null, translate('User is banned'), 401);
+                return response()->json(['result' => false, 'message' => translate('User is banned'), 'user' => null], 401);
             }
         } else {
-            return $this->failedResponse(null, translate('User not found'), 404);
+            return response()->json(['result' => false, 'message' => translate('User not found'), 'user' => null], 401);
         }
     }
 
@@ -219,7 +225,7 @@ class AuthController extends Controller
         $user = $request->user();
 
         if (! $user) {
-            return $this->failedResponse(null, translate('User not found'), 404);
+            return $this->loginFailed();
         }
 
         return $this->loginSuccess($user, null);
@@ -231,13 +237,20 @@ class AuthController extends Controller
         $user = request()->user();
         $user->tokens()->where('id', $user->currentAccessToken()->id)->delete();
 
-        return $this->successResponse(null, translate('Successfully logged out'));
+        return response()->json([
+            'result' => true,
+            'message' => translate('Successfully logged out')
+        ]);
     }
 
     public function socialLogin(Request $request)
     {
         if (!$request->provider) {
-            return $this->failedResponse(null, translate('User not found'), 404);
+            return response()->json([
+                'result' => false,
+                'message' => translate('User not found'),
+                'user' => null
+            ]);
         }
 
         switch ($request->social_provider) {
@@ -264,7 +277,7 @@ class AuthController extends Controller
                 $social_user = null;
         }
         if ($social_user == null) {
-            return $this->failedResponse(null, translate('No social provider matches'), 400);
+            return response()->json(['result' => false, 'message' => translate('No social provider matches'), 'user' => null]);
         }
 
         if ($request->social_provider == 'twitter') {
@@ -274,7 +287,7 @@ class AuthController extends Controller
         }
 
         if ($social_user_details == null) {
-            return $this->failedResponse(null, translate('No social account matches'), 400);
+            return response()->json(['result' => false, 'message' => translate('No social account matches'), 'user' => null]);
         }
 
         $existingUserByProviderId = User::where('provider_id', $request->provider)->first();
@@ -342,7 +355,10 @@ class AuthController extends Controller
         }
 
         if($success == 0){
-            return $this->failedResponse(null, translate('Something went wrong!'), 500);
+            return response()->json([
+                'result' => false,
+                'message' => translate('Something went wrong!')
+            ]);
         }
 
         if($isEmailVerificationEnabled == 1){
@@ -377,11 +393,6 @@ class AuthController extends Controller
 
     public function loginSuccess($user, $token = null, $tempUserId = null)
     {
-        $resolvedRole = $user->user_type === 'super_admin'
-            ? 'super_admin'
-            : (in_array($user->user_type, ['admin', 'staff'], true)
-                ? 'admin'
-                : ($user->hasRole('Super Admin') ? 'super_admin' : 'customer'));
 
         if (!$token) {
             $token = $user->createToken('API Token')->plainTextToken;
@@ -403,28 +414,48 @@ class AuthController extends Controller
             ]);
         }
 
-        return $this->successResponse([
+        return response()->json([
+            'result' => true,
+            'message' => translate('Successfully logged in'),
             'access_token' => $token,
             'token_type' => 'Bearer',
             'expires_at' => null,
             'user' => [
                 'id' => $user->id,
                 'type' => $user->user_type,
-                'role' => $resolvedRole,
+                'role' => $user->hasRole('Super Admin')
+                    ? 'super_admin'
+                    : (in_array($user->user_type, ['admin', 'staff']) ? 'admin' : 'customer'),
                 'name' => $user->name,
                 'email' => $user->email,
                 'avatar' => $user->avatar,
-                'avatar_original' => $user->avatar_original ? uploaded_asset($user->avatar_original) : null,
+                'avatar_original' => uploaded_asset($user->avatar_original),
                 'phone' => $user->phone,
                 'email_verified' => $user->email_verified_at != null
             ]
-        ], translate('Successfully logged in'));
+        ]);
     }
 
 
     protected function loginFailed()
     {
-        return $this->failedResponse(null, translate('Login Failed'), 401);
+
+        return response()->json([
+            'result' => false,
+            'message' => translate('Login Failed'),
+            'access_token' => '',
+            'token_type' => '',
+            'expires_at' => null,
+            'user' => [
+                'id' => 0,
+                'type' => '',
+                'name' => '',
+                'email' => '',
+                'avatar' => '',
+                'avatar_original' => '',
+                'phone' => ''
+            ]
+        ]);
     }
 
 
@@ -439,7 +470,10 @@ class AuthController extends Controller
 
         User::destroy(auth()->user()->id);
 
-        return $this->successResponse(null, translate('Your account deletion successfully done'));
+        return response()->json([
+            "result" => true,
+            "message" => translate('Your account deletion successfully done')
+        ]);
     }
 
     public function getUserInfoByAccessToken(Request $request)
@@ -457,4 +491,3 @@ class AuthController extends Controller
         return $this->loginSuccess($user, $request->access_token);
     }
 }
-

@@ -29,12 +29,138 @@
         </div>
     </div>
 
-    <div class="card">
+    <div class="card admin-products-card">
         <style>
+            .admin-products-card {
+                border: 0;
+                border-radius: 8px;
+                box-shadow: 0 14px 45px rgba(31, 45, 61, 0.08);
+                overflow: hidden;
+            }
+            .admin-products-card .table-nav-tabs {
+                background: #fff;
+                gap: 16px;
+            }
+            .admin-products-card .nav-tabs {
+                gap: 8px;
+            }
+            .admin-products-card .nav-tabs .nav-link {
+                border: 0;
+                color: #677489;
+                min-height: 54px;
+                padding-left: 14px !important;
+                padding-right: 14px !important;
+                position: relative;
+                white-space: nowrap;
+            }
+            .admin-products-card .nav-tabs .nav-link.active {
+                color: #1b75ff;
+                background: #f4f8ff;
+                border-radius: 8px 8px 0 0;
+            }
+            .admin-products-card .nav-tabs .nav-link.active::after {
+                content: "";
+                position: absolute;
+                left: 14px;
+                right: 14px;
+                bottom: 0;
+                height: 3px;
+                border-radius: 3px 3px 0 0;
+                background: #1b75ff;
+            }
+            .admin-products-toolbar .card-header {
+                background: #f8fafc;
+                border-bottom: 1px solid #edf1f7 !important;
+                gap: 10px;
+            }
+            .admin-products-toolbar .input-group,
+            .admin-products-toolbar .dropdown > .btn,
+            .admin-products-toolbar .bootstrap-select > .dropdown-toggle,
+            .admin-products-toolbar select.form-control {
+                min-height: 48px;
+                border-radius: 8px !important;
+                background: #fff !important;
+                border: 1px solid #e5eaf2 !important;
+                box-shadow: none;
+            }
+            .admin-products-table {
+                padding: 0;
+            }
+            .admin-products-table .table {
+                border-collapse: separate;
+                border-spacing: 0;
+            }
+            .admin-products-table thead th {
+                background: #fbfcfe;
+                border-bottom: 1px solid #e8edf5 !important;
+                color: #7b8798 !important;
+                letter-spacing: .04em;
+                padding-top: 16px;
+                padding-bottom: 16px;
+            }
+            .admin-products-table tbody tr {
+                transition: background-color .18s ease, box-shadow .18s ease;
+            }
+            .admin-products-table tbody tr:hover {
+                background: #f8fbff;
+                box-shadow: inset 3px 0 0 #1b75ff;
+            }
+            .admin-products-table tbody td {
+                border-top: 1px solid #eef2f7 !important;
+                vertical-align: middle;
+            }
+            .admin-product-thumb {
+                border-radius: 8px !important;
+                border-color: #e6edf5 !important;
+                background: #f7f9fc;
+                box-shadow: 0 8px 20px rgba(31, 45, 61, .08);
+            }
+            .admin-product-name {
+                color: #172033;
+                line-height: 1.35;
+            }
+            .admin-product-owner {
+                color: #00a95c;
+            }
+            .admin-product-chip {
+                display: inline-flex;
+                align-items: center;
+                border-radius: 999px;
+                background: #f1f5f9;
+                color: #64748b;
+                font-size: 11px;
+                font-weight: 700;
+                min-height: 24px;
+                padding: 3px 9px;
+            }
+            .admin-product-quick-action {
+                width: 34px;
+                height: 34px;
+                border-radius: 8px !important;
+                display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+                margin-left: 6px;
+                border: 1px solid #e7edf5 !important;
+                background: #fff !important;
+                color: #64748b !important;
+            }
+            .admin-product-quick-action:hover {
+                color: #1b75ff !important;
+                border-color: #b8d6ff !important;
+                background: #f4f8ff !important;
+            }
+            .admin-product-quick-action.text-danger:hover {
+                color: #ef4444 !important;
+                border-color: #fecaca !important;
+                background: #fff5f5 !important;
+            }
             .quick-edit-container {
                 cursor: pointer;
                 transition: all 0.2s ease;
                 border-radius: var(--radius-sm);
+                padding: 3px 6px;
+                margin-left: -6px;
             }
             .quick-edit-container:hover {
                 background-color: var(--soft-primary) !important;
@@ -49,6 +175,25 @@
                 align-items: center;
                 justify-content: center;
                 padding: 0 !important;
+            }
+            .table-actions .admin-product-quick-action {
+                width: 34px;
+                height: 34px;
+            }
+            @media (max-width: 767.98px) {
+                .admin-products-card .table-nav-tabs {
+                    padding-left: 14px !important;
+                    padding-right: 14px !important;
+                }
+                .admin-products-card .nav-tabs .nav-link {
+                    min-height: 46px;
+                    padding-left: 10px !important;
+                    padding-right: 10px !important;
+                }
+                .admin-products-toolbar .card-header {
+                    padding-left: 14px !important;
+                    padding-right: 14px !important;
+                }
             }
         </style>
 
@@ -72,7 +217,7 @@
             </div>
             <!--Right Side- Add New Button -->
             <div class="">
-                @if ($seller_type != 'seller' && auth()->user()->can('add_new_product'))
+                @if ($seller_type != 'seller' && (auth()->user()->can('add_new_product') || auth()->user()->user_type == 'admin'))
                     <a href="{{ route('products.create') }}" class="position-relative overflow-hidden add-new-btn">
                         <span class="position-relative z-2 pr-15px fs-14 fw-500 text-blue label-text">{{ translate('Add New Product') }}</span>
                         <span class="position-absolute top-0 right-0 h-100 w-40px bg-blue d-flex align-items-center justify-content-end z-1 plus-icon-container m-0 p-0 rounded-pill">
@@ -86,7 +231,7 @@
                 @endif
             </div>
         </div>
-        <div class="tab-filter-bar">
+        <div class="tab-filter-bar admin-products-toolbar">
             <form class="" id="sort_products" action="" method="GET">
                 <div class="card-header row  border-0 pb-0 mt-2">
                     <div class="col pl-0 pl-md-3">
@@ -116,7 +261,7 @@
                             {{ translate('Bulk Action') }}
                         </button>
                         <div class="dropdown-menu dropdown-menu-right">
-                            @can('product_edit')
+                            @if(auth()->user()->can('product_edit') || auth()->user()->user_type == 'admin')
                             <a class="dropdown-item confirm-alert text-secondary fs-14 fw-500 hov-bg-light hov-text-blue"
                                 href="javascript:void(0)" id="bulk-publish-option" onclick="bulkPublish()">
                                 {{ translate('Publish') }}</a>
@@ -126,12 +271,12 @@
                             <a class="dropdown-item text-secondary fs-14 fw-500 hov-bg-light hov-text-blue" id="bulk-td-option" onclick="bulkProductTodaysDeal()"
                                 href="javascript:void(0)">
                                 {{ translate('Mark Todays Deal') }}</a>
-                            @endcan
-                            @can('product_delete')
+                            @endif
+                            @if(auth()->user()->can('product_delete') || auth()->user()->user_type == 'admin')
                             <a class="dropdown-item confirm-alert text-danger fs-14 fw-500 hov-bg-light hov-text-blue"
                                 href="javascript:void(0)" onclick="bulkDelete()">
                                 {{ translate('Delete') }}</a>
-                            @endcan
+                            @endif
                         </div>
                     </div>
                     @if($seller_type == 'seller')
@@ -270,6 +415,9 @@
             let $input = $container.find('.edit-input');
             let $icon = $container.find('.edit-icon');
 
+            // Store original value to detect changes
+            $input.data('original-value', $input.val());
+
             $display.addClass('d-none');
             $icon.addClass('d-none');
             $input.removeClass('d-none').focus();
@@ -280,7 +428,8 @@
 
         function handleQuickEditKey(e, input, type, id) {
             if (e.key === 'Enter') {
-                saveQuickEdit(input, type, id);
+                e.preventDefault();
+                input.blur(); // Triggers saveQuickEdit via onblur
             } else if (e.key === 'Escape') {
                 let $container = $(input).closest('.quick-edit-container');
                 $container.find('.display-value').removeClass('d-none');
@@ -296,7 +445,14 @@
             let $icon = $container.find('.edit-icon');
             let newValue = $input.val();
 
-            // Minimal client-side feedback
+            // Only proceed if value actually changed
+            if (newValue == $input.data('original-value')) {
+                $input.addClass('d-none');
+                $display.removeClass('d-none');
+                $icon.removeClass('d-none');
+                return;
+            }
+
             $input.attr('disabled', true);
 
             $.post('{{ route('products.quick_update') }}', {
@@ -307,18 +463,7 @@
             }, function(data) {
                 if(data.success) {
                     AIZ.plugins.notify('success', data.message);
-                    
-                    // Update display based on type
-                    if(type === 'price') {
-                        // Very rough formatting, exact currency format happens on reload
-                        $display.text($display.text().replace(/[0-9.,]+/, newValue)); 
-                    } else if(type === 'stock') {
-                        $display.text(newValue + ' ' + $display.text().replace(/[0-9.,]+/, '').trim());
-                    }
-
-                    $input.attr('disabled', false).addClass('d-none');
-                    $display.removeClass('d-none');
-                    $icon.removeClass('d-none');
+                    getProducts(currentTab); // Full refresh for consistent state
                 } else {
                     AIZ.plugins.notify('danger', '{{ translate('Something went wrong') }}');
                     $input.attr('disabled', false).addClass('d-none');
@@ -811,6 +956,7 @@
                     if(response == 1) {
                         AIZ.plugins.notify('success', '{{ translate('Stock updated successfully') }}');
                         closeRightcanvas();
+                        getProducts(currentTab);
                     }
                 },
                 error: function() {

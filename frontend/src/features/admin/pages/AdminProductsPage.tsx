@@ -42,7 +42,7 @@ export function AdminProductsPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setIsImportModalOpen(true)}><Upload className="mr-1.5 h-4 w-4" />Import CSV</Button>
-          <Link to="/store-admin/products/new">
+          <Link to="/admin/products/new">
             <Button><Plus className="mr-1.5 h-4 w-4" />Add Product</Button>
           </Link>
         </div>

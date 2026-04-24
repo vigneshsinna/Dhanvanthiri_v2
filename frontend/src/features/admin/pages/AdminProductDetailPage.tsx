@@ -171,7 +171,7 @@ export function AdminProductDetailPage() {
                 <Button variant="outline"><ExternalLink className="mr-1.5 h-4 w-4" />View on Storefront</Button>
               </a>
             )}
-            <Link to="/store-admin/products">
+            <Link to="/admin/products">
               <Button variant="outline">&larr; Back to Products</Button>
             </Link>
           </div>
@@ -305,7 +305,7 @@ export function AdminProductDetailPage() {
           <Button type="submit" loading={createMut.isPending || updateMut.isPending}>
             {isNew ? 'Create Product' : 'Update Product'}
           </Button>
-          <Link to="/store-admin/products">
+          <Link to="/admin/products">
             <Button type="button" variant="ghost">Cancel</Button>
           </Link>
         </div>

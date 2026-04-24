@@ -25,8 +25,20 @@ export interface CreatePaymentIntentPayload {
 }
 
 export interface GuestCreatePaymentIntentPayload {
-  guest_checkout_token: string;
   gateway: string;
+  guest_email: string;
+  guest_phone: string;
+  shipping_address: {
+    recipient_name: string;
+    phone: string;
+    line1: string;
+    line2?: string;
+    city: string;
+    state: string;
+    postal_code: string;
+    country_code: string;
+  };
+  shipping_method_id?: number;
 }
 
 export function usePaymentMethodsQuery() {
@@ -130,15 +142,8 @@ export function useOrderPaymentQuery(orderId: number | null) {
 export function useGuestValidateCheckoutMutation() {
   return useMutation({
     mutationFn: async (payload: {
-      temp_user_id: string;
-      name: string;
-      email: string;
-      address: string;
-      country_id?: number;
-      state_id?: number;
-      city_id?: number;
-      postal_code: string;
-      phone: string;
+      guest_email: string;
+      guest_phone: string;
     }) => {
       const res = await checkoutAdapter.guestValidateCheckout(payload);
       return res;
@@ -148,7 +153,7 @@ export function useGuestValidateCheckoutMutation() {
 
 export function useGuestCheckoutSummaryMutation() {
   return useMutation({
-    mutationFn: async (payload: { guest_checkout_token: string }) => {
+    mutationFn: async (payload: { shipping_method_id?: number; state?: string }) => {
       const res = await checkoutAdapter.guestCheckoutSummary(payload);
       return res;
     },
@@ -167,11 +172,11 @@ export function useGuestCreatePaymentIntentMutation() {
 export function useGuestConfirmPaymentMutation() {
   return useMutation({
     mutationFn: async (payload: {
-      guest_checkout_token: string;
       order_id: number;
       gateway_payment_id: string;
       gateway_order_id: string;
       signature: string;
+      cart_token?: string;
     }) => {
       const res = await checkoutAdapter.guestConfirmPayment(payload);
       return res;

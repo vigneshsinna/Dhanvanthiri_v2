@@ -56,41 +56,6 @@ interface Recommendation {
   image?: string | null;
 }
 
-interface Product {
-  id: number;
-  name: string;
-  slug: string;
-  price: number;
-  compare_at_price?: number;
-  primary_image_url?: string;
-  short_description?: string;
-  description?: string;
-  category_id?: number;
-  category?: { id: number; name: string };
-  brand?: { name: string };
-  tags?: { name: string }[];
-  images?: any;
-  variants?: any;
-  meta_description?: string;
-  warranty?: { name: string; duration_days: number; type: string };
-  size_chart?: any;
-  // Rich Metadata from API
-  badge?: string;
-  chips?: string[];
-  taste_profile?: string;
-  pair_with?: string[];
-  about?: string;
-  why_love?: string[];
-  storage?: string;
-  tamil_name?: string;
-  is_premium?: boolean;
-  custom_labels?: any;
-  avg_rating?: number | null;
-  average_rating?: number | null;
-  review_count?: number | null;
-  reviews?: any;
-}
-
 const SITE_URL = 'https://dhanvanthirifoods.in';
 const API_ORIGIN = ((import.meta as any).env.VITE_API_BASE_URL?.replace(/\/api\/?$/, '')) || '';
 
@@ -108,7 +73,7 @@ export function ProductDetailPage() {
   // Use API product or fall back to static data
   const apiProduct = data?.data?.data ?? data?.data;
   const fallbackProduct = !apiProduct ? fallbackProducts.find((p) => p.slug === slug) : null;
-  const product = (apiProduct || fallbackProduct) as Product | undefined;
+  const product = apiProduct || fallbackProduct;
 
   // Get rich details from catalog data
   const detail = slug ? getProductDetailBySlug(slug) : undefined;
@@ -125,7 +90,7 @@ export function ProductDetailPage() {
   const handleWishlistToggle = () => {
     if (!product) return;
     if (isInWishlist && wishlistEntry) {
-      removeFromWishlist.mutate({ id: wishlistEntry.id, slug: product.slug });
+      removeFromWishlist.mutate(wishlistEntry.id);
     } else {
       addToWishlist.mutate({ product_id: product.id, variant_id: selectedVariant, slug: product.slug });
     }
@@ -184,7 +149,7 @@ export function ProductDetailPage() {
     }
   }, [product?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (isLoading) return <PageLoader />;
+  if (isLoading && !fallbackProduct) return <PageLoader />;
   if (error && !product) {
     return (
       <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center">
@@ -347,9 +312,9 @@ export function ProductDetailPage() {
         <div className="space-y-5 animate-on-scroll slide-right">
           {/* Badge + Category */}
           <div className="flex flex-wrap items-center gap-2">
-            {(product?.badge || detail?.badge) && (
+            {detail?.badge && (
               <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-700">
-                {product?.badge || detail?.badge}
+                {detail.badge}
               </span>
             )}
             {detail?.category && (
@@ -369,12 +334,12 @@ export function ProductDetailPage() {
             ))}
           </div>
 
-          <h1 className="text-2xl font-bold text-slate-900 lg:text-3xl" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <h1 className="text-2xl font-bold text-slate-900 lg:text-3xl" style={{ fontFamily: "'Playfair Display', serif" }} data-testid="storefront-product-title">
             {productTitle}
           </h1>
-          {(product?.tamil_name || detail?.tamil_title) && (
+          {detail?.tamil_title && (
             <div className="text-xl font-medium text-brand-700/80 -mt-2">
-              {product?.tamil_name || detail?.tamil_title}
+              {detail.tamil_title}
             </div>
           )}
 
@@ -395,7 +360,7 @@ export function ProductDetailPage() {
 
           {/* Price */}
           <div className="flex items-baseline gap-3">
-            <span className="text-3xl font-bold text-slate-900">₹{price}</span>
+            <span className="text-3xl font-bold text-slate-900" data-testid="storefront-product-price">₹{price}</span>
             {product.compare_at_price && product.compare_at_price > price && (
               <>
                 <span className="text-lg text-slate-400 line-through">₹{product.compare_at_price}</span>
@@ -410,9 +375,9 @@ export function ProductDetailPage() {
           </div>
 
           {/* Chips */}
-          {(product?.chips?.length || (detail && detail.chips.length > 0)) && (
+          {detail && detail.chips.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {(product?.chips || detail?.chips || []).map((chip, i) => (
+              {detail.chips.map((chip, i) => (
                 <span key={i} className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 border border-amber-100">
                   {chip}
                 </span>
@@ -430,19 +395,19 @@ export function ProductDetailPage() {
           )}
 
           {/* Taste Profile */}
-          {(product?.taste_profile || detail?.taste_profile) && (
+          {detail?.taste_profile && (
             <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm animate-on-scroll scale-in">
               <h3 className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-400">{t('Taste Profile', 'சுவை விவரம்')}</h3>
-              <p className="text-sm font-medium text-slate-700">{product?.taste_profile || detail?.taste_profile}</p>
+              <p className="text-sm font-medium text-slate-700">{detail.taste_profile}</p>
             </div>
           )}
 
           {/* Pair With */}
-          {(product?.pair_with?.length || (detail && detail.pair_with.length > 0)) && (
+          {detail && detail.pair_with.length > 0 && (
             <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm animate-on-scroll scale-in">
               <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">{t('Best Paired With', 'இணைந்து சாப்பிட')}</h3>
               <div className="flex flex-wrap gap-2">
-                {(product?.pair_with || detail?.pair_with || []).map((item, i) => (
+                {detail.pair_with.map((item, i) => (
                   <span key={i} className="rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
                     {item}
                   </span>
@@ -491,7 +456,7 @@ export function ProductDetailPage() {
                 onClick={() => setQuantity(quantity + 1)}
               >+</button>
             </div>
-            <Button className="flex-1" disabled={!inStock} loading={addToCart.isPending} onClick={handleAddToCart}>
+            <Button className="flex-1" disabled={!inStock} loading={addToCart.isPending} onClick={handleAddToCart} data-testid="storefront-add-to-cart">
               {inStock ? t('Add to Cart', 'கார்டில் சேர்') : t('Out of Stock', 'கையிருப்பு இல்லை')}
             </Button>
             <button
@@ -547,10 +512,10 @@ export function ProductDetailPage() {
           )}
 
           {/* Storage info */}
-          {(product?.storage || detail?.storage) && (
+          {detail?.storage && (
             <div className="flex items-start gap-2 rounded-lg bg-amber-50/60 border border-amber-100 px-4 py-3 animate-on-scroll scale-in">
               <span className="text-base mt-0.5">📋</span>
-              <p className="text-xs leading-relaxed text-amber-800">{product?.storage || detail?.storage}</p>
+              <p className="text-xs leading-relaxed text-amber-800">{detail.storage}</p>
             </div>
           )}
 
@@ -562,17 +527,17 @@ export function ProductDetailPage() {
       </div>
 
       {/* ─── About & Why You'll Love It ─── */}
-      {(product?.about || detail) && (
+      {detail && (
         <div className="mt-12 grid gap-8 lg:grid-cols-2 stagger-children">
           {/* About This Product */}
           <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm animate-on-scroll scale-in">
             <h2 className="mb-4 text-xl font-bold text-slate-900" style={{ fontFamily: "'Playfair Display', serif" }}>
               {t('About This Product', 'இந்த தயாரிப்பை பற்றி')}
             </h2>
-            <p className="text-sm leading-relaxed text-slate-600">{product?.about || detail?.about}</p>
+            <p className="text-sm leading-relaxed text-slate-600">{detail.about}</p>
 
             {/* Description from API */}
-            {product?.description && (
+            {product.description && (
               <div className="mt-4 border-t border-slate-100 pt-4">
                 <div className="prose prose-sm text-slate-600" dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.description) }} />
               </div>
@@ -580,25 +545,23 @@ export function ProductDetailPage() {
           </div>
 
           {/* Why You'll Love It */}
-          {(product?.why_love?.length || (detail && detail.why_love.length > 0)) && (
-            <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm animate-on-scroll scale-in">
-              <h2 className="mb-4 text-xl font-bold text-slate-900" style={{ fontFamily: "'Playfair Display', serif" }}>
-                {t("Why You'll Love It", 'நீங்கள் ஏன் விரும்புவீர்கள்')}
-              </h2>
-              <ul className="space-y-3">
-                {(product?.why_love || detail?.why_love || []).map((reason, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
-                      <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
-                    <span className="text-sm text-slate-700">{reason}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm animate-on-scroll scale-in">
+            <h2 className="mb-4 text-xl font-bold text-slate-900" style={{ fontFamily: "'Playfair Display', serif" }}>
+              {t("Why You'll Love It", 'நீங்கள் ஏன் விரும்புவீர்கள்')}
+            </h2>
+            <ul className="space-y-3">
+              {detail.why_love.map((reason, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
+                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </span>
+                  <span className="text-sm text-slate-700">{reason}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
 

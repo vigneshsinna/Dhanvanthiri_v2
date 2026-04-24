@@ -39,6 +39,41 @@ function normalizeBlogDetail(post: any) {
   };
 }
 
+function normalizeBanner(banner: any, index: number) {
+  const image = banner?.image ?? banner?.image_url ?? banner?.photo ?? '';
+  const url = banner?.cta_url ?? banner?.link_url ?? banner?.link ?? banner?.url ?? '';
+  const position = banner?.position ?? banner?.position_id ?? banner?.slot ?? null;
+
+  return {
+    ...banner,
+    id: banner?.id ?? index + 1,
+    image,
+    image_url: banner?.image_url ?? image,
+    photo: banner?.photo ?? image,
+    cta_url: banner?.cta_url ?? url,
+    link_url: banner?.link_url ?? url,
+    link: banner?.link ?? url,
+    position,
+    is_active: banner?.is_active ?? banner?.published ?? true,
+  };
+}
+
+function bannerMatchesPosition(banner: any, position?: string) {
+  if (!position) {
+    return true;
+  }
+
+  const bannerPosition = String(banner.position ?? banner.position_id ?? '').trim();
+
+  if (bannerPosition === position) {
+    return true;
+  }
+
+  const legacyHomeHeroSlots = ['1', 'home_hero', 'home-banner-1', 'home_banner1'];
+
+  return position === 'home_hero' && legacyHomeHeroSlots.includes(bannerPosition);
+}
+
 export const cmsAdapter: any = {
   async posts(params?: Record<string, unknown>) {
     const res = await headlessApi.get('/blog-list', { params });
@@ -79,10 +114,10 @@ export const cmsAdapter: any = {
 
   async banners(position?: string) {
     const res = await headlessApi.get('/banners');
-    const allBanners = res.data.data || [];
+    const allBanners = (res.data.data || []).map(normalizeBanner);
 
     const filtered = position
-      ? allBanners.filter((banner: any) => banner.position === position || banner.position_id === position)
+      ? allBanners.filter((banner: any) => bannerMatchesPosition(banner, position))
       : allBanners;
 
     return { data: { items: filtered } };

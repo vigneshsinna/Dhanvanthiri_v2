@@ -146,34 +146,17 @@ class AdminModuleController extends Controller
         ]);
     }
 
-    public function activationRequest(Request $request, ?int $id = null): JsonResponse
+    public function activationRequest(Request $request): JsonResponse
     {
         $this->ensureSuperAdmin($request);
-
-        $payload = $request->validate([
-            'reason' => ['nullable', 'string'],
-            'module_id' => ['nullable', 'integer'],
-            'module_name' => ['nullable', 'string'],
-            'purchase_code' => ['nullable', 'string'],
+        $request->validate([
+            'module_name' => ['required', 'string'],
+            'purchase_code' => ['required', 'string'],
         ]);
-
-        $moduleId = $id ?? (int) ($payload['module_id'] ?? 0);
-        $addon = $moduleId > 0
-            ? DB::table('addons')->where('id', $moduleId)->first()
-            : null;
-
-        if ($moduleId > 0 && !$addon) {
-            return response()->json(['success' => false, 'message' => 'Module not found'], 404);
-        }
 
         return response()->json([
             'success' => true,
             'message' => 'Activation request submitted',
-            'data' => [
-                'module_id' => $moduleId ?: null,
-                'module_name' => $addon->name ?? ($payload['module_name'] ?? null),
-                'reason' => $payload['reason'] ?? null,
-            ],
         ]);
     }
 }

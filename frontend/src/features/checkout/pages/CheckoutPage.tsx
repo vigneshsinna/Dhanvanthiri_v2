@@ -205,9 +205,10 @@ export function CheckoutPage() {
           });
           const d = unwrapData<CheckoutTotals>(res);
           setSummary(d);
-        } else if (checkout.guestCheckoutToken) {
+        } else {
           const res = await guestSummaryMut.mutateAsync({
-            guest_checkout_token: checkout.guestCheckoutToken,
+            shipping_method_id: checkout.shippingMethodId ?? undefined,
+            state: guestInfo.state.trim() || undefined,
           });
           const d = unwrapData<CheckoutTotals>(res);
           setSummary(d);
@@ -240,9 +241,8 @@ export function CheckoutPage() {
     const amount = Number(data.amount ?? data.amount_minor ?? 0);
     const currency = String(data.currency ?? 'INR');
     const gateway = String(data.gateway ?? 'razorpay');
-    const guestToken = String(data.guest_checkout_token ?? '');
 
-    return { orderId, orderNumber, razorpayOrderId, keyId, amount, currency, gateway, guestToken };
+    return { orderId, orderNumber, razorpayOrderId, keyId, amount, currency, gateway };
   };
 
   const handleAuthPayment = async () => {
@@ -347,22 +347,15 @@ export function CheckoutPage() {
     dispatch(setCheckoutData({ error: null }));
     try {
       const res = await guestValidate.mutateAsync({
-        temp_user_id: cart.cartToken || `temp_` + Date.now(),
-        name: guestInfo.recipient_name.trim(),
-        email: guestInfo.guest_email.trim(),
-        address: guestInfo.line1.trim() + (guestInfo.line2 ? `, ${guestInfo.line2.trim()}` : ''),
-        country_id: 1, // Defaulting to 1 (India) since country_code is hardcoded
-        city_id: 1, // Placeholder until city mapping is robust
-        postal_code: guestInfo.postal_code.trim(),
-        phone: guestInfo.guest_phone.trim(),
+        guest_email: guestInfo.guest_email.trim(),
+        guest_phone: guestInfo.guest_phone.trim(),
       });
-      const data = unwrapData<{ guest_checkout_token?: string }>(res);
-      if (data.guest_checkout_token) {
-        dispatch(setCheckoutData({ guestCheckoutToken: data.guest_checkout_token }));
-        dispatch(setStep('payment'));
-      } else {
-        dispatch(setCheckoutData({ error: 'Checkout validation failed: No token received' }));
+      const validation = unwrapData<{ valid: boolean; issues?: string[] }>(res);
+      if (!validation.valid) {
+        dispatch(setCheckoutData({ error: validation.issues?.join(', ') || 'Checkout validation failed' }));
+        return;
       }
+      dispatch(setStep('payment'));
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Unable to validate checkout';
       dispatch(setCheckoutData({ error: msg }));
@@ -372,11 +365,21 @@ export function CheckoutPage() {
   const handleGuestPayment = async () => {
     dispatch(setCheckoutData({ isProcessing: true, error: null }));
     try {
-      if (!checkout.guestCheckoutToken) throw new Error('Missing guest session token');
-
       const res = await guestCreatePayment.mutateAsync({
         gateway: checkout.gateway,
-        guest_checkout_token: checkout.guestCheckoutToken,
+        guest_email: guestInfo.guest_email.trim(),
+        guest_phone: guestInfo.guest_phone.trim(),
+        shipping_address: {
+          recipient_name: guestInfo.recipient_name.trim(),
+          phone: guestInfo.phone.trim() || guestInfo.guest_phone.trim(),
+          line1: guestInfo.line1.trim(),
+          line2: guestInfo.line2.trim() || undefined,
+          city: guestInfo.city.trim(),
+          state: guestInfo.state.trim(),
+          postal_code: guestInfo.postal_code.trim(),
+          country_code: guestInfo.country_code,
+        },
+        shipping_method_id: checkout.shippingMethodId ?? undefined,
       });
 
       const paymentData = parseIntentPayload(res);
@@ -386,7 +389,7 @@ export function CheckoutPage() {
       if (checkout.gateway === 'cash_on_delivery' || checkout.gateway === 'cod') {
         dispatch(clearCart());
         dispatch(resetCheckout());
-        navigate('/checkout/confirmation', { state: { gateway: 'cod', orderNumber: paymentData.orderNumber, guestCheckoutToken: paymentData.guestToken || undefined } });
+        navigate('/checkout/confirmation', { state: { gateway: 'cod', orderNumber: paymentData.orderNumber } });
         return;
       }
 
@@ -394,7 +397,7 @@ export function CheckoutPage() {
       if (checkout.gateway === 'wallet') {
         dispatch(clearCart());
         dispatch(resetCheckout());
-        navigate('/checkout/confirmation', { state: { gateway: 'wallet', orderNumber: paymentData.orderNumber, guestCheckoutToken: paymentData.guestToken || undefined } });
+        navigate('/checkout/confirmation', { state: { gateway: 'wallet', orderNumber: paymentData.orderNumber } });
         return;
       }
 
@@ -410,15 +413,15 @@ export function CheckoutPage() {
           handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
             try {
               await guestConfirmPayment.mutateAsync({
-                guest_checkout_token: checkout.guestCheckoutToken!,
                 order_id: paymentData.orderId,
                 gateway_payment_id: response.razorpay_payment_id,
                 gateway_order_id: response.razorpay_order_id,
                 signature: response.razorpay_signature,
+                cart_token: cart.cartToken ?? undefined,
               });
               dispatch(clearCart());
               dispatch(resetCheckout());
-              navigate('/checkout/confirmation', { state: { gateway: 'razorpay', orderNumber: paymentData.orderNumber, guestCheckoutToken: paymentData.guestToken || undefined } });
+              navigate('/checkout/confirmation', { state: { gateway: 'razorpay', orderNumber: paymentData.orderNumber } });
             } catch {
               dispatch(setCheckoutData({ isProcessing: false, error: 'Payment verification failed' }));
               dispatch(setStep('payment'));
@@ -460,7 +463,7 @@ export function CheckoutPage() {
       // Fallback
       dispatch(clearCart());
       dispatch(resetCheckout());
-      navigate('/checkout/confirmation', { state: { gateway: checkout.gateway, orderNumber: paymentData.orderNumber, guestCheckoutToken: paymentData.guestToken || undefined } });
+      navigate('/checkout/confirmation', { state: { gateway: checkout.gateway, orderNumber: paymentData.orderNumber } });
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Payment creation failed';
       dispatch(setCheckoutData({ isProcessing: false, error: msg }));

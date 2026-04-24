@@ -17,6 +17,8 @@ use App\Models\SellerPackagePayment;
 use Carbon\Carbon;
 use DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
+
 class EarningReportController extends Controller
 {
     public function __construct()
@@ -37,22 +39,28 @@ class EarningReportController extends Controller
         $seller_subscriptions = array();
         $total_seller_subscriptions_earning = 0;
         if (addon_is_activated('seller_subscription')) {
-            $seller_subscriptions = SellerPackagePayment::groupBy('time')
-                                    ->select(DB::raw('SUM(amount) as total'), DB::raw('DATE_FORMAT(created_at, "%M") AS time'))
-                                    ->whereYear('created_at', Carbon::now()->year)
-                                    ->where('approval', 1)
-                                    ->orderBy(DB::raw('MONTH(created_at)'), 'asc')
-                                    ->get();
-            $total_seller_subscriptions_earning = SellerPackagePayment::where('approval', 1)->sum('amount');
+            $seller_subscriptions = $this->packagePaymentMonthlyTotals(
+                'seller_package_payments',
+                'seller_packages',
+                'seller_package_id'
+            );
+            $total_seller_subscriptions_earning = $this->packagePaymentTotal(
+                'seller_package_payments',
+                'seller_packages',
+                'seller_package_id'
+            );
         }
 
-        $customer_subscriptions = CustomerPackagePayment::groupBy('time')
-                                ->select(DB::raw('SUM(amount) as total'), DB::raw('DATE_FORMAT(created_at, "%M") AS time'))
-                                ->whereYear('created_at', Carbon::now()->year)
-                                ->where('approval', 1)
-                                ->orderBy(DB::raw('MONTH(created_at)'), 'asc')
-                                ->get();
-        $total_customer_subscriptions_earning = CustomerPackagePayment::where('approval', 1)->sum('amount');
+        $customer_subscriptions = $this->packagePaymentMonthlyTotals(
+            'customer_package_payments',
+            'customer_packages',
+            'customer_package_id'
+        );
+        $total_customer_subscriptions_earning = $this->packagePaymentTotal(
+            'customer_package_payments',
+            'customer_packages',
+            'customer_package_id'
+        );
 
         // Payouts data
         $seller_payments = Payment::groupBy('time')->where('payment_method','!=','Seller paid to admin')
@@ -229,29 +237,21 @@ class EarningReportController extends Controller
         // Seller Subscription
         $data['seller_subscription'] = 0.00;
         if (addon_is_activated('seller_subscription')) {
-            $seller_subscription = SellerPackagePayment::query();
-            if ($intervalType == 'DAY') {
-                $seller_subscription->whereDate('created_at', Carbon::today());
-            }
-            elseif($intervalType == 'WEEK' || $intervalType == 'MONTH') {
-                $day = $intervalType == 'WEEK' ? 7 : 30;
-                $seller_subscription->whereDate('created_at', '>', Carbon::now()->subDays($day));
-            }
-            $seller_subscription->select(DB::raw('SUM(amount) as total_amount'))->where('approval', 1);
-            $data['seller_subscription'] = $seller_subscription->first()->total_amount;
+            $data['seller_subscription'] = $this->packagePaymentIntervalTotal(
+                'seller_package_payments',
+                'seller_packages',
+                'seller_package_id',
+                $intervalType
+            );
         }
 
         // Customer Subscription
-        $customer_subscription = CustomerPackagePayment::query();
-        if ($intervalType == 'DAY') {
-            $customer_subscription->whereDate('created_at', Carbon::today());
-        }
-        elseif($intervalType == 'WEEK' || $intervalType == 'MONTH') {
-            $day = $intervalType == 'WEEK' ? 7 : 30;
-            $customer_subscription->whereDate('created_at', '>', Carbon::now()->subDays($day));
-        }
-        $customer_subscription->select(DB::raw('SUM(amount) as total_amount'))->where('approval', 1);
-        $data['customer_subscription'] = $customer_subscription->first()->total_amount;
+        $data['customer_subscription'] = $this->packagePaymentIntervalTotal(
+            'customer_package_payments',
+            'customer_packages',
+            'customer_package_id',
+            $intervalType
+        );
 
         return $data;
     }
@@ -327,29 +327,22 @@ class EarningReportController extends Controller
         // Earning from Seller Subscription
         $seller_subscriptions = array();
         if (addon_is_activated('seller_subscription')) {
-            $seller_subscriptions_query = SellerPackagePayment::groupBy('time')->where('approval', 1)->whereYear('created_at', Carbon::now()->year);
-            if($intervalType == 'MONTH'){
-                $seller_subscriptions_query->select(DB::raw('SUM(amount) as total'), DB::raw('DATE_FORMAT(created_at, "%M") AS time'));
-            }
-            else{
-                $seller_subscriptions_query->select(DB::raw('SUM(amount) as total'), DB::raw('DATE_FORMAT(created_at, "%d") AS time'))
-                    ->whereMonth('created_at', Carbon::now()->month);
-            }
-            $seller_subscriptions = $seller_subscriptions_query->orderBy(DB::raw('Date(created_at)'), 'asc')->get();
+            $seller_subscriptions = $this->packagePaymentAnalyticTotals(
+                'seller_package_payments',
+                'seller_packages',
+                'seller_package_id',
+                $intervalType
+            );
         }
         // Earning from Seller Subscription End
 
         // Earning from Customer Subscription
-        $customer_subscription_query = CustomerPackagePayment::groupBy('time')->where('approval', 1)->whereYear('created_at', Carbon::now()->year);
-        if($intervalType == 'MONTH'){
-            $customer_subscription_query->select(DB::raw('SUM(amount) as total'), DB::raw('DATE_FORMAT(created_at, "%M") AS time'));
-        }
-        else{
-            $customer_subscription_query->select(DB::raw('SUM(amount) as total'), DB::raw('DATE_FORMAT(created_at, "%d") AS time'))
-                ->whereMonth('created_at', Carbon::now()->month);
-        }
-
-        $customer_subscriptions = $customer_subscription_query->orderBy(DB::raw('Date(created_at)'), 'asc')->get();
+        $customer_subscriptions = $this->packagePaymentAnalyticTotals(
+            'customer_package_payments',
+            'customer_packages',
+            'customer_package_id',
+            $intervalType
+        );
         // Earning from Customer Subscription End
 
         $mymonths = array('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December');
@@ -544,18 +537,119 @@ class EarningReportController extends Controller
 
     public function packageAmountStoreIntoPackagePaymentTable()
     {
+        if (!Schema::hasColumn('customer_package_payments', 'amount')) {
+            return;
+        }
+
         $customerPackagePayments = CustomerPackagePayment::where('amount','<',1)->get();
         foreach($customerPackagePayments as $customerPackagePayment){
             $customerPackagePayment->amount = $customerPackagePayment->customer_package->amount;
             $customerPackagePayment->save();
         }
 
-        if(addon_is_activated('seller_subscription')){
+        if(addon_is_activated('seller_subscription') && Schema::hasColumn('seller_package_payments', 'amount')){
             $sellerPackagePayments = SellerPackagePayment::where('amount','<',1)->get();
             foreach($sellerPackagePayments as $sellerPackagePayment){
                 $sellerPackagePayment->amount = $sellerPackagePayment->seller_package->amount;
                 $sellerPackagePayment->save();
             }
+        }
+    }
+
+    private function packagePaymentMonthlyTotals(string $paymentTable, string $packageTable, string $packageForeignKey)
+    {
+        $query = $this->packagePaymentAmountQuery($paymentTable, $packageTable, $packageForeignKey)
+            ->select(
+                DB::raw($this->packagePaymentSumExpression($paymentTable, $packageTable) . ' as total'),
+                DB::raw('DATE_FORMAT(' . $paymentTable . '.created_at, "%M") AS time')
+            )
+            ->whereYear($paymentTable . '.created_at', Carbon::now()->year)
+            ->groupBy('time')
+            ->orderBy(DB::raw('MONTH(' . $paymentTable . '.created_at)'), 'asc');
+
+        $this->applyApprovalFilter($query, $paymentTable);
+
+        return $query->get();
+    }
+
+    private function packagePaymentTotal(string $paymentTable, string $packageTable, string $packageForeignKey)
+    {
+        $query = $this->packagePaymentAmountQuery($paymentTable, $packageTable, $packageForeignKey);
+        $this->applyApprovalFilter($query, $paymentTable);
+
+        return (float) $query->sum(DB::raw($this->packagePaymentAmountExpression($paymentTable, $packageTable)));
+    }
+
+    private function packagePaymentIntervalTotal(string $paymentTable, string $packageTable, string $packageForeignKey, ?string $intervalType)
+    {
+        $query = $this->packagePaymentAmountQuery($paymentTable, $packageTable, $packageForeignKey);
+        $this->applyApprovalFilter($query, $paymentTable);
+        $this->applyIntervalFilter($query, $paymentTable, $intervalType);
+
+        return (float) $query->sum(DB::raw($this->packagePaymentAmountExpression($paymentTable, $packageTable)));
+    }
+
+    private function packagePaymentAnalyticTotals(string $paymentTable, string $packageTable, string $packageForeignKey, ?string $intervalType)
+    {
+        $timeExpression = $intervalType == 'MONTH'
+            ? 'DATE_FORMAT(' . $paymentTable . '.created_at, "%M")'
+            : 'DATE_FORMAT(' . $paymentTable . '.created_at, "%d")';
+
+        $query = $this->packagePaymentAmountQuery($paymentTable, $packageTable, $packageForeignKey)
+            ->select(
+                DB::raw($this->packagePaymentSumExpression($paymentTable, $packageTable) . ' as total'),
+                DB::raw($timeExpression . ' AS time')
+            )
+            ->whereYear($paymentTable . '.created_at', Carbon::now()->year)
+            ->groupBy('time');
+
+        if ($intervalType != 'MONTH') {
+            $query->whereMonth($paymentTable . '.created_at', Carbon::now()->month);
+        }
+
+        $this->applyApprovalFilter($query, $paymentTable);
+
+        return $query->orderBy(DB::raw('Date(' . $paymentTable . '.created_at)'), 'asc')->get();
+    }
+
+    private function packagePaymentAmountQuery(string $paymentTable, string $packageTable, string $packageForeignKey)
+    {
+        $query = DB::table($paymentTable);
+
+        if (!Schema::hasColumn($paymentTable, 'amount') && Schema::hasColumn($paymentTable, $packageForeignKey)) {
+            $query->leftJoin($packageTable, $packageTable . '.id', '=', $paymentTable . '.' . $packageForeignKey);
+        }
+
+        return $query;
+    }
+
+    private function packagePaymentAmountExpression(string $paymentTable, string $packageTable): string
+    {
+        return Schema::hasColumn($paymentTable, 'amount')
+            ? $paymentTable . '.amount'
+            : $packageTable . '.amount';
+    }
+
+    private function packagePaymentSumExpression(string $paymentTable, string $packageTable): string
+    {
+        return 'SUM(' . $this->packagePaymentAmountExpression($paymentTable, $packageTable) . ')';
+    }
+
+    private function applyApprovalFilter($query, string $paymentTable): void
+    {
+        if (Schema::hasColumn($paymentTable, 'approval')) {
+            $query->where($paymentTable . '.approval', 1);
+        }
+    }
+
+    private function applyIntervalFilter($query, string $paymentTable, ?string $intervalType): void
+    {
+        if ($intervalType == 'DAY') {
+            $query->whereDate($paymentTable . '.created_at', Carbon::today());
+        }
+        elseif($intervalType == 'WEEK' || $intervalType == 'MONTH') {
+            $day = $intervalType == 'WEEK' ? 7 : 30;
+            $query->whereDate($paymentTable . '.created_at', '>', Carbon::now()->subDays($day));
         }
     }
 }

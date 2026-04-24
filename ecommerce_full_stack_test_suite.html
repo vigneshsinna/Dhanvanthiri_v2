@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans,'Inter',sans-serif);font-size:13px;color:var(--color-text-primary);background:var(--color-background-tertiary,#f5f5f5);line-height:1.5}
+h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.app{display:flex;min-height:100vh;background:var(--color-background-tertiary)}
+.sidebar{width:220px;min-width:220px;background:var(--color-background-primary);border-right:0.5px solid var(--color-border-tertiary);padding:0;overflow-y:auto;position:sticky;top:0;height:100vh}
+.sidebar-header{padding:16px 14px 12px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.sidebar-header h1{font-size:14px;font-weight:500;color:var(--color-text-primary)}
+.sidebar-header p{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.progress-bar{height:4px;background:var(--color-border-tertiary);border-radius:2px;margin-top:8px;overflow:hidden}
+.progress-fill{height:100%;background:#3b82f6;border-radius:2px;transition:width .3s}
+.progress-text{font-size:10px;color:var(--color-text-secondary);margin-top:4px}
+.sidebar-nav{padding:8px 0}
+.nav-section{padding:4px 14px 2px;font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-top:6px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;border-left:2px solid transparent;transition:background .15s}
+.nav-item:hover{background:var(--color-background-secondary)}
+.nav-item.active{background:var(--color-background-info);border-left-color:#3b82f6}
+.nav-item.active .nav-label{color:var(--color-text-info);font-weight:500}
+.nav-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.nav-label{font-size:12px;color:var(--color-text-secondary)}
+.nav-count{margin-left:auto;font-size:10px;color:var(--color-text-tertiary);background:var(--color-background-secondary);padding:1px 5px;border-radius:8px}
+.main{flex:1;overflow-y:auto;padding:16px}
+.domain-header{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg,12px);padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px}
+.domain-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.domain-title{font-size:15px;font-weight:500}
+.domain-subtitle{font-size:11px;color:var(--color-text-secondary);margin-top:1px}
+.domain-stats{margin-left:auto;display:flex;gap:8px;align-items:center}
+.stat-chip{font-size:11px;padding:3px 8px;border-radius:12px;background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.stat-chip.pass{background:#dcfce7;color:#166534}
+.stat-chip.fail{background:#fee2e2;color:#991b1b}
+.stat-chip.block{background:#fef3c7;color:#92400e}
+.section-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg,12px);margin-bottom:10px;overflow:hidden}
+.section-head{padding:10px 14px;display:flex;align-items:center;gap:8px;cursor:pointer;border-bottom:0.5px solid var(--color-border-tertiary);user-select:none}
+.section-head:hover{background:var(--color-background-secondary)}
+.section-title{font-size:12px;font-weight:500;flex:1}
+.chevron{font-size:10px;color:var(--color-text-tertiary);transition:transform .2s}
+.chevron.open{transform:rotate(90deg)}
+.section-progress{font-size:10px;color:var(--color-text-tertiary);margin-right:4px}
+.test-list{padding:8px 0}
+.test-row{display:flex;align-items:flex-start;gap:10px;padding:7px 14px 7px 14px;border-bottom:0.5px solid var(--color-border-tertiary);transition:background .1s}
+.test-row:last-child{border-bottom:none}
+.test-row:hover{background:var(--color-background-secondary)}
+.test-num{font-size:10px;color:var(--color-text-tertiary);min-width:28px;padding-top:1px;font-variant-numeric:tabular-nums}
+.test-body{flex:1}
+.test-name{font-size:12px;color:var(--color-text-primary);font-weight:500}
+.test-desc{font-size:11px;color:var(--color-text-secondary);margin-top:2px;line-height:1.4}
+.test-expected{font-size:10px;color:var(--color-text-tertiary);margin-top:2px;font-style:italic}
+.test-actions{display:flex;gap:4px;align-items:flex-start;padding-top:1px;flex-shrink:0}
+.btn-status{border:none;background:none;padding:4px 8px;border-radius:5px;font-size:10px;font-weight:500;cursor:pointer;transition:background .15s;white-space:nowrap}
+.btn-pass{background:#dcfce7;color:#166534}
+.btn-pass:hover{background:#bbf7d0}
+.btn-fail{background:#fee2e2;color:#991b1b}
+.btn-fail:hover{background:#fecaca}
+.btn-block{background:#fef3c7;color:#92400e}
+.btn-block:hover{background:#fde68a}
+.btn-note{background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary)}
+.btn-note:hover{background:var(--color-border-tertiary)}
+.status-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.dot-pass{background:#22c55e}
+.dot-fail{background:#ef4444}
+.dot-block{background:#f59e0b}
+.dot-none{background:var(--color-border-tertiary)}
+.note-row{padding:4px 14px 8px 52px}
+.note-input{width:100%;font-size:11px;padding:5px 8px;border:0.5px solid var(--color-border-secondary);border-radius:5px;background:var(--color-background-secondary);color:var(--color-text-primary);font-family:inherit;resize:none}
+.note-input:focus{outline:none;border-color:#3b82f6}
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.toolbar-btn{padding:6px 12px;font-size:11px;border:0.5px solid var(--color-border-secondary);border-radius:6px;background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer;font-family:inherit;transition:background .15s}
+.toolbar-btn:hover{background:var(--color-background-secondary)}
+.toolbar-btn.primary{background:#3b82f6;color:#fff;border-color:#3b82f6}
+.toolbar-btn.primary:hover{background:#2563eb}
+.toolbar-btn.danger{background:#ef4444;color:#fff;border-color:#ef4444}
+.filter-bar{display:flex;gap:6px;align-items:center;flex:1}
+.filter-btn{padding:4px 10px;font-size:11px;border:0.5px solid var(--color-border-tertiary);border-radius:12px;background:none;color:var(--color-text-secondary);cursor:pointer;font-family:inherit}
+.filter-btn.active{background:var(--color-background-info);color:var(--color-text-info);border-color:#3b82f6}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px}
+.summary-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md,8px);padding:10px 12px;text-align:center}
+.summary-val{font-size:22px;font-weight:500}
+.summary-label{font-size:10px;color:var(--color-text-secondary);margin-top:2px}
+.summary-val.pass{color:#22c55e}
+.summary-val.fail{color:#ef4444}
+.summary-val.block{color:#f59e0b}
+.summary-val.total{color:var(--color-text-primary)}
+.tag{display:inline-block;font-size:9px;padding:1px 5px;border-radius:4px;margin-left:4px;vertical-align:middle;font-weight:500}
+.tag-critical{background:#fee2e2;color:#991b1b}
+.tag-api{background:#dbeafe;color:#1e40af}
+.tag-ui{background:#f3e8ff;color:#6b21a8}
+.tag-sec{background:#fef3c7;color:#92400e}
+.tag-perf{background:#dcfce7;color:#166534}
+.export-area{display:none}
+.hidden{display:none}
+.badge-severity{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:500;white-space:nowrap}
+.sev-high{background:#fee2e2;color:#991b1b}
+.sev-med{background:#fef3c7;color:#92400e}
+.sev-low{background:#f3f4f6;color:#6b7280}
+</style>
+</head>
+<body>
+<h2 class="sr-only">Complete ecommerce testing script covering storefront, admin panel, API, UI/UX, security and performance</h2>
+<div class="app" id="app">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h1>Test Suite</h1>
+      <p>Ecommerce Full Stack QA</p>
+      <div class="progress-bar"><div class="progress-fill" id="global-bar" style="width:0%"></div></div>
+      <div class="progress-text" id="global-pct">0 / 0 tested</div>
+    </div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+  </aside>
+  <main class="main" id="main-content">
+    <div class="toolbar">
+      <div class="filter-bar">
+        <span style="font-size:11px;color:var(--color-text-secondary)">Filter:</span>
+        <button class="filter-btn active" onclick="setFilter('all')">All</button>
+        <button class="filter-btn" onclick="setFilter('untested')">Untested</button>
+        <button class="filter-btn" onclick="setFilter('pass')">Pass</button>
+        <button class="filter-btn" onclick="setFilter('fail')">Fail</button>
+        <button class="filter-btn" onclick="setFilter('block')">Blocked</button>
+      </div>
+      <button class="toolbar-btn" onclick="expandAll()">Expand all</button>
+      <button class="toolbar-btn" onclick="collapseAll()">Collapse all</button>
+      <button class="toolbar-btn primary" onclick="exportResults()">Export results</button>
+      <button class="toolbar-btn danger" onclick="resetAll()">Reset</button>
+    </div>
+    <div class="summary-grid" id="summary-grid">
+      <div class="summary-card"><div class="summary-val total" id="s-total">0</div><div class="summary-label">Total tests</div></div>
+      <div class="summary-card"><div class="summary-val pass" id="s-pass">0</div><div class="summary-label">Passed</div></div>
+      <div class="summary-card"><div class="summary-val fail" id="s-fail">0</div><div class="summary-label">Failed</div></div>
+      <div class="summary-card"><div class="summary-val block" id="s-block">0</div><div class="summary-label">Blocked</div></div>
+      <div class="summary-card"><div class="summary-val" id="s-pct" style="color:#3b82f6">0%</div><div class="summary-label">Pass rate</div></div>
+    </div>
+    <div id="domain-container"></div>
+  </main>
+</div>
+
+<script>
+const DOMAINS = [
+  {
+    id:'storefront',label:'Storefront (React)',icon:'🛍️',color:'#dbeafe',
+    sections:[
+      {title:'Homepage & Navigation',tests:[
+        {name:'Homepage loads under 3s',desc:'Measure Time to Interactive on cold load. Check Core Web Vitals in DevTools Lighthouse.',expect:'LCP < 2.5s, CLS < 0.1, FID < 100ms',sev:'high',tags:['perf']},
+        {name:'Hero banner renders correctly',desc:'Check image loads, CTA button links correctly, carousel auto-play works.',expect:'No layout shift, buttons navigate correctly'},
+        {name:'Category navigation links',desc:'Click every main nav category. Verify route changes and products load.',expect:'Each category shows filtered products'},
+        {name:'Search bar — basic query',desc:'Type product name. Results appear within 500ms. Clicking result opens product.',expect:'Autocomplete suggestions, correct results page'},
+        {name:'Search bar — special characters',desc:'Enter <script>, \'OR 1=1--, and emoji. No JS error, no SQL error in response.',expect:'Sanitized query, safe empty state',tags:['sec'],sev:'high'},
+        {name:'Header cart icon count updates',desc:'Add item to cart. Cart badge count increments without page reload.',expect:'Real-time badge update via React state'},
+        {name:'Mobile hamburger menu',desc:'At 375px, open nav menu. All links accessible, menu closes on outside click.',expect:'No overflow, all links reachable'},
+        {name:'Footer links',desc:'Verify all footer links (About, Contact, Policy, Social) resolve and are not 404.',expect:'All links return 200 or valid redirect'},
+      ]},
+      {title:'Product Listing Pages',tests:[
+        {name:'Category page loads products',desc:'Navigate to any category. Products grid renders with images, names, prices.',expect:'Minimum 12 products per page, pagination shown'},
+        {name:'Filters apply correctly',desc:'Apply price range filter. Verify only products in range appear.',expect:'URL updates with filter params, results change'},
+        {name:'Sort by Price (low-high)',desc:'Select "Price: Low to High". Verify first product is cheapest.',expect:'Sorted order matches API response'},
+        {name:'Sort by Newest',desc:'Select "Newest". Verify sort order matches created_at desc from API.',expect:'Most recently added products first'},
+        {name:'Pagination — next page',desc:'Click page 2. New products load, URL updates to ?page=2.',expect:'Different products, no duplicate items'},
+        {name:'Pagination — last page edge',desc:'Go to last page. "Next" button is disabled or absent.',expect:'No 404, correct disabled state'},
+        {name:'Product card hover state',desc:'Hover product card. Quick-view, wishlist icon appear.',expect:'Smooth animation, no layout shift'},
+        {name:'Out-of-stock badge',desc:'Find an out-of-stock product. Verify badge shows and Add to Cart is disabled.',expect:'"Out of Stock" label, button disabled'},
+        {name:'Product image lazy loading',desc:'Scroll product grid quickly. Images load progressively.',expect:'No broken image icons, skeleton shown during load'},
+        {name:'Empty state — no results',desc:'Apply filters that return zero products.',expect:'Friendly "No products found" state with reset option'},
+      ]},
+      {title:'Product Detail Page',tests:[
+        {name:'Product images gallery',desc:'Click thumbnail images. Main image updates. Zoom works on hover.',expect:'Smooth gallery, correct image displayed'},
+        {name:'Variant selection (size/color)',desc:'Select all variant combinations. Price and stock update accordingly.',expect:'Price reflects variant, stock shows correctly'},
+        {name:'Add to Cart button',desc:'Select variant, click Add to Cart. Cart count updates, toast appears.',expect:'Item in cart, success notification'},
+        {name:'Add to Wishlist',desc:'Click wishlist button. Requires login if unauthenticated.',expect:'Redirect to login or wishlist updates'},
+        {name:'Quantity selector bounds',desc:'Try setting quantity to 0, -1, and above max stock.',expect:'Input clamped to 1–max, no negative quantities'},
+        {name:'Product reviews display',desc:'Reviews section renders with star ratings, pagination.',expect:'Reviews load, star rating is correct'},
+        {name:'Related products section',desc:'Scroll to related products. Links navigate to correct products.',expect:'Related products are from same category'},
+        {name:'Breadcrumb navigation',desc:'Breadcrumb shows Home > Category > Product Name.',expect:'Each breadcrumb link navigates correctly'},
+        {name:'SEO meta tags',desc:'Inspect page source. title, og:image, og:description, canonical present.',expect:'Dynamic product data in meta tags',tags:['ui']},
+        {name:'Share buttons',desc:'Click social share buttons. Correct URL is shared.',expect:'Correct product URL in share dialog'},
+      ]},
+      {title:'Cart & Checkout',tests:[
+        {name:'Cart page renders all items',desc:'Add 3+ items. Open cart. All items show with correct name, price, qty.',expect:'All items present with correct data'},
+        {name:'Update quantity in cart',desc:'Change quantity via +/- buttons. Subtotal recalculates.',expect:'Price updates without page reload',tags:['api']},
+        {name:'Remove item from cart',desc:'Click remove on a cart item. Item disappears, total recalculates.',expect:'Item removed, empty state if last item'},
+        {name:'Apply coupon code',desc:'Enter a valid coupon. Discount applied to order total.',expect:'Discount shown as line item, correct amount',tags:['api']},
+        {name:'Apply invalid coupon',desc:'Enter expired or fake coupon. Error message shown.',expect:'Clear error message, no discount applied',sev:'high'},
+        {name:'Checkout — guest checkout',desc:'Proceed to checkout without login. Guest form shown.',expect:'Guest checkout works or clear sign-in prompt'},
+        {name:'Checkout — address form validation',desc:'Submit empty address form. Required field errors appear inline.',expect:'Per-field validation, form not submitted'},
+        {name:'Checkout — payment method selection',desc:'All configured payment gateways appear and are selectable.',expect:'At least COD and one online method'},
+        {name:'Order summary totals',desc:'Verify subtotal + shipping + tax = grand total.',expect:'Math is correct, no rounding errors'},
+        {name:'Place order — success flow',desc:'Complete full checkout. Order confirmation page shown with order ID.',expect:'Order in DB, confirmation email sent',tags:['api'],sev:'high'},
+        {name:'Place order — payment failure',desc:'Simulate payment failure (test card). Error shown, order not created.',expect:'Error message, cart preserved',sev:'high'},
+        {name:'Double-click place order',desc:'Click "Place Order" twice rapidly. Only one order created.',expect:'Idempotency — single order in DB',tags:['sec'],sev:'high'},
+      ]},
+      {title:'Authentication (Storefront)',tests:[
+        {name:'Register with valid data',desc:'Complete registration form. Verification email sent.',expect:'Account created, redirect to dashboard or verify page',tags:['api']},
+        {name:'Register duplicate email',desc:'Register with existing email. Error shown.',expect:'"Email already taken" error, no duplicate account'},
+        {name:'Login with correct credentials',desc:'Login with valid email/password. Redirected to intended page.',expect:'Session created, user data loaded'},
+        {name:'Login with wrong password',desc:'3 wrong attempts. Account lockout or CAPTCHA triggered.',expect:'Rate limiting after N failures',tags:['sec'],sev:'high'},
+        {name:'Forgot password flow',desc:'Enter email, receive reset link, set new password.',expect:'Token expires after 60 min, password updated'},
+        {name:'Google OAuth login',desc:'Click "Login with Google". OAuth flow completes.',expect:'Account linked or created, logged in'},
+        {name:'Logout clears session',desc:'Logout. Try accessing /profile. Redirected to login.',expect:'Session cleared, protected routes blocked'},
+        {name:'Remember me token',desc:'Login with Remember Me. Close browser. Reopen. Still logged in.',expect:'Persistent session via remember token'},
+      ]},
+      {title:'User Account Dashboard',tests:[
+        {name:'My Orders list',desc:'View order history. Orders show status badges, dates, totals.',expect:'All orders with correct status'},
+        {name:'Order detail — track status',desc:'Click an order. Status timeline shows current delivery stage.',expect:'Correct status, tracking info if shipped'},
+        {name:'Profile edit',desc:'Update name and phone. Save. Verify changes persisted.',expect:'Updated data shown on reload'},
+        {name:'Change password',desc:'Change password with correct current password.',expect:'Password updated, re-login required'},
+        {name:'Address book — add',desc:'Add new shipping address.',expect:'Address saved, selectable at checkout'},
+        {name:'Wishlist shows saved items',desc:'View wishlist. All previously wishlisted items present.',expect:'Correct items, links to product pages'},
+        {name:'Wallet balance display',desc:'Check wallet section. Balance matches admin record.',expect:'Correct balance, transaction history'},
+      ]},
+    ]
+  },
+  {
+    id:'admin-nav',label:'Admin — Navigation',icon:'🧭',color:'#f3e8ff',
+    sections:[
+      {title:'Sidebar & Menu',tests:[
+        {name:'All sidebar links navigate',desc:'Click every enabled sidebar link. Correct page loads.',expect:'No 404, no blank pages'},
+        {name:'Active link highlights correctly',desc:'On each page, the corresponding sidebar item is highlighted.',expect:'Active state matches current URL'},
+        {name:'Sidebar menu search',desc:'Type "coupon" in sidebar search. Coupon menu item appears.',expect:'Fuzzy match results, clicking navigates correctly'},
+        {name:'Collapsed sidebar on mobile',desc:'At 768px, sidebar collapses. Toggle opens/closes it.',expect:'Content not obscured, hamburger works'},
+        {name:'Duplicate label check',desc:'Look for "System", "Settings", "Marketing" labels appearing twice in sidebar.',expect:'All nav labels are unique (see BUG-04)',sev:'high',tags:['ui']},
+        {name:'Breadcrumbs on all pages',desc:'Visit Orders, Products, Sellers, Customers detail pages. Breadcrumbs present.',expect:'2-3 level trail, each link works'},
+        {name:'Breadcrumb — Products page missing',desc:'Visit /admin/products. Check breadcrumb section.',expect:'Breadcrumb shown (BUG-06 fix verification)',sev:'high'},
+        {name:'Page titles consistent h2',desc:'All pages use h2.page-title class. No h1/h5/h6 for page titles.',expect:'Consistent heading hierarchy'},
+      ]},
+      {title:'Layout & App Shell',tests:[
+        {name:'CSS variable theme applies',desc:'Primary color matches business settings brand color, not hardcoded green.',expect:'admin-redesign.css !important removed (BUG-13)',sev:'high',tags:['ui']},
+        {name:'Logo brand text styling',desc:'Sidebar logo uses .brand-text class, not inline style.',expect:'BUG-03 fix — no inline style= on h3',tags:['ui']},
+        {name:'Responsive at 1280px',desc:'Test at 1280×800. No horizontal scroll. All filter bars visible.',expect:'All content accessible without scroll'},
+        {name:'Footer copyright shows correctly',desc:'Footer shows site name and version.',expect:'Dynamic values, not hardcoded'},
+      ]},
+    ]
+  },
+  {
+    id:'admin-products',label:'Admin — Products',icon:'📦',color:'#dcfce7',
+    sections:[
+      {title:'Product Listing (Admin)',tests:[
+        {name:'All Products tab loads',desc:'Visit /admin/products. All products paginated list appears.',expect:'Products with thumbnail, name, price, stock'},
+        {name:'Product search by name',desc:'Search "test product". Results filter in real-time.',expect:'Matching products only'},
+        {name:'Filter by category',desc:'Select category dropdown. Products filter.',expect:'Only products in that category'},
+        {name:'Filter by brand',desc:'Select brand filter. Products update.',expect:'Only products from that brand'},
+        {name:'Filter by status (published/draft)',desc:'Filter by published. Only published products shown.',expect:'Correct filter applied'},
+        {name:'In-House tab vs All Products',desc:'Switch between "All Products" and "In House Products" tabs.',expect:'Different product sets per tab'},
+        {name:'Seller Products tab',desc:'Navigate to Seller Products > All. Seller products shown.',expect:'Correct seller name in Owner column'},
+        {name:'Bulk select all',desc:'Check "Select All" checkbox. All row checkboxes check.',expect:'All items selected across page'},
+        {name:'Bulk publish action',desc:'Select 3 products, Bulk Action > Publish.',expect:'All 3 become published, status updates'},
+        {name:'Bulk delete confirmation',desc:'Select products, click Delete selection. Confirmation modal appears.',expect:'Modal shows count of items to delete'},
+        {name:'Empty state when no results',desc:'Apply filter with zero results.',expect:'"No products found" with icon (not empty table)'},
+        {name:'Inline price quick-edit',desc:'Click price cell on any product row. Input appears.',expect:'enableQuickEdit() activates, input focused',tags:['ui'],sev:'high'},
+        {name:'Quick-edit save via Enter',desc:'Edit price, press Enter.',expect:'AJAX saves, display updates, success toast'},
+        {name:'Quick-edit cancel via Escape',desc:'Edit price, press Escape.',expect:'Original value restored, input hidden'},
+        {name:'Quick-edit save via blur',desc:'Edit price, click outside.',expect:'Value saved on blur'},
+        {name:'Quick-edit route exists',desc:'AJAX POST to products.quick_update returns 200.',expect:'Route defined in admin.php (BUG-08)',tags:['api'],sev:'high'},
+      ]},
+      {title:'Product Create / Edit',tests:[
+        {name:'Product create form loads',desc:'Visit /admin/products/create. All form sections visible.',expect:'General, Media, Pricing, Variants, SEO sections'},
+        {name:'Required field validation',desc:'Submit empty product form. Inline errors per field.',expect:'@error blocks show per-field messages (FORM-02)'},
+        {name:'Product name required',desc:'Leave name blank, submit.',expect:'"Name is required" under name field'},
+        {name:'Category selection required',desc:'Leave category blank, submit.',expect:'Error on category field'},
+        {name:'Image upload works',desc:'Upload product thumbnail. Preview shown.',expect:'Image uploaded, preview renders'},
+        {name:'Multiple images upload',desc:'Upload gallery images.',expect:'All images saved, gallery displayed on frontend'},
+        {name:'Variant generation (size/color)',desc:'Add attributes and generate SKU combinations.',expect:'SKU matrix generates correctly'},
+        {name:'Price must be positive',desc:'Enter negative price. Submit.',expect:'Validation error on price field',tags:['sec']},
+        {name:'Stock value numeric',desc:'Enter text in stock field.',expect:'Numeric validation error'},
+        {name:'SEO fields — slug auto-fill',desc:'Enter product name. Slug auto-populates.',expect:'Slug is URL-safe, no spaces'},
+        {name:'Save button disables on submit',desc:'Click Save. Button shows spinner, disabled state.',expect:'No double-submit possible (FEEDBACK-02)'},
+        {name:'Edit existing product',desc:'Edit a product. All fields pre-populated correctly.',expect:'All saved values appear in form'},
+        {name:'Cancel returns to list',desc:'Click Cancel on create/edit form.',expect:'Returns to products list without saving'},
+        {name:'Delete product confirmation',desc:'Click delete icon on product row.',expect:'Confirmation modal before deletion'},
+      ]},
+      {title:'Categories',tests:[
+        {name:'Category list with hierarchy',desc:'View categories. Parent > Child hierarchy visible.',expect:'Nested structure shown correctly'},
+        {name:'Create category with image',desc:'Create category with banner image.',expect:'Image saved, appears in frontend nav'},
+        {name:'Category slug unique validation',desc:'Create two categories with same slug.',expect:'Error: slug must be unique'},
+        {name:'Category-based discount',desc:'Set discount % for a category.',expect:'All products in category get discount on frontend'},
+        {name:'Delete category with products',desc:'Try to delete category that has products.',expect:'Warning or block — products not orphaned'},
+      ]},
+      {title:'Brands',tests:[
+        {name:'Brand list',desc:'View all brands with logo, name, product count.',expect:'Correct counts'},
+        {name:'Create brand',desc:'Create brand with name and logo.',expect:'Brand appears in product create dropdown'},
+        {name:'Brand bulk import CSV',desc:'Upload valid brand CSV.',expect:'Brands imported, count matches CSV rows',tags:['api']},
+        {name:'Brand bulk import — invalid CSV',desc:'Upload CSV with wrong headers.',expect:'Clear error, no partial import',sev:'high'},
+      ]},
+      {title:'Product Reviews',tests:[
+        {name:'Reviews list shows all reviews',desc:'Visit product reviews. All reviews listed with product, user, rating.',expect:'Complete list with pagination'},
+        {name:'Approve/reject review',desc:'Change review status.',expect:'Status updates, visibility changes on frontend'},
+        {name:'Delete review',desc:'Delete a review with confirmation.',expect:'Review removed from frontend immediately'},
+        {name:'Custom review create',desc:'Admin creates review for a product.',expect:'Review appears with admin badge or as verified'},
+      ]},
+    ]
+  },
+  {
+    id:'admin-orders',label:'Admin — Orders',icon:'📋',color:'#fef3c7',
+    sections:[
+      {title:'Orders Listing',tests:[
+        {name:'All orders load with pagination',desc:'Visit /admin/orders. Order list with pagination.',expect:'Orders with code, customer, amount, status badges'},
+        {name:'Stray closing </td> — table renders',desc:'Check order table rows. Columns align with headers.',expect:'BUG-01: No misaligned columns (critical fix)',sev:'high',tags:['ui']},
+        {name:'Filter by delivery status',desc:'Filter by "Pending". Only pending orders shown.',expect:'Correct filter, count matches badge'},
+        {name:'Filter by payment status',desc:'Filter by "Unpaid". Only unpaid orders shown.',expect:'Correct filter applied'},
+        {name:'Date range filter usable',desc:'At 1280px, date picker field is wide enough to see selected dates.',expect:'col-md-3 fix — no truncation (TABLE-03)'},
+        {name:'Search by order code',desc:'Enter partial order code. Correct order found.',expect:'Matching order in results'},
+        {name:'Status badge colors consistent',desc:'Pending=yellow, Delivered=green, Cancelled=red, Paid=green, Unpaid=red.',expect:'Matches _status_badge.blade.php color map'},
+        {name:'"New" badge on unread orders',desc:'New orders show blue "New" badge.',expect:'Badge disappears after viewing order'},
+        {name:'Bulk export',desc:'Select orders, click Bulk Action > Export.',expect:'CSV/Excel file downloads with correct data',tags:['api']},
+        {name:'Bulk delete',desc:'Select orders, click Delete selection. Confirm modal.',expect:'Deletion with count shown in modal'},
+        {name:'Empty state',desc:'Filter to date range with no orders.',expect:'"No orders found" with icon (not blank table)'},
+        {name:'Invoice download from list',desc:'Click download icon on order row.',expect:'PDF invoice downloads correctly'},
+      ]},
+      {title:'Order Detail Page',tests:[
+        {name:'Order detail breadcrumb',desc:'Visit order detail. Breadcrumb shows Home > Orders > #CODE.',expect:'Each breadcrumb link works'},
+        {name:'Delivery status dropdown present',desc:'Delivery status select shown if not delivered/cancelled.',expect:'Dropdown with all status options'},
+        {name:'Cancel status — SweetAlert fires',desc:'Change delivery status to "Cancel".',expect:'SweetAlert confirmation with reason textarea (WORKFLOW-01)',sev:'high',tags:['ui']},
+        {name:'Cancel requires reason',desc:'In cancel confirmation, click confirm without entering reason.',expect:'"Please provide a reason" validation error'},
+        {name:'Cancel — confirm changes status',desc:'Provide reason and confirm cancellation.',expect:'Status updates, reason saved, updateDeliveryStatus() runs (BUG-11)',sev:'high',tags:['api']},
+        {name:'Cancel — dismiss reverts dropdown',desc:'Open cancel dialog, click Cancel button.',expect:'Dropdown reverts to previous status value'},
+        {name:'Non-cancel status change',desc:'Change "Pending" to "Confirmed". Simple confirm dialog.',expect:'Status updates after confirm'},
+        {name:'Payment status update',desc:'Mark unpaid order as paid.',expect:'Payment status updates, email sent to customer',tags:['api']},
+        {name:'Assign delivery boy',desc:'Select delivery boy from dropdown (if addon active).',expect:'Assigned, delivery boy notified'},
+        {name:'Shipping method select',desc:'For pending orders, shipping system selectable.',expect:'Shiprocket/Steadfast/Pathao options if addons active'},
+        {name:'Order items table',desc:'All order items shown with correct qty, price, total.',expect:'Line items match order totals'},
+        {name:'Invoice download from detail',desc:'Download invoice from order detail page.',expect:'PDF has correct order data'},
+        {name:'Customer info section',desc:'Customer name, email, phone, address shown.',expect:'Correct data from order record'},
+        {name:'Seller info section',desc:'For seller orders, seller name and shop shown.',expect:'Correct seller data'},
+      ]},
+    ]
+  },
+  {
+    id:'admin-customers',label:'Admin — Customers & Sellers',icon:'👥',color:'#fce7f3',
+    sections:[
+      {title:'Customers',tests:[
+        {name:'Customer list loads',desc:'Visit /admin/customers. Paginated customer list.',expect:'Name, email, phone, package, wallet, status'},
+        {name:'Breadcrumb on customers page',desc:'Breadcrumb shows Home > Customers.',expect:'Both links work'},
+        {name:'Filter by verification status',desc:'Filter Verified / Unverified.',expect:'Correct subset shown'},
+        {name:'Filter by date range',desc:'Filter customers by registration date.',expect:'Only customers registered in range shown (new filter)'},
+        {name:'Filter by blocked/suspicious status',desc:'Filter for blocked customers.',expect:'BUG-09: Status filter dropdown present',sev:'high',tags:['ui']},
+        {name:'Search by email',desc:'Type partial email in search.',expect:'Matching customers appear'},
+        {name:'Search by phone',desc:'Type phone number in search.',expect:'Customer found by phone'},
+        {name:'Color legend — blocked/suspicious',desc:'Red=Blocked, Blue=Suspicious chips shown above table.',expect:'Legend inside card, not as raw paragraph text'},
+        {name:'Blocked customer row styling',desc:'A banned customer row has visual indicator.',expect:'Icon or color differentiates banned users'},
+        {name:'Add New Customer button',desc:'Button uses btn btn-primary with + icon.',expect:'Consistent button style (VISUAL-02 fix)'},
+        {name:'Create customer form',desc:'Fill and submit create customer form.',expect:'Customer created, appears in list'},
+        {name:'Block customer action',desc:'Block a customer from their row.',expect:'Customer banned, cannot login on storefront',sev:'high'},
+        {name:'Bulk delete customers',desc:'Select customers, delete. Confirmation modal.',expect:'Deletion with count in modal'},
+        {name:'Empty state',desc:'Search for non-existent customer.',expect:'"No customers found" message'},
+        {name:'Customer packages',desc:'View customer packages list.',expect:'Packages with price and features'},
+      ]},
+      {title:'Sellers',tests:[
+        {name:'Seller pipeline tabs',desc:'Sellers page shows All / Pending Approval / Verification tabs.',expect:'Three tabs, each loads correct subset (S4 fix)'},
+        {name:'Pending sellers tab',desc:'Route sellers.pending exists and loads.',expect:'BUG-12 verification — tab link works',sev:'high'},
+        {name:'Verification tab',desc:'Route sellers.verification exists and loads.',expect:'BUG-12 verification — tab link works',sev:'high'},
+        {name:'Filter by verification status',desc:'Filter Verified/Unverified in sellers list.',expect:'Correct subset'},
+        {name:'Filter by approval status',desc:'Filter Approved/Non-Approved.',expect:'Correct subset'},
+        {name:'Approve seller',desc:'Click approve on a pending seller.',expect:'Seller approved, moved out of Pending tab'},
+        {name:'View seller profile',desc:'Click seller name. Profile page with overview, products, orders.',expect:'Full seller profile with tabs'},
+        {name:'Seller commission — category-wise',desc:'Set different commission % per category for a seller.',expect:'Commission saved, applies to seller orders'},
+        {name:'Seller withdraw requests',desc:'View withdraw requests. Approve/reject payment.',expect:'Payment modal works, status updates'},
+        {name:'Add New Seller button style',desc:'Button uses btn btn-primary + la-plus icon.',expect:'Not btn-circle btn-info (VISUAL-02 fix)'},
+        {name:'Seller product list',desc:'From seller profile, view their products.',expect:'Correct products, links to edit'},
+      ]},
+    ]
+  },
+  {
+    id:'admin-marketing',label:'Admin — Marketing & CMS',icon:'📣',color:'#ecfdf5',
+    sections:[
+      {title:'Coupons',tests:[
+        {name:'Coupon list',desc:'View all coupons with code, type, value, expiry, usage.',expect:'All fields visible, status badge'},
+        {name:'Create coupon — flat discount',desc:'Create coupon with fixed amount off.',expect:'Coupon works at checkout for correct amount'},
+        {name:'Create coupon — percentage',desc:'Create 10% off coupon.',expect:'Correct percentage deducted at checkout'},
+        {name:'Create coupon — min order amount',desc:'Set minimum order value. Try applying below minimum.',expect:'Error: minimum order not met'},
+        {name:'Create coupon — usage limit',desc:'Set max usage = 1. Use twice.',expect:'Second use rejected: "Coupon limit reached"',sev:'high'},
+        {name:'Coupon expiry date',desc:'Create coupon expiring yesterday. Try to apply.',expect:'Error: coupon expired'},
+        {name:'Delete coupon with confirmation',desc:'Delete a coupon.',expect:'confirm-delete dialog, coupon removed'},
+      ]},
+      {title:'Flash Deals',tests:[
+        {name:'Flash deal list',desc:'View flash deals with title, start/end dates, status.',expect:'Active deals shown with countdown timer on frontend'},
+        {name:'Create flash deal',desc:'Create deal with products and discount %.',expect:'Deal appears on storefront homepage'},
+        {name:'Flash deal end date validation',desc:'Set end date before start date.',expect:'Validation error on date fields'},
+        {name:'Add products to flash deal',desc:'Add products with discount %.',expect:'Discounted price shown on product listing'},
+        {name:'Flash deal — expired deal hidden',desc:'Let a deal expire. Check storefront.',expect:'Expired deal removed from storefront display'},
+      ]},
+      {title:'Banners & Appearance',tests:[
+        {name:'Top banner create',desc:'Create top banner with link and text.',expect:'Banner appears on storefront header'},
+        {name:'Top banner toggle active/inactive',desc:'Deactivate banner.',expect:'Banner disappears from storefront'},
+        {name:'Homepage sections edit',desc:'Edit hero/featured sections in home page editor.',expect:'Changes reflect on storefront after save'},
+        {name:'Header configuration',desc:'Change header style in Website Settings.',expect:'Storefront header updates'},
+        {name:'Footer links update',desc:'Edit footer column links.',expect:'Footer reflects changes on storefront'},
+        {name:'Appearance — primary color',desc:'Change primary color. Storefront uses new color.',expect:'CSS variable updates, not overridden by !important (BUG-13)'},
+      ]},
+      {title:'Blog & CMS Pages',tests:[
+        {name:'Blog post create',desc:'Create blog post with title, content, image.',expect:'Post appears on /blogs on storefront'},
+        {name:'Blog category create',desc:'Create blog category.',expect:'Category available in blog post creation'},
+        {name:'CMS page create',desc:'Create custom page at /page/test-page.',expect:'Page accessible at that URL on storefront'},
+        {name:'CMS page edit',desc:'Edit existing CMS page content.',expect:'Updated content on storefront'},
+        {name:'Contact us page edit',desc:'Update contact info.',expect:'Changes show on /contact page'},
+      ]},
+      {title:'Notifications & Newsletters',tests:[
+        {name:'Send custom notification',desc:'Send push notification to all customers.',expect:'Notification delivered (check browser/Firebase)'},
+        {name:'Newsletter subscriber list',desc:'View subscribers with email and date.',expect:'Correct subscriber count'},
+        {name:'Export subscribers',desc:'Export newsletter subscribers.',expect:'CSV downloads with email list'},
+        {name:'Custom alert create',desc:'Create site-wide alert banner.',expect:'Alert appears on storefront'},
+      ]},
+    ]
+  },
+  {
+    id:'admin-settings',label:'Admin — Settings',icon:'⚙️',color:'#f1f5f9',
+    sections:[
+      {title:'Settings Hub',tests:[
+        {name:'Settings hub loads',desc:'Navigate to Settings. Card grid shows 6 categories.',expect:'General, Localization, Payment, Email, Integrations, System'},
+        {name:'Facebook Chat link in hub',desc:'Integrations card includes Facebook Chat.',expect:'BUG-14 fix: link present',sev:'high',tags:['ui']},
+        {name:'All hub card links work',desc:'Click every link in settings hub.',expect:'All navigate to correct setting page'},
+        {name:'Settings hub breadcrumb',desc:'Home > Settings breadcrumb shown.',expect:'Breadcrumb present and links work'},
+      ]},
+      {title:'Business Settings',tests:[
+        {name:'Business settings breadcrumb',desc:'Visit business settings. Breadcrumb present.',expect:'BUG-05 fix: breadcrumb shown',sev:'high'},
+        {name:'Save business info',desc:'Update store name, address, phone. Save.',expect:'Data persists, updates on storefront footer'},
+        {name:'GSTIN field (if GST addon)',desc:'Enter GSTIN number. Upload certificate.',expect:'Saved and visible in invoices'},
+        {name:'Logo upload',desc:'Upload new store logo.',expect:'Logo updates in admin header and storefront'},
+        {name:'Favicon upload',desc:'Upload favicon.',expect:'Browser tab icon updates'},
+      ]},
+      {title:'Payment Methods',tests:[
+        {name:'Enable/disable payment methods',desc:'Toggle Stripe on/off.',expect:'Stripe appears/disappears at checkout'},
+        {name:'Stripe credentials save',desc:'Enter test Stripe keys. Save.',expect:'Credentials encrypted and saved'},
+        {name:'COD toggle',desc:'Enable/disable Cash on Delivery.',expect:'COD appears/disappears at checkout'},
+        {name:'Razorpay configuration',desc:'Enter Razorpay key/secret.',expect:'Razorpay works in checkout test'},
+      ]},
+      {title:'Shipping Configuration',tests:[
+        {name:'Shipping carriers list',desc:'View carriers.',expect:'Carriers with rates and zones'},
+        {name:'Create carrier — save button',desc:'Fill carrier form. Click Save.',expect:'BUG-07: type=submit works (not type=button)',sev:'high',tags:['ui']},
+        {name:'Edit carrier — save button',desc:'Edit carrier form. Click Update.',expect:'BUG-07: type=submit works',sev:'high'},
+        {name:'Pickup points',desc:'Create pickup point with address.',expect:'Point selectable at checkout'},
+        {name:'Zone-based shipping',desc:'Create zone for state. Assign rate.',expect:'Correct rate shown at checkout for that zone'},
+        {name:'Free shipping threshold',desc:'Set free shipping above ₹500.',expect:'Shipping fee = 0 when cart > ₹500'},
+      ]},
+      {title:'SMTP & Email',tests:[
+        {name:'SMTP settings save',desc:'Enter SMTP credentials. Save.',expect:'Credentials saved'},
+        {name:'Test email send',desc:'Send test email from SMTP settings page.',expect:'Email received at test address',tags:['api']},
+        {name:'Email templates list',desc:'View email templates.',expect:'All templates (order confirmation, reset, etc.) listed'},
+        {name:'Edit email template',desc:'Edit order confirmation template.',expect:'Custom text appears in next order confirmation email'},
+      ]},
+      {title:'Languages & Localization',tests:[
+        {name:'Add new language',desc:'Add Tamil/Hindi language.',expect:'Language selectable in storefront language switcher'},
+        {name:'Translation edit',desc:'Edit a translation string.',expect:'Updated string appears on frontend'},
+        {name:'Currency create',desc:'Add new currency with exchange rate.',expect:'Currency selectable by customers'},
+        {name:'VAT/Tax create',desc:'Create tax rule for a zone.',expect:'Tax appears in checkout for that zone'},
+      ]},
+    ]
+  },
+  {
+    id:'api-backend',label:'API & Backend',icon:'🔌',color:'#dbeafe',
+    sections:[
+      {title:'Authentication API',tests:[
+        {name:'POST /api/auth/login — valid',desc:'POST with correct credentials.',expect:'200 with JWT/token, user object',tags:['api']},
+        {name:'POST /api/auth/login — invalid',desc:'POST with wrong password.',expect:'401, error message, no token',tags:['api'],sev:'high'},
+        {name:'POST /api/auth/login — brute force',desc:'10 rapid login attempts.',expect:'429 Too Many Requests after threshold',tags:['sec','api'],sev:'high'},
+        {name:'POST /api/auth/register',desc:'Register new user.',expect:'201, user created, email queued',tags:['api']},
+        {name:'POST /api/auth/logout',desc:'Logout with valid token.',expect:'200, token invalidated',tags:['api']},
+        {name:'Unauthenticated route access',desc:'GET /api/orders without token.',expect:'401 Unauthorized',tags:['sec','api'],sev:'high'},
+      ]},
+      {title:'Products API',tests:[
+        {name:'GET /api/products',desc:'Fetch products list.',expect:'200, paginated array with correct structure',tags:['api']},
+        {name:'GET /api/products/{id}',desc:'Fetch single product.',expect:'200, product object with variants',tags:['api']},
+        {name:'GET /api/products — filters',desc:'?category_id=1&min_price=100',expect:'Filtered results matching params',tags:['api']},
+        {name:'Admin POST /api/products',desc:'Create product via API (admin token).',expect:'201, product created',tags:['api']},
+        {name:'Admin POST /api/products — unauthorized',desc:'Create product with customer token.',expect:'403 Forbidden',tags:['sec','api'],sev:'high'},
+        {name:'Mass assignment protection',desc:'POST with admin=true field.',expect:'Field ignored, no privilege escalation',tags:['sec'],sev:'high'},
+        {name:'Product soft delete',desc:'Delete product. Check it is soft-deleted.',expect:'Product hidden from API, record kept in DB'},
+      ]},
+      {title:'Orders API',tests:[
+        {name:'POST /api/orders — place order',desc:'Place order with valid cart and address.',expect:'201, order created, stock decremented',tags:['api'],sev:'high'},
+        {name:'POST /api/orders — out of stock',desc:'Order product with stock=0.',expect:'400/422 with "out of stock" error',tags:['api'],sev:'high'},
+        {name:'GET /api/orders/{id} — own order',desc:'Fetch own order.',expect:'200, full order data',tags:['api']},
+        {name:'GET /api/orders/{id} — other user',desc:'Fetch another user\'s order with own token.',expect:'403 Forbidden — IDOR protection',tags:['sec'],sev:'high'},
+        {name:'Order status webhook (if Shiprocket)',desc:'Simulate status webhook.',expect:'Order status updates in DB',tags:['api']},
+        {name:'Admin PATCH order status',desc:'Admin updates delivery status.',expect:'200, status changes, customer notified',tags:['api']},
+      ]},
+      {title:'Cart & Coupon API',tests:[
+        {name:'POST /api/cart — add item',desc:'Add product to cart.',expect:'200, cart updated with new item',tags:['api']},
+        {name:'POST /api/cart — quantity update',desc:'Update cart item quantity.',expect:'Cart total recalculates correctly',tags:['api']},
+        {name:'DELETE /api/cart/{id}',desc:'Remove cart item.',expect:'204 or 200, item removed',tags:['api']},
+        {name:'POST /api/coupons/apply',desc:'Apply valid coupon to cart.',expect:'200, discount amount returned',tags:['api']},
+        {name:'POST /api/coupons/apply — expired',desc:'Apply expired coupon.',expect:'422 with expiry error',tags:['api'],sev:'high'},
+        {name:'Negative price exploit',desc:'POST cart item with price=-9999.',expect:'Server uses catalog price, not client price',tags:['sec'],sev:'high'},
+      ]},
+      {title:'File Upload API',tests:[
+        {name:'POST /api/upload — image',desc:'Upload valid JPEG.',expect:'200, file URL returned',tags:['api']},
+        {name:'POST /api/upload — oversized file',desc:'Upload 20MB file.',expect:'413 or validation error',tags:['api'],sev:'high'},
+        {name:'POST /api/upload — PHP file',desc:'Upload .php file as image.',expect:'422 validation error, file rejected',tags:['sec'],sev:'high'},
+        {name:'POST /api/upload — SVG with XSS',desc:'Upload SVG containing <script> tag.',expect:'Sanitized or rejected',tags:['sec'],sev:'high'},
+      ]},
+      {title:'Reports & Data',tests:[
+        {name:'Earnings report generates',desc:'Load earnings report for date range.',expect:'Correct totals matching orders DB',tags:['api']},
+        {name:'Stock report accuracy',desc:'Load stock report. Compare product stock values.',expect:'Matches product.current_stock in DB'},
+        {name:'Seller sale report',desc:'Load seller sale report.',expect:'Per-seller totals correct'},
+        {name:'Export earnings to Excel',desc:'Export report as XLSX.',expect:'File downloads with correct data',tags:['api']},
+      ]},
+    ]
+  },
+  {
+    id:'security',label:'Security',icon:'🔒',color:'#fee2e2',
+    sections:[
+      {title:'Input & Injection',tests:[
+        {name:'SQL injection — search',desc:'Enter \' OR \'1\'=\'1 in search field.',expect:'Parameterized query — no DB error or data leak',sev:'high',tags:['sec']},
+        {name:'XSS — product review',desc:'Submit review with <script>alert(1)</script>.',expect:'Escaped on output — no JS execution',sev:'high',tags:['sec']},
+        {name:'XSS — product name (admin)',desc:'Create product with XSS in name.',expect:'Escaped in admin table and storefront',sev:'high',tags:['sec']},
+        {name:'CSRF protection on forms',desc:'Submit admin form without CSRF token.',expect:'419 CSRF token mismatch',sev:'high',tags:['sec']},
+        {name:'Command injection — file paths',desc:'Submit filename with ; rm -rf in upload.',expect:'Sanitized filename, no command executed',sev:'high',tags:['sec']},
+        {name:'Path traversal — file access',desc:'Request /api/files?path=../../.env',expect:'403 or 404 — no env file exposed',sev:'high',tags:['sec']},
+      ]},
+      {title:'Access Control',tests:[
+        {name:'Admin routes require admin auth',desc:'Access /admin/* without login.',expect:'Redirect to /admin/login (AdminMiddleware)',sev:'high',tags:['sec']},
+        {name:'Seller cannot access admin',desc:'Login as seller. Try to access /admin/settings.',expect:'403 Forbidden (IsAdmin middleware)',sev:'high',tags:['sec']},
+        {name:'Customer cannot access admin',desc:'Login as customer. Access /admin routes.',expect:'403 Forbidden',sev:'high',tags:['sec']},
+        {name:'IDOR — order access',desc:'Access another user\'s order URL.',expect:'403 — own records only',sev:'high',tags:['sec']},
+        {name:'IDOR — profile edit',desc:'POST to /api/users/{other_id}/update.',expect:'403 — cannot edit other user',sev:'high',tags:['sec']},
+        {name:'Role escalation attempt',desc:'POST with role=admin in user update.',expect:'Role field ignored by server',sev:'high',tags:['sec']},
+        {name:'Unauthenticated API endpoints',desc:'Audit all /api/* routes for missing auth middleware.',expect:'All write endpoints require token',sev:'high',tags:['sec']},
+      ]},
+      {title:'Data & Sessions',tests:[
+        {name:'Passwords are hashed in DB',desc:'Check users table password column.',expect:'bcrypt hash, not plaintext',sev:'high',tags:['sec']},
+        {name:'Sensitive data not in URL',desc:'Check that payment tokens/keys never appear in URLs.',expect:'No sensitive data in query strings',sev:'high',tags:['sec']},
+        {name:'Session fixation',desc:'Login. Check session ID changes after login.',expect:'New session ID issued on auth',sev:'high',tags:['sec']},
+        {name:'HTTPS enforced',desc:'Try HTTP URL. Redirects to HTTPS.',expect:'301 redirect to HTTPS, HSTS header',sev:'high',tags:['sec']},
+        {name:'.env not publicly accessible',desc:'Request /.env from browser.',expect:'404 — not served publicly',sev:'high',tags:['sec']},
+        {name:'API rate limiting',desc:'Send 100 rapid API requests.',expect:'429 after threshold',sev:'high',tags:['sec']},
+      ]},
+    ]
+  },
+  {
+    id:'perf-access',label:'Performance & Accessibility',icon:'⚡',color:'#f0fdf4',
+    sections:[
+      {title:'Performance',tests:[
+        {name:'Homepage Lighthouse score',desc:'Run Lighthouse on homepage.',expect:'Performance > 80, Accessibility > 90',tags:['perf']},
+        {name:'Product listing page speed',desc:'Category page with 20 products.',expect:'LCP < 3s, no CLS',tags:['perf']},
+        {name:'Admin panel initial load',desc:'Time admin dashboard load.',expect:'Dashboard renders < 4s on 10Mbps',tags:['perf']},
+        {name:'Large product list pagination',desc:'Navigate to page 50 of products.',expect:'Query < 500ms, pagination correct',tags:['perf','api']},
+        {name:'Image optimization',desc:'Check product images are WebP or optimized JPEG.',expect:'No unoptimized 2MB+ images on page',tags:['perf']},
+        {name:'N+1 query check — order list',desc:'Load 50 orders page. Check query count in Telescope/Debugbar.',expect:'< 10 DB queries per page load',tags:['perf','api'],sev:'high'},
+        {name:'N+1 query check — product list',desc:'Load products with brands/categories. Check queries.',expect:'Eager loading used (with()), not N+1',tags:['perf','api'],sev:'high'},
+        {name:'Caching — settings',desc:'Verify get_setting() uses cache, not DB on every call.',expect:'Redis/file cache hit for settings',tags:['perf']},
+        {name:'Queue — emails async',desc:'Place order. Verify confirmation email is queued, not sync.',expect:'Order response < 500ms, email via queue',tags:['perf']},
+      ]},
+      {title:'Accessibility',tests:[
+        {name:'All form labels have for= attribute',desc:'Audit admin forms for bare <label> tags.',expect:'No unlabeled inputs — 63 labels fixed (FORM-04)',sev:'high',tags:['ui']},
+        {name:'Admin sidebar search aria-label',desc:'Inspect #menu-search input.',expect:'aria-label="Search navigation menu" present'},
+        {name:'Status dropdowns have labels',desc:'Delivery status select has associated <label for=>.',expect:'Screen reader announces label + select'},
+        {name:'Keyboard navigation — checkout',desc:'Tab through checkout form. All fields reachable.',expect:'No focus traps, logical tab order'},
+        {name:'Color contrast — status badges',desc:'Check badge text contrast ratios.',expect:'WCAG AA: ≥4.5:1 for text on badge bg',tags:['ui']},
+        {name:'Images have alt text',desc:'Inspect product images on storefront.',expect:'Meaningful alt text, not empty or "image"'},
+        {name:'Modal keyboard close',desc:'Open any modal. Press Escape.',expect:'Modal closes, focus returns to trigger'},
+        {name:'Error messages linked to fields',desc:'Submit invalid form. Error text is associated to input.',expect:'aria-describedby or role=alert on errors'},
+        {name:'Page title changes on route change',desc:'Navigate between pages. <title> updates.',expect:'Unique descriptive title per page'},
+      ]},
+      {title:'Cross-Browser & Responsive',tests:[
+        {name:'Chrome — storefront full flow',desc:'Complete purchase in Chrome.',expect:'Full flow works'},
+        {name:'Firefox — storefront full flow',desc:'Complete purchase in Firefox.',expect:'Full flow works'},
+        {name:'Safari — checkout',desc:'Payment and checkout in Safari.',expect:'No Safari-specific JS errors'},
+        {name:'Mobile 375px — cart',desc:'Cart and checkout at 375px.',expect:'No overflow, all buttons tappable (min 44px)'},
+        {name:'Tablet 768px — admin panel',desc:'Admin panel at 768px. Sidebar collapses.',expect:'Content not obscured'},
+        {name:'1280px — admin filter bars',desc:'All filter controls visible at 1280px laptop.',expect:'No truncation or overflow'},
+        {name:'Dark mode — storefront',desc:'System dark mode. Storefront respects it.',expect:'Dark theme applied, no invisible text'},
+      ]},
+    ]
+  },
+];
+
+const state = {results:{}, notes:{}, filter:'all', openSections:{}};
+
+function flatId(domainId, secIdx, testIdx){return `${domainId}_${secIdx}_${testIdx}`;}
+function allIds(){const ids=[];DOMAINS.forEach(d=>d.sections.forEach((s,si)=>s.tests.forEach((_,ti)=>ids.push(flatId(d.id,si,ti)))));return ids;}
+function countsByDomain(domainId){let p=0,f=0,b=0,t=0;const d=DOMAINS.find(x=>x.id===domainId);d.sections.forEach((s,si)=>s.tests.forEach((_,ti)=>{t++;const r=state.results[flatId(domainId,si,ti)];if(r==='pass')p++;else if(r==='fail')f++;else if(r==='block')b++;}));return{p,f,b,t};}
+
+function setStatus(id,status){
+  state.results[id]=state.results[id]===status?null:status;
+  render();
+}
+function setNote(id,val){state.notes[id]=val;}
+function toggleSection(key){state.openSections[key]=!state.openSections[key];render();}
+function setFilter(f){state.filter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('active',b.getAttribute('onclick').includes("'"+f+"'")));render();}
+function expandAll(){DOMAINS.forEach(d=>d.sections.forEach((_,i)=>{state.openSections[d.id+'_'+i]=true;}));render();}
+function collapseAll(){state.openSections={};render();}
+function resetAll(){if(confirm('Reset all test results?')){Object.keys(state.results).forEach(k=>delete state.results[k]);Object.keys(state.notes).forEach(k=>delete state.notes[k]);render();}}
+
+function exportResults(){
+  const rows=['Domain,Section,Test,Status,Notes'];
+  DOMAINS.forEach(d=>d.sections.forEach((s,si)=>s.tests.forEach((t,ti)=>{
+    const id=flatId(d.id,si,ti);
+    const r=state.results[id]||'untested';
+    const n=(state.notes[id]||'').replace(/,/g,' ');
+    rows.push(`"${d.label}","${s.title}","${t.name}","${r}","${n}"`);
+  })));
+  const blob=new Blob([rows.join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='test-results.csv';a.click();
+}
+
+function renderSidebar(){
+  const nav=document.getElementById('sidebar-nav');
+  const ids=allIds();const total=ids.length;
+  const tested=ids.filter(id=>state.results[id]).length;
+  document.getElementById('global-bar').style.width=(total?Math.round(tested/total*100):0)+'%';
+  document.getElementById('global-pct').textContent=`${tested} / ${total} tested`;
+  const activeDomain=document.getElementById('main-content').querySelector('.domain-header')?.dataset?.domain||DOMAINS[0].id;
+  nav.innerHTML=DOMAINS.map(d=>{
+    const c=countsByDomain(d.id);
+    const dotColor=c.f>0?'#ef4444':c.p===c.t&&c.t>0?'#22c55e':c.p>0?'#3b82f6':'var(--color-border-tertiary)';
+    return`<div class="nav-item" onclick="scrollToDomain('${d.id}')"><span class="nav-dot" style="background:${dotColor}"></span><span class="nav-label">${d.label}</span><span class="nav-count">${c.p}/${c.t}</span></div>`;
+  }).join('');
+}
+
+function scrollToDomain(id){const el=document.getElementById('domain-'+id);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});}
+
+function renderSummary(){
+  const ids=allIds();
+  const p=ids.filter(id=>state.results[id]==='pass').length;
+  const f=ids.filter(id=>state.results[id]==='fail').length;
+  const b=ids.filter(id=>state.results[id]==='block').length;
+  const t=ids.length;
+  document.getElementById('s-total').textContent=t;
+  document.getElementById('s-pass').textContent=p;
+  document.getElementById('s-fail').textContent=f;
+  document.getElementById('s-block').textContent=b;
+  document.getElementById('s-pct').textContent=t?(Math.round((p/(p+f||1))*100))+'%':'0%';
+}
+
+function renderDomains(){
+  const container=document.getElementById('domain-container');
+  container.innerHTML=DOMAINS.map(d=>{
+    const c=countsByDomain(d.id);
+    const sectionsHtml=d.sections.map((s,si)=>{
+      const secKey=d.id+'_'+si;
+      const isOpen=state.openSections[secKey]!==false;
+      const secTests=s.tests.map((t,ti)=>{
+        const id=flatId(d.id,si,ti);
+        const r=state.results[id]||'none';
+        if(state.filter!=='all'){
+          const visible=state.filter==='untested'?r==='none':r===state.filter;
+          if(!visible)return'';
+        }
+        const dotClass=r==='none'?'dot-none':`dot-${r}`;
+        const tagHtml=(t.tags||[]).map(tg=>`<span class="tag tag-${tg}">${tg}</span>`).join('');
+        const sevHtml=t.sev?`<span class="badge-severity sev-high">critical</span>`:'';
+        const noteVal=state.notes[id]||'';
+        return`<div class="test-row" id="row-${id}">
+          <span class="status-dot ${dotClass}"></span>
+          <span class="test-num">${(ti+1).toString().padStart(2,'0')}</span>
+          <div class="test-body">
+            <div class="test-name">${t.name}${sevHtml}${tagHtml}</div>
+            <div class="test-desc">${t.desc}</div>
+            <div class="test-expected">Expected: ${t.expect}</div>
+          </div>
+          <div class="test-actions">
+            <button class="btn-status btn-pass ${r==='pass'?'':'opacity-60'}" onclick="setStatus('${id}','pass')">Pass</button>
+            <button class="btn-status btn-fail ${r==='fail'?'':'opacity-60'}" onclick="setStatus('${id}','fail')">Fail</button>
+            <button class="btn-status btn-block" onclick="setStatus('${id}','block')">Skip</button>
+            <button class="btn-status btn-note" onclick="toggleNote('${id}')">Note</button>
+          </div>
+        </div>
+        <div id="note-${id}" class="${noteVal?'note-row':'note-row hidden'}">
+          <textarea class="note-input" rows="2" placeholder="Add note, bug ID, or observation…" onchange="setNote('${id}',this.value)">${noteVal}</textarea>
+        </div>`;
+      }).join('');
+      const secPassed=s.tests.filter((_,ti)=>state.results[flatId(d.id,si,ti)]==='pass').length;
+      const secFailed=s.tests.filter((_,ti)=>state.results[flatId(d.id,si,ti)]==='fail').length;
+      return`<div class="section-card">
+        <div class="section-head" onclick="toggleSection('${secKey}')">
+          <span class="chevron ${isOpen?'open':''}">▶</span>
+          <span class="section-title">${s.title}</span>
+          <span class="section-progress">${secPassed}/${s.tests.length}</span>
+          ${secFailed>0?`<span class="stat-chip fail" style="font-size:10px">${secFailed} failed</span>`:''}
+        </div>
+        ${isOpen?`<div class="test-list">${secTests||'<div style="padding:12px 14px;font-size:11px;color:var(--color-text-tertiary)">No tests match filter.</div>'}</div>`:''}
+      </div>`;
+    }).join('');
+    const failCount=c.f;const passCount=c.p;
+    return`<div id="domain-${d.id}" data-domain="${d.id}">
+      <div class="domain-header">
+        <div class="domain-icon" style="background:${d.color}">${d.icon}</div>
+        <div><div class="domain-title">${d.label}</div><div class="domain-subtitle">${c.t} tests across ${d.sections.length} sections</div></div>
+        <div class="domain-stats">
+          ${passCount>0?`<span class="stat-chip pass">${passCount} passed</span>`:''}
+          ${failCount>0?`<span class="stat-chip fail">${failCount} failed</span>`:''}
+          <span class="stat-chip">${c.t-passCount-failCount-c.b} pending</span>
+        </div>
+      </div>
+      ${sectionsHtml}
+    </div>`;
+  }).join('');
+}
+
+function toggleNote(id){const el=document.getElementById('note-'+id);el.classList.toggle('hidden');}
+function render(){renderSummary();renderDomains();renderSidebar();}
+
+// Initialize all sections open
+DOMAINS.forEach(d=>d.sections.forEach((_,i)=>{state.openSections[d.id+'_'+i]=i===0;}));
+render();
+</script>
+</body>
+</html>

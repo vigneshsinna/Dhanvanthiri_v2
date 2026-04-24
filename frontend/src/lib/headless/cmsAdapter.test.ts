@@ -143,4 +143,30 @@ describe('cmsAdapter', () => {
       }),
     ]);
   });
+
+  it('normalizes legacy homepage banner fields for the React hero slot', async () => {
+    mockedGet.mockResolvedValue({
+      data: {
+        data: [
+          {
+            photo: 'https://cdn.example.test/banner.jpg',
+            url: 'https://store.example.test/products',
+            position: 1,
+          },
+        ],
+      },
+    } as any);
+
+    const response = await cmsAdapter.banners('home_hero');
+
+    expect(mockedGet).toHaveBeenCalledWith('/banners');
+    expect(response.data.items).toEqual([
+      expect.objectContaining({
+        image: 'https://cdn.example.test/banner.jpg',
+        image_url: 'https://cdn.example.test/banner.jpg',
+        cta_url: 'https://store.example.test/products',
+        is_active: true,
+      }),
+    ]);
+  });
 });

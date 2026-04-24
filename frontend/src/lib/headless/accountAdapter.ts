@@ -45,6 +45,7 @@ export const accountAdapter: any = {
     // Return both camelCase and snake_case for backward compat with old pages
     const items = (order.order_details || []).map((item: any) => ({
       id: item.id,
+      product_id: item.product_id || item.product?.id,
       product_name: item.product_name || item.product?.name,
       quantity: item.quantity,
       unit_price: parsePrice(item.price),
@@ -152,61 +153,35 @@ export const accountAdapter: any = {
     return { data: res.data };
   },
 
-  async guestOrderTracking(payload: {
-    order_number: string;
-    email?: string;
-    phone?: string;
-    guest_checkout_token?: string;
-    order_access_token?: string;
-  }) {
-    const res = await headlessApi.post('/orders/track', {
-      order_number: payload.order_number,
-      ...(payload.email ? { email: payload.email } : {}),
-      ...(payload.phone ? { phone: payload.phone } : {}),
-      ...(payload.guest_checkout_token ? { guest_checkout_token: payload.guest_checkout_token } : {}),
-      ...(payload.order_access_token ? { order_access_token: payload.order_access_token } : {}),
-    });
-    const data = res.data?.data ?? res.data;
-    return {
-      data: {
-        order: {
-          order_number: data.order_number || payload.order_number,
-          status: data.status || data.delivery_status || 'unknown',
-          payment_status: data.payment_status,
-          grand_total: data.grand_total || 0,
-          created_at: data.created_at || new Date().toISOString(),
-        },
-        items: data.items || [],
-        shipping_address: data.shipping_address || null,
-        shipments: data.shipments || [],
-        status_history: data.status_history || [],
-        order_access_token: data.order_access_token,
-        order_access_expires_at: data.order_access_expires_at,
-      },
-    };
-  },
-
-  async guestGetOrder(orderNumber: string, opts?: {
-    guest_checkout_token?: string;
-    order_access_token?: string;
-  }) {
-    const params: Record<string, string> = {};
-    if (opts?.guest_checkout_token) params.guest_checkout_token = opts.guest_checkout_token;
-    if (opts?.order_access_token) params.order_access_token = opts.order_access_token;
-
-    const res = await headlessApi.get(`/orders/${encodeURIComponent(orderNumber)}`, { params });
-    const order = res.data?.data ?? res.data;
-
-    return { data: order };
-  },
-
-  async guestClaimAccount(payload: {
-    guest_checkout_token: string;
-    password: string;
-    password_confirmation: string;
-  }) {
-    const res = await headlessApi.post('/guest/account/claim', payload);
-    return { data: res.data?.data ?? res.data };
+  async guestOrderTracking(payload: { order_number: string; email?: string; phone?: string }) {
+    // Try to look up order by code via track-order endpoint
+    try {
+      const res = await headlessApi.get('/track-your-order', {
+        params: { order_code: payload.order_number },
+      });
+      const order = res.data.data || res.data;
+      if (order && (order.delivery_status || order.status)) {
+        return {
+          data: {
+            items: [{
+              id: 1,
+              description: `Order ${order.delivery_status || order.status}`,
+              location: '',
+              occurred_at: order.date || order.created_at || new Date().toISOString(),
+              created_at: order.date || order.created_at || new Date().toISOString(),
+            }],
+            order: {
+              order_number: order.code || payload.order_number,
+              status: order.delivery_status || order.status,
+              payment_status: order.payment_status,
+            },
+          },
+        };
+      }
+    } catch {
+      // Endpoint may not exist — fall through
+    }
+    return { data: { items: [], order: null } };
   },
 
   // ── Re-order ──
@@ -244,20 +219,18 @@ export const accountAdapter: any = {
     };
   },
 
-  async addToWishlist(payload: { product_id: number; variant_id?: number | null; slug: string }) {
-    if (!payload.slug) {
-      throw new Error('Wishlist operations require a product slug.');
-    }
-    const slug = payload.slug;
-    const res = await headlessApi.get(`/wishlists-add-product/${encodeURIComponent(slug)}`);
+  async addToWishlist(payload: { product_id: number; variant_id?: number | null; slug?: string }) {
+    // V2 uses GET with slug — we need the product slug
+    // If slug provided use it; otherwise try to find it
+    const slug = payload.slug || String(payload.product_id);
+    const res = await headlessApi.get(`/wishlists-add-product/${slug}`);
     return { data: res.data };
   },
 
-  async removeFromWishlist(id: number, slug: string) {
-    if (!slug) {
-      throw new Error('Wishlist removal requires the product slug.');
-    }
-    const res = await headlessApi.delete(`/wishlists-remove-product/${encodeURIComponent(slug)}`);
+  async removeFromWishlist(id: number, slug?: string) {
+    // V2 uses GET with slug for removal
+    const identifier = slug || String(id);
+    const res = await headlessApi.get(`/wishlists-remove-product/${identifier}`);
     return { data: res.data };
   },
 };

@@ -178,7 +178,9 @@ if (!function_exists('get_cached_products')) {
     function get_cached_products($category_id = null)
     {
         return Cache::remember('products-category-' . $category_id, 86400, function () use ($category_id) {
-            return filter_products(Product::where('category_id', $category_id))->latest()->take(5)->get();
+            return filter_products(Product::whereHas('categories', function($q) use ($category_id) {
+                $q->where('categories.id', $category_id);
+            }))->latest()->take(5)->get();
         });
     }
 }

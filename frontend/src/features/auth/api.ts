@@ -22,6 +22,20 @@ export function useLoginMutation() {
   });
 }
 
+export function useSocialProvidersQuery() {
+  return useQuery({
+    queryKey: ['auth', 'socialProviders'],
+    queryFn: async () => {
+      const providers = await authAdapter.socialProviders();
+      return providers as string[];
+    },
+  });
+}
+
+export function getSocialLoginRedirectUrl(provider: string) {
+  return authAdapter.socialLoginRedirectUrl(provider);
+}
+
 export function useRegisterMutation() {
   return useMutation({
     mutationFn: async (payload: { name: string; email: string; password: string; password_confirmation: string }) => {

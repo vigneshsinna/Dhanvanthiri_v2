@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { GlobalAlerts } from '@/components/layout/GlobalAlerts';
 import { NewsletterSignup } from '@/components/layout/NewsletterSignup';
@@ -30,6 +30,7 @@ export function AppLayout() {
 
   const logoutMut = useLogoutMutation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const pageContentRef = useRef<HTMLDivElement>(null);
   const footerRef = useRef<HTMLElement>(null);
 
@@ -174,6 +175,11 @@ export function AppLayout() {
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
   }, [location.pathname]);
 
+  useEffect(() => {
+    const currentSearch = new URLSearchParams(location.search).get('search') ?? '';
+    setSearchQuery(currentSearch);
+  }, [location.search]);
+
   usePageScrollReveal(pageContentRef, `${location.pathname}${location.search}`);
   usePageScrollReveal(footerRef, `${location.pathname}${location.search}`);
 
@@ -190,6 +196,12 @@ export function AppLayout() {
 
   const isActive = (path: string) => location.pathname === path;
 
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = searchQuery.trim();
+    navigate(query ? `/products?search=${encodeURIComponent(query)}` : '/products');
+  };
+
   const navLinkClass = (path: string) =>
     `relative px-3 py-2 text-sm font-medium transition-colors ${isActive(path)
       ? 'text-brand-700'
@@ -204,7 +216,7 @@ export function AppLayout() {
       <GlobalAlerts />
       <PromotionalPopups />
 
-      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur-md" data-testid="storefront-header">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-2.5">
             <div className="h-14 w-14 overflow-hidden sm:h-16 sm:w-16">
@@ -222,6 +234,30 @@ export function AppLayout() {
               </Link>
             ))}
           </nav>
+
+          <form
+            role="search"
+            className="hidden min-w-[220px] max-w-xs flex-1 items-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 lg:flex"
+            onSubmit={handleSearchSubmit}
+          >
+            <input
+              type="search"
+              aria-label="Search products"
+              placeholder="Search products"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
+            />
+            <button
+              type="submit"
+              aria-label="Search"
+              className="ml-2 rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-white hover:text-brand-700"
+            >
+              <svg className="h-4 w-4" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z" />
+              </svg>
+            </button>
+          </form>
 
           <div className="flex items-center gap-2">
             <Link
@@ -301,6 +337,25 @@ export function AppLayout() {
         {mobileMenuOpen && (
           <div className="border-t bg-white px-4 pb-4 pt-2 md:hidden">
             <nav className="flex flex-col gap-1">
+              <form
+                role="search"
+                className="mb-2 flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"
+                onSubmit={handleSearchSubmit}
+              >
+                <input
+                  type="search"
+                  aria-label="Search products"
+                  placeholder="Search products"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                />
+                <button type="submit" aria-label="Search" className="ml-2 rounded-lg p-1.5 text-slate-500 hover:bg-white hover:text-brand-700">
+                  <svg className="h-4 w-4" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z" />
+                  </svg>
+                </button>
+              </form>
               <div className="mb-1 flex gap-2 border-b p-2">
                 <button onClick={() => handleLocaleChange('en')} className={`flex-1 rounded-lg py-1.5 text-xs font-semibold ${currentLocale === 'en' ? 'bg-brand-100 text-brand-700' : 'bg-slate-100 text-slate-600'}`}>English</button>
                 <button onClick={() => handleLocaleChange('ta')} className={`flex-1 rounded-lg py-1.5 text-xs font-semibold ${currentLocale === 'ta' ? 'bg-brand-100 text-brand-700' : 'bg-slate-100 text-slate-600'}`}>தமிழ்</button>
@@ -340,7 +395,7 @@ export function AppLayout() {
 
       <NewsletterSignup />
 
-      <footer ref={footerRef} className="relative z-20 border-t border-slate-200/10 bg-[#102F26] text-brand-100">
+      <footer ref={footerRef} className="relative z-20 border-t border-slate-200/10 bg-[#102F26] text-brand-100" data-testid="storefront-footer">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 stagger-children">
             <div className="animate-on-scroll fade-up lg:col-span-1">

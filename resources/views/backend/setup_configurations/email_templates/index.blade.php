@@ -38,9 +38,13 @@
                     </thead>
                     <tbody>
                         @foreach ($emailTemplates as $key => $emailTemplate)
+                            @php
+                                $emailType = $emailTemplate->email_type ?? $emailTemplate->type ?? $emailTemplate->name ?? 'Email Template';
+                                $isStatusChangeable = $emailTemplate->is_status_changeable ?? 1;
+                            @endphp
                             <tr>
                                 <td>{{ ($key+1) + ($emailTemplates->currentPage() - 1)*$emailTemplates->perPage() }}</td>
-                                <td>{{ translate($emailTemplate->email_type) }}</td>
+                                <td>{{ translate($emailType) }}</td>
                                 <td>
                                     {{ $emailTemplate->subject }}</td>
                                 <td>
@@ -49,7 +53,7 @@
                                             value="{{ $emailTemplate->id }}"
                                             type="checkbox" 
                                             @if($emailTemplate->status == 1) checked @endif
-                                            @if($emailTemplate->is_status_changeable == 0) disabled @endif>
+                                            @if($isStatusChangeable == 0) disabled @endif>
                                         <span class="slider round"></span>
                                     </label>
                                 </td>

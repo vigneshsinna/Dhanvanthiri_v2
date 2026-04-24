@@ -18,7 +18,7 @@ trait AdminAuth
             ], 401));
         }
 
-        if (!in_array($user->user_type, ['admin', 'staff', 'super_admin'], true)) {
+        if (!in_array($user->user_type, ['admin', 'staff'], true)) {
             throw new HttpResponseException(response()->json([
                 'success' => false,
                 'message' => 'Forbidden',
@@ -31,7 +31,7 @@ trait AdminAuth
     protected function ensureSuperAdmin(Request $request): User
     {
         $user = $this->ensureAdmin($request);
-        if ($user->user_type !== 'super_admin' && !$user->hasRole('Super Admin')) {
+        if (!$user->hasRole('Super Admin')) {
             throw new HttpResponseException(response()->json([
                 'success' => false,
                 'message' => 'Forbidden',

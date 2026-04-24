@@ -433,7 +433,9 @@ class ProductService
         $seller_discount = null;
 
         $category = Category::find($data['category_id']);
-        $products = Product::where('category_id', $data['category_id'])->where('auction_product', 0);
+        $products = Product::whereHas('categories', function($q) use ($data) {
+            $q->where('categories.id', $data['category_id']);
+        })->where('auction_product', 0);
 
        if (in_array($auth_user->user_type, ['admin', 'staff'])) {
             $admin_discount = $data['discount'];

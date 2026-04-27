@@ -1,0 +1,52 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Block direct access to sensitive Laravel directories
+    RewriteRule ^core/(app|bootstrap|config|database|resources|routes|storage|vendor|\.env) - [F,L]
+
+    # Serve React frontend assets first. Vite builds to /assets/*.
+    RewriteCond %{DOCUMENT_ROOT}/app/$1 -f [OR]
+    RewriteCond %{DOCUMENT_ROOT}/app/$1 -d
+    RewriteRule ^(.*)$ app/$1 [L]
+
+    # Storage and Laravel public asset rewrites
+    RewriteRule ^storage/(.*)$ core/storage/app/public/$1 [L]
+    RewriteRule ^public/(assets|addons|css|js|img|fonts|font|download|temp_uploads)/(.*)$ core/public/$1/$2 [L]
+    RewriteRule ^public/uploads/(.*)$ core/public/uploads/$1 [L]
+    RewriteRule ^uploads/(.*)$ core/public/uploads/$1 [L]
+
+    # If the request matches an existing file or directory, serve it directly
+    RewriteCond %{REQUEST_URI} !^/$
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Admin panel, auth, and API routes go to Laravel backend
+    RewriteCond %{REQUEST_URI} ^/admin [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/login$ [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/logout [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/seller [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/api [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/up/?$ [NC]
+    RewriteRule ^ index.php [L,QSA]
+
+    # Fallback: serve React SPA
+    RewriteRule ^ app/index.html [L]
+</IfModule>
+
+<IfModule mod_mime.c>
+    AddType application/javascript .js .mjs
+    AddType text/css .css
+    AddType image/svg+xml .svg
+    AddType image/webp .webp
+    AddType image/png .png
+    AddType image/jpeg .jpg .jpeg
+    AddType image/gif .gif
+    AddType application/json .json
+    AddType font/woff .woff
+    AddType font/woff2 .woff2
+</IfModule>

@@ -50,11 +50,11 @@ class OrderController extends Controller
             $shippingAddress['name']        = $user->name;
             $shippingAddress['email']       = $user->email;
             $shippingAddress['address']     = $address->address. (isset($address->area) ? ', ' . $address->area->name : '');
-            $shippingAddress['country']     = $address->country->name;
+            $shippingAddress['country']     = optional($address->country)->name ?? ($address->country_name ?? $user->country ?? '');
             if(get_setting('has_state') == 1){
-            $shippingAddress['state']       = $address->state->name;
+            $shippingAddress['state']       = optional($address->state)->name ?? ($address->state_name ?? '');
             }
-            $shippingAddress['city']        = $address->city->name;
+            $shippingAddress['city']        = optional($address->city)->name ?? ($address->city_name ?? $user->city ?? '');
             $shippingAddress['postal_code'] = $address->postal_code;
             $shippingAddress['phone']       = $address->phone;
             if ($address->latitude || $address->longitude) {

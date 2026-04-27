@@ -23,7 +23,20 @@ export function useAddCartItemMutation() {
       const res = await cartAdapter.addItem(payload);
       return res;
     },
-    onSuccess: () => {
+    onMutate: async (payload) => {
+      await qc.cancelQueries({ queryKey: queryKeys.cart.current });
+      const previousCart = store.getState().cart;
+      store.dispatch(setCart({
+        itemCount: previousCart.itemCount + payload.quantity,
+      }));
+      return { previousCart };
+    },
+    onError: (_error, _payload, context) => {
+      if (context?.previousCart) {
+        store.dispatch(setCart(context.previousCart));
+      }
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: queryKeys.cart.current });
     },
   });

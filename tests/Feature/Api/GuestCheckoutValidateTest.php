@@ -44,7 +44,7 @@ class GuestCheckoutValidateTest extends TestCase
 
         $fields = $response->json('error.fields');
 
-        foreach (['name', 'email', 'address', 'country_id', 'city_id', 'postal_code', 'phone'] as $field) {
+        foreach (['name', 'email', 'address', 'postal_code', 'phone'] as $field) {
             $this->assertArrayHasKey($field, $fields);
         }
     }
@@ -110,6 +110,29 @@ class GuestCheckoutValidateTest extends TestCase
 
         $this->assertNotNull($session);
         $this->assertSame(hash('sha256', $token), $session->guest_checkout_token_hash);
+    }
+
+    public function test_guest_checkout_validate_applies_admin_flat_rate_shipping_to_guest_cart(): void
+    {
+        \DB::table('business_settings')->insert([
+            ['type' => 'shipping_type', 'value' => 'flat_rate'],
+            ['type' => 'flat_rate_shipping_cost', 'value' => '49'],
+        ]);
+
+        $cart = $this->makeCart('temp-flat-rate');
+
+        $response = $this->postGuestValidate([
+            'temp_user_id' => 'temp-flat-rate',
+            'city' => 'Chennai',
+            'state' => 'Tamil Nadu',
+            'country_code' => 'IN',
+        ] + $this->validGuestPayload());
+
+        $response->assertOk();
+
+        $cart->refresh();
+        $this->assertSame('home_delivery', $cart->shipping_type);
+        $this->assertEquals(49.0, (float) $cart->shipping_cost);
     }
 
     private function postGuestValidate(array $overrides)

@@ -54,6 +54,9 @@ interface Recommendation {
   slug: string;
   price: number;
   image?: string | null;
+  primary_image_url?: string | null;
+  thumbnail_image?: string | null;
+  images?: ProductImage[];
 }
 
 const SITE_URL = 'https://dhanvanthirifoods.in';
@@ -123,6 +126,10 @@ export function ProductDetailPage() {
   const apiRecommendations: Recommendation[] = useMemo(() => {
     return unwrapCollection<Recommendation>(recommendationsData);
   }, [recommendationsData]);
+
+  const backendRecommendationBySlug = useMemo(() => {
+    return new Map(apiRecommendations.map((item) => [item.slug, item]));
+  }, [apiRecommendations]);
 
   const recentlyViewed: RecentlyViewedProduct[] = useMemo(() => {
     return getRecentlyViewed()
@@ -723,11 +730,17 @@ export function ProductDetailPage() {
               image: null,
             }))).map((related) => {
               const relFallback = fallbackProducts.find((fp) => fp.slug === related.slug);
+              const relatedImages = unwrapCollection<ProductImage>((related as Recommendation).images);
               const relImage = resolveProductImageUrl({
-                primaryImageUrl: related.image || relFallback?.primary_image_url,
+                primaryImageUrl:
+                  (related as Recommendation).primary_image_url ||
+                  (related as Recommendation).thumbnail_image ||
+                  related.image ||
+                  relFallback?.primary_image_url,
+                imagePaths: relatedImages.map((image) => image.url || image.path),
                 productName: related.name,
                 productSlug: related.slug,
-                productId: 1,
+                productId: related.id || relFallback?.id || 1,
               });
 
               return (
@@ -776,36 +789,48 @@ export function ProductDetailPage() {
           </h2>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 stagger-children">
             {recentlyViewed.map((item) => (
-              <Link
-                key={item.slug}
-                to={`/products/${item.slug}`}
-                className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md animate-on-scroll scale-in"
-              >
-                <div className="aspect-[4/3] overflow-hidden bg-slate-50">
-                  <img
-                    src={resolveProductImageUrl({
-                      primaryImageUrl: item.image,
-                      productName: item.name,
-                      productSlug: item.slug,
-                      productId: item.id || 1,
-                    }) || ''}
-                    alt={item.name}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    loading="lazy"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.parentElement?.classList.add('flex', 'items-center', 'justify-center');
-                      e.currentTarget.insertAdjacentHTML('afterend', '<div class="text-4xl">?</div>');
-                    }}
-                  />
-                </div>
-                <div className="p-4">
-                  <h3 className="text-sm font-semibold text-slate-900 group-hover:text-brand-700 transition-colors">
-                    {item.name}
-                  </h3>
-                  <p className="mt-2 text-base font-bold text-slate-900">Rs {item.price}</p>
-                </div>
-              </Link>
+              (() => {
+                const backendItem = backendRecommendationBySlug.get(item.slug);
+                const image = resolveProductImageUrl({
+                  primaryImageUrl:
+                    backendItem?.primary_image_url ||
+                    backendItem?.thumbnail_image ||
+                    backendItem?.image ||
+                    item.image,
+                  imagePaths: unwrapCollection<ProductImage>(backendItem?.images).map((img) => img.url || img.path),
+                  productName: backendItem?.name || item.name,
+                  productSlug: item.slug,
+                  productId: backendItem?.id || item.id || 1,
+                }) || '';
+
+                return (
+                  <Link
+                    key={item.slug}
+                    to={`/products/${item.slug}`}
+                    className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md animate-on-scroll scale-in"
+                  >
+                    <div className="aspect-[4/3] overflow-hidden bg-slate-50">
+                      <img
+                        src={image}
+                        alt={backendItem?.name || item.name}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.parentElement?.classList.add('flex', 'items-center', 'justify-center');
+                          e.currentTarget.insertAdjacentHTML('afterend', '<div class="text-4xl">?</div>');
+                        }}
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="text-sm font-semibold text-slate-900 group-hover:text-brand-700 transition-colors">
+                        {backendItem?.name || item.name}
+                      </h3>
+                      <p className="mt-2 text-base font-bold text-slate-900">Rs {backendItem?.price ?? item.price}</p>
+                    </div>
+                  </Link>
+                );
+              })()
             ))}
           </div>
         </div>

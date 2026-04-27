@@ -22,7 +22,43 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $limit = $request->per_page ?? 10;
-        return new ProductMiniCollection(Product::latest()->paginate($limit));
+        $products = Product::query()->physical();
+
+        if ($request->filled('category_id')) {
+            $categoryIds = [(int) $request->category_id];
+            $categoryIds = array_merge($categoryIds, CategoryUtility::children_ids((int) $request->category_id));
+
+            $products->whereHas('categories', function ($query) use ($categoryIds) {
+                $query->whereIn('categories.id', $categoryIds);
+            });
+        }
+
+        if ($request->filled('category_slug')) {
+            $category = Category::where('slug', $request->category_slug)->first();
+            if ($category) {
+                $categoryIds = [$category->id];
+                $categoryIds = array_merge($categoryIds, CategoryUtility::children_ids($category->id));
+
+                $products->whereHas('categories', function ($query) use ($categoryIds) {
+                    $query->whereIn('categories.id', $categoryIds);
+                });
+            }
+        }
+
+        $search = $request->input('name', $request->input('search'));
+        if (!blank($search)) {
+            $products->where(function ($query) use ($search) {
+                foreach (explode(' ', trim((string) $search)) as $word) {
+                    $query->where('name', 'like', '%' . $word . '%')
+                        ->orWhere('tags', 'like', '%' . $word . '%')
+                        ->orWhereHas('product_translations', function ($translationQuery) use ($word) {
+                            $translationQuery->where('name', 'like', '%' . $word . '%');
+                        });
+                }
+            });
+        }
+
+        return new ProductMiniCollection(filter_products($products)->latest()->paginate($limit));
     }
     public function show()
     {

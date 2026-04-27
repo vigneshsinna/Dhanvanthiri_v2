@@ -1661,7 +1661,20 @@ if (!function_exists('get_images_path')) {
     function get_images_path($given_ids, $with_trashed = false)
     {
         $paths = [];
-        foreach (explode(',', $given_ids) as $id) {
+        if (blank($given_ids)) {
+            return $paths;
+        }
+
+        $ids = is_array($given_ids) ? $given_ids : null;
+        if ($ids === null && is_string($given_ids)) {
+            $decoded = json_decode($given_ids, true);
+            $ids = is_array($decoded) ? $decoded : explode(',', $given_ids);
+        }
+
+        foreach ($ids ?? [] as $id) {
+            if (blank($id)) {
+                continue;
+            }
             $paths[] = uploaded_asset($id);
         }
 

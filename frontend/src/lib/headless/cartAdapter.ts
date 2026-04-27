@@ -72,6 +72,24 @@ function cartContext() {
   return {};
 }
 
+function unwrapCartGroups(payload: any): V2CartGroup[] {
+  const data = payload?.data?.data ?? payload?.data ?? payload;
+
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (Array.isArray(data?.data)) {
+    return data.data;
+  }
+
+  return [];
+}
+
+function unwrapCartSummary(payload: any): V2CartSummary | undefined {
+  return payload?.data?.data ?? payload?.data ?? payload;
+}
+
 // Normalize V2 cart group structure to flat cart expected by old frontend
 function normalizeCart(groups: V2CartGroup[], summary?: V2CartSummary) {
   const state = store.getState();
@@ -141,8 +159,8 @@ export const cartAdapter: any = {
       headlessApi.post('/cart-summary', context).catch(() => null),
     ]);
 
-    const groups: V2CartGroup[] = cartRes.data.data || [];
-    const summary: V2CartSummary | undefined = summaryRes?.data;
+    const groups = unwrapCartGroups(cartRes.data);
+    const summary = summaryRes ? unwrapCartSummary(summaryRes.data) : undefined;
 
     return normalizeCart(groups, summary);
   },
@@ -157,7 +175,7 @@ export const cartAdapter: any = {
       cost_matrix: 'headless-storefront',
       ...context,
     });
-    const tempUserId = res.data?.temp_user_id;
+    const tempUserId = res.data?.data?.temp_user_id ?? res.data?.temp_user_id;
     if (tempUserId) {
       store.dispatch(setCartToken(tempUserId));
     }
@@ -180,8 +198,8 @@ export const cartAdapter: any = {
   async clearCart() {
     // V2 doesn't have a "clear all" endpoint; fetch cart first, then remove each
     try {
-      const cartRes = await headlessApi.post('/carts');
-      const groups: V2CartGroup[] = cartRes.data.data || [];
+      const cartRes = await headlessApi.post('/carts', cartContext());
+      const groups = unwrapCartGroups(cartRes.data);
       const allItems = groups.flatMap(g => g.cart_items);
       await Promise.all(allItems.map(item => headlessApi.delete(`/carts/${item.id}`)));
     } catch {

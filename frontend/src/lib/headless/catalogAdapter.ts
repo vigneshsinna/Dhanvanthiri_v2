@@ -209,7 +209,23 @@ function normalizeProductList(v2Data: any): any {
       )
     : [];
 
-  const items = dedupedProducts.map((product: V2ProductMini) => ({
+  const items = dedupedProducts.map((product: V2ProductMini) => normalizeProductMini(product));
+
+  return {
+    data: {
+      data: items,
+      meta: v2Data.meta || {
+        current_page: 1,
+        last_page: 1,
+        per_page: 20,
+        total: items.length,
+      },
+    },
+  };
+}
+
+function normalizeProductMini(product: V2ProductMini): any {
+  return {
     id: product.id,
     name: product.name,
     slug: product.slug,
@@ -227,18 +243,6 @@ function normalizeProductList(v2Data: any): any {
     sales: product.sales,
     is_wholesale: product.is_wholesale,
     variants: [{ id: product.id, name: '250g Jar', stock_quantity: 50 }],
-  }));
-
-  return {
-    data: {
-      data: items,
-      meta: v2Data.meta || {
-        current_page: 1,
-        last_page: 1,
-        per_page: 20,
-        total: items.length,
-      },
-    },
   };
 }
 
@@ -295,26 +299,7 @@ export const catalogAdapter: any = {
     );
 
     // Map V2 product mini → frontend Product interface
-    const mapped = deduped.map((p: V2ProductMini) => ({
-      id: p.id,
-      name: p.name,
-      slug: p.slug,
-      price: parsePrice(p.main_price),
-      compare_at_price: p.has_discount ? parsePrice(p.stroked_price) : undefined,
-      primary_image_url: p.thumbnail_image,
-      thumbnail_image: p.thumbnail_image,
-      short_description: '',
-      avg_rating: p.rating,
-      review_count: p.review_count ?? 0,
-      has_discount: p.has_discount,
-      discount: p.discount,
-      main_price: p.main_price,
-      stroked_price: p.stroked_price,
-      sales: p.sales,
-      is_wholesale: p.is_wholesale,
-      // Provide a synthetic variant so "Add to Cart" and stock checks work
-      variants: [{ id: p.id, name: '250g Jar', stock_quantity: 50 }],
-    }));
+    const mapped = deduped.map((p: V2ProductMini) => normalizeProductMini(p));
 
     return {
       data: {
@@ -355,7 +340,7 @@ export const catalogAdapter: any = {
     const res = await headlessApi.get('/products/best-seller');
     return {
       data: {
-        items: res.data.data || [],
+        items: (res.data.data || []).map((p: V2ProductMini) => normalizeProductMini(p)),
       },
     };
   },
@@ -379,7 +364,7 @@ export const catalogAdapter: any = {
     const res = await headlessApi.get('/products/best-seller');
     return {
       data: {
-        items: (res.data.data || []).slice(0, 4),
+        items: (res.data.data || []).slice(0, 4).map((p: V2ProductMini) => normalizeProductMini(p)),
       },
     };
   },

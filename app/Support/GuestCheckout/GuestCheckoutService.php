@@ -14,6 +14,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Razorpay\Api\Api;
@@ -734,6 +735,10 @@ class GuestCheckoutService
             $existingUser->forceFill([
                 'name' => $payload['name'],
                 'phone' => $payload['phone'],
+                'address' => $payload['address'],
+                'city' => $payload['city_name'] ?? null,
+                'postal_code' => $payload['postal_code'],
+                'country' => $payload['country_name'] ?? null,
             ]);
             $existingUser->save();
 
@@ -745,6 +750,10 @@ class GuestCheckoutService
             'name' => $payload['name'],
             'email' => $email,
             'phone' => $payload['phone'],
+            'address' => $payload['address'],
+            'city' => $payload['city_name'] ?? null,
+            'postal_code' => $payload['postal_code'],
+            'country' => $payload['country_name'] ?? null,
             'password' => bcrypt(Str::random(32)),
             'user_type' => 'customer',
             'is_guest' => true,
@@ -760,7 +769,7 @@ class GuestCheckoutService
             'user_id' => $guestUser->id,
         ]);
 
-        $address->forceFill([
+        $addressData = [
             'user_id' => $guestUser->id,
             'address' => $payload['address'],
             'country_id' => $payload['country_id'],
@@ -769,7 +778,15 @@ class GuestCheckoutService
             'postal_code' => $payload['postal_code'],
             'phone' => $payload['phone'],
             'set_default' => 1,
-        ]);
+        ];
+
+        foreach (['country_name', 'state_name', 'city_name'] as $column) {
+            if (Schema::hasColumn('addresses', $column)) {
+                $addressData[$column] = $payload[$column] ?? null;
+            }
+        }
+
+        $address->forceFill($addressData);
         $address->save();
 
         return $address;
@@ -786,6 +803,8 @@ class GuestCheckoutService
                 'address_id' => $address->id,
             ]);
 
+            $this->applyHomeDeliveryShipping($guestUser, $address);
+
             return;
         }
 
@@ -796,12 +815,33 @@ class GuestCheckoutService
                 'address_id' => $address->id,
             ]);
 
+            $this->applyHomeDeliveryShipping($guestUser, $address);
+
             return;
         }
 
         throw ValidationException::withMessages([
             'temp_user_id' => ['A guest cart is required before checkout can continue.'],
         ]);
+    }
+
+    private function applyHomeDeliveryShipping(User $guestUser, Address $address): void
+    {
+        $carts = Cart::where('user_id', $guestUser->id)->active()->get();
+
+        $shippingInfo = [
+            'country_id' => $address->country_id,
+            'city_id' => $address->city_id,
+            'area_id' => $address->area_id,
+        ];
+
+        foreach ($carts as $key => $cart) {
+            $cart->shipping_type = 'home_delivery';
+            $cart->pickup_point = 0;
+            $cart->carrier_id = 0;
+            $cart->shipping_cost = getShippingCost($carts, $key, $shippingInfo);
+            $cart->save();
+        }
     }
 
     private function razorpayApi(): array

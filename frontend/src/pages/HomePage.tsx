@@ -56,8 +56,18 @@ const productMeta: Record<string, { category?: string; desc?: string; chips?: st
 
 export function HomePage() {
   const currentLocale = getStorefrontLocale();
-  const { data: featuredData } = useFeaturedProductsQuery();
-  const { data: catData } = useCategoriesQuery();
+  const {
+    data: featuredData,
+    isLoading: featuredLoading,
+    isFetched: featuredFetched,
+    isError: featuredError,
+  } = useFeaturedProductsQuery();
+  const {
+    data: catData,
+    isLoading: categoriesLoading,
+    isFetched: categoriesFetched,
+    isError: categoriesError,
+  } = useCategoriesQuery();
   const { data: bannerData } = useBannersQuery('home_hero');
   const addToCart = useAddCartItemMutation();
 
@@ -74,9 +84,19 @@ export function HomePage() {
     return `${base}${url}`;
   };
 
-  // Use API products when available, fallback only when API returns nothing
-  const featured: Product[] = (apiFeatured.length > 0 ? apiFeatured : (fallbackProducts as unknown as Product[])).slice(0, 8);
-  const categories = apiCategories.length > 0 ? apiCategories : fallbackCategories;
+  // Use API products when available. While the backend is still resolving, show skeletons
+  // instead of flashing the bundled fallback product images.
+  const canUseFallbackProducts = !featuredLoading && (featuredFetched || featuredError);
+  const canUseFallbackCategories = !categoriesLoading && (categoriesFetched || categoriesError);
+  const featured: Product[] = (
+    apiFeatured.length > 0
+      ? apiFeatured
+      : canUseFallbackProducts
+        ? (fallbackProducts as unknown as Product[])
+        : []
+  ).slice(0, 8);
+  const categories = apiCategories.length > 0 || !canUseFallbackCategories ? apiCategories : fallbackCategories;
+  const showProductSkeletons = featuredLoading && featured.length === 0;
   const copy = {
     heroPill: getLocalizedText(currentLocale, {
       en: '100% Natural • Preservative-Free',
@@ -248,8 +268,24 @@ export function HomePage() {
           </div>
 
           <div className="home-grid stagger-children">
+            {showProductSkeletons && Array.from({ length: 8 }).map((_, index) => (
+              <div key={`home-product-skeleton-${index}`} className="home-card home-card-skeleton" aria-hidden="true">
+                <div className="cardImg skeleton-img" />
+                <div className="cardBody">
+                  <div className="skeleton-line skeleton-line-short" />
+                  <div className="skeleton-line skeleton-line-title" />
+                  <div className="skeleton-line" />
+                  <div className="skeleton-line skeleton-line-wide" />
+                  <div className="skeleton-pill-row">
+                    <span />
+                    <span />
+                  </div>
+                  <div className="skeleton-button" />
+                </div>
+              </div>
+            ))}
 
-            {featured.map((p) => {
+            {!showProductSkeletons && featured.map((p) => {
               const inStock = p.variants?.some((v) => v.stock_quantity > 0) ?? true;
               const imageUrl = resolveProductImageUrl({
                 primaryImageUrl: p.primary_image_url,

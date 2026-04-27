@@ -525,6 +525,66 @@
     transform: translateY(-2px);
 }
 
+.home-card-skeleton {
+    pointer-events: none;
+}
+
+.skeleton-img,
+.skeleton-line,
+.skeleton-pill-row span,
+.skeleton-button {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(90deg, #eee7dc 0%, #faf7f0 42%, #eee7dc 82%);
+    background-size: 240% 100%;
+    animation: homeSkeletonShimmer 1.35s var(--ease-premium) infinite;
+}
+
+.skeleton-img {
+    height: 244px;
+    border-radius: 14px;
+    margin: 12px;
+}
+
+.skeleton-line {
+    height: 12px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+}
+
+.skeleton-line-short {
+    width: 35%;
+}
+
+.skeleton-line-title {
+    width: 82%;
+    height: 18px;
+}
+
+.skeleton-line-wide {
+    width: 62%;
+}
+
+.skeleton-pill-row {
+    display: flex;
+    gap: 8px;
+    margin: 4px 0 18px;
+}
+
+.skeleton-pill-row span {
+    display: block;
+    width: 72px;
+    height: 24px;
+    border-radius: 999px;
+}
+
+.skeleton-button {
+    width: 100%;
+    height: 46px;
+    border-radius: 999px;
+    margin-top: auto;
+}
+
 @keyframes homeCardSheen {
     from {
         left: -120%;
@@ -546,6 +606,16 @@
 
     100% {
         transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes homeSkeletonShimmer {
+    0% {
+        background-position: 120% 0;
+    }
+
+    100% {
+        background-position: -120% 0;
     }
 }
 

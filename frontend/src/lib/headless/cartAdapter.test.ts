@@ -32,9 +32,11 @@ describe('cartAdapter', () => {
   it('stores the guest temp user id as the cart token after adding an item', async () => {
     mockedPost.mockResolvedValue({
       data: {
-        result: true,
-        temp_user_id: 'guest-cart-123',
+        success: true,
         message: 'Product added to cart successfully',
+        data: {
+          temp_user_id: 'guest-cart-123',
+        },
       },
     } as any);
 
@@ -61,36 +63,40 @@ describe('cartAdapter', () => {
         expect(body).toEqual({ user_id: 42 });
         return {
           data: {
-            data: [
-              {
-                name: 'Inhouse',
-                owner_id: 1,
-                sub_total: 'Rs 250.00',
-                cart_items: [
-                  {
-                    id: 9,
-                    status: 1,
-                    owner_id: 1,
-                    user_id: 42,
-                    product_id: 5,
-                    product_name: 'Poondu Thokku',
-                    product_slug: 'poondu-thokku',
-                    auction_product: 0,
-                    product_thumbnail_image: '/uploads/poondu.png',
-                    variation: '',
-                    price: 'Rs 250.00',
-                    currency_symbol: 'Rs',
-                    tax: 'Rs 12.50',
-                    shipping_cost: 40,
-                    quantity: 2,
-                    lower_limit: 1,
-                    upper_limit: 10,
-                    digital: 0,
-                    stock: 10,
-                  },
-                ],
-              },
-            ],
+            success: true,
+            data: {
+              grand_total: 'Rs 500.00',
+              data: [
+                {
+                  name: 'Inhouse',
+                  owner_id: 1,
+                  sub_total: 'Rs 250.00',
+                  cart_items: [
+                    {
+                      id: 9,
+                      status: 1,
+                      owner_id: 1,
+                      user_id: 42,
+                      product_id: 5,
+                      product_name: 'Poondu Thokku',
+                      product_slug: 'poondu-thokku',
+                      auction_product: 0,
+                      product_thumbnail_image: '/uploads/poondu.png',
+                      variation: '',
+                      price: 'Rs 250.00',
+                      currency_symbol: 'Rs',
+                      tax: 'Rs 12.50',
+                      shipping_cost: 40,
+                      quantity: 2,
+                      lower_limit: 1,
+                      upper_limit: 10,
+                      digital: 0,
+                      stock: 10,
+                    },
+                  ],
+                },
+              ],
+            },
           },
         } as any;
       }
@@ -99,14 +105,17 @@ describe('cartAdapter', () => {
         expect(body).toEqual({ user_id: 42 });
         return {
           data: {
-            sub_total: 'Rs 500.00',
-            tax: 'Rs 25.00',
-            shipping_cost: 'Rs 40.00',
-            discount: 'Rs 0.00',
-            grand_total: 'Rs 565.00',
-            grand_total_value: 565,
-            coupon_code: '',
-            coupon_applied: false,
+            success: true,
+            data: {
+              sub_total: 'Rs 500.00',
+              tax: 'Rs 25.00',
+              shipping_cost: 'Rs 40.00',
+              discount: 'Rs 0.00',
+              grand_total: 'Rs 565.00',
+              grand_total_value: 565,
+              coupon_code: '',
+              coupon_applied: false,
+            },
           },
         } as any;
       }

@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { checkoutAdapter } from './checkoutAdapter';
 import { headlessApi } from './client';
+import { store } from '@/app/store';
+import { setCartToken } from '@/features/cart/store/cartSlice';
+import { resetCheckout, setCheckoutData } from '@/features/checkout/store/checkoutSlice';
 
 vi.mock('./client', async () => {
   const actual = await vi.importActual<typeof import('./client')>('./client');
@@ -21,6 +24,9 @@ describe('checkoutAdapter', () => {
   beforeEach(() => {
     mockedGet.mockReset();
     mockedPost.mockReset();
+    localStorage.clear();
+    store.dispatch(setCartToken(null));
+    store.dispatch(resetCheckout());
   });
 
   it('maps address resources to the fields expected by CheckoutPage', async () => {
@@ -164,6 +170,132 @@ describe('checkoutAdapter', () => {
       order_id: 55,
       status: 'confirmed',
       payment: { status: 'captured' },
+    }));
+  });
+
+  it('uses the public guest checkout token flow for guest checkout', async () => {
+    store.dispatch(setCartToken('guest-cart-123'));
+    mockedPost.mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: {
+          guest_checkout_token: 'guest-checkout-token',
+          expires_at: '2026-04-26T18:49:19.000000Z',
+        },
+      },
+    } as any);
+
+    const validation = await checkoutAdapter.guestValidateCheckout({
+      guest_email: 'buyer@example.com',
+      guest_phone: '9876543210',
+      recipient_name: 'Buyer',
+      line1: '42 Temple Street',
+      city: 'Chennai',
+      state: 'Tamil Nadu',
+      postal_code: '600001',
+      country_code: 'IN',
+    });
+
+    expect(mockedPost).toHaveBeenCalledWith('/guest/checkout/validate', expect.objectContaining({
+      temp_user_id: 'guest-cart-123',
+      guest_email: 'buyer@example.com',
+      recipient_name: 'Buyer',
+      line1: '42 Temple Street',
+    }));
+    expect(validation.data.guest_checkout_token).toBe('guest-checkout-token');
+
+    store.dispatch(setCheckoutData({ guestCheckoutToken: 'guest-checkout-token' }));
+    mockedPost.mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: {
+          order_id: 88,
+          order_number: 'ORD-88',
+          gateway: 'cash_on_delivery',
+          status: 'confirmed',
+        },
+      },
+    } as any);
+
+    const intent = await checkoutAdapter.guestCreatePaymentIntent({ gateway: 'cash_on_delivery' });
+
+    expect(mockedPost).toHaveBeenLastCalledWith('/guest/payments/intent', {
+      guest_checkout_token: 'guest-checkout-token',
+      gateway: 'cash_on_delivery',
+    });
+    expect(intent.data.order_number).toBe('ORD-88');
+  });
+
+  it('passes guest address labels through validation and creates Razorpay guest intents with the guest token', async () => {
+    store.dispatch(setCartToken('guest-cart-razorpay'));
+    mockedPost.mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: {
+          guest_checkout_token: 'guest-checkout-razorpay',
+          expires_at: '2026-04-26T18:49:19.000000Z',
+        },
+      },
+    } as any);
+
+    await checkoutAdapter.guestValidateCheckout({
+      guest_email: 'buyer@example.com',
+      guest_phone: '9876543210',
+      recipient_name: 'Buyer',
+      line1: '42 Temple Street',
+      city: 'Chennai',
+      state: 'Tamil Nadu',
+      postal_code: '600001',
+      country_code: 'IN',
+    });
+
+    expect(mockedPost).toHaveBeenCalledWith('/guest/checkout/validate', expect.objectContaining({
+      city: 'Chennai',
+      state: 'Tamil Nadu',
+      country_code: 'IN',
+    }));
+
+    store.dispatch(setCheckoutData({ guestCheckoutToken: 'guest-checkout-razorpay' }));
+    mockedPost.mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: {
+          order_id: 99,
+          order_number: 'ORD-99',
+          gateway: 'razorpay',
+          razorpay_order_id: 'order_guest_razorpay',
+          razorpay_key_id: 'rzp_test_key',
+          amount: 23900,
+          currency: 'INR',
+        },
+      },
+    } as any);
+
+    const intent = await checkoutAdapter.guestCreatePaymentIntent({ gateway: 'razorpay' });
+
+    expect(mockedPost).toHaveBeenLastCalledWith('/guest/payments/intent', {
+      guest_checkout_token: 'guest-checkout-razorpay',
+      gateway: 'razorpay',
+    });
+    expect(intent.data).toEqual(expect.objectContaining({
+      gateway: 'razorpay',
+      razorpay_order_id: 'order_guest_razorpay',
+      amount: 23900,
+    }));
+  });
+
+  it('uses payment_type_key as the checkout gateway code for cash on delivery', async () => {
+    mockedGet.mockResolvedValue({
+      data: [
+        { payment_type: 'cash_payment', payment_type_key: 'cash_on_delivery', name: 'Cash Payment' },
+      ],
+    } as any);
+
+    const response = await checkoutAdapter.getPaymentMethods();
+
+    expect(response.data.data[0]).toEqual(expect.objectContaining({
+      code: 'cash_on_delivery',
+      name: 'Cash Payment',
     }));
   });
 });

@@ -592,7 +592,7 @@ class DhanvathiriProductsSeeder extends Seeder
                 'user_id' => $adminId,
                 'category_id' => $p['category_id'],
                 'brand_id' => null,
-                'photos' => $uploadId ? json_encode([$uploadId]) : '[]',
+                'photos' => $uploadId ? (string) $uploadId : null,
                 'thumbnail_img' => $uploadId,
                 'tags' => $p['tags'] ?? '',
                 'description' => $p['about'], // Full about text as description

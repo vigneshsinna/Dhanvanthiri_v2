@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
@@ -9,6 +10,8 @@ return new class extends Migration
 {
     public function up()
     {
+        $this->ensureSeedPrerequisiteTables();
+
         // ── Admin User ──────────────────────────────────────────
         $adminExists = DB::table('users')->where('user_type', 'admin')->exists();
         if (!$adminExists) {
@@ -146,5 +149,60 @@ return new class extends Migration
     public function down()
     {
         // No need to rollback seed data individually
+    }
+
+    private function ensureSeedPrerequisiteTables(): void
+    {
+        if (!Schema::hasTable('languages')) {
+            Schema::create('languages', function (Blueprint $table) {
+                $table->id();
+                $table->string('name')->nullable();
+                $table->string('code')->nullable();
+                $table->tinyInteger('rtl')->default(0);
+                $table->tinyInteger('status')->default(1);
+                $table->string('app_lang_code', 100)->nullable();
+                $table->timestamps();
+            });
+        }
+
+        if (!Schema::hasTable('business_settings')) {
+            Schema::create('business_settings', function (Blueprint $table) {
+                $table->id();
+                $table->string('type')->nullable();
+                $table->text('value')->nullable();
+                $table->string('lang')->nullable();
+                $table->timestamps();
+            });
+        }
+
+        if (!Schema::hasTable('translations')) {
+            Schema::create('translations', function (Blueprint $table) {
+                $table->id();
+                $table->string('lang')->nullable();
+                $table->string('lang_key')->nullable();
+                $table->text('lang_value')->nullable();
+                $table->timestamps();
+            });
+        }
+
+        if (!Schema::hasTable('app_translations')) {
+            Schema::create('app_translations', function (Blueprint $table) {
+                $table->id();
+                $table->string('lang')->nullable();
+                $table->string('lang_key')->nullable();
+                $table->text('lang_value')->nullable();
+                $table->timestamps();
+            });
+        }
+
+        if (!Schema::hasTable('category_translations')) {
+            Schema::create('category_translations', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('category_id');
+                $table->string('name');
+                $table->string('lang', 10);
+                $table->timestamps();
+            });
+        }
     }
 };

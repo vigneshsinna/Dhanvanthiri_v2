@@ -15,7 +15,7 @@ export function OrderConfirmationPage() {
     orderNumber?: string;
     guestCheckoutToken?: string;
   } | null) ?? {};
-  const isCod = gateway === 'cod';
+  const isCod = gateway === 'cod' || gateway === 'cash_on_delivery';
   const currentLocale = getStorefrontLocale();
   const t = (en: string, ta: string) => getLocalizedText(currentLocale, { en, ta });
 

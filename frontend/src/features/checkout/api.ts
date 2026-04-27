@@ -144,6 +144,14 @@ export function useGuestValidateCheckoutMutation() {
     mutationFn: async (payload: {
       guest_email: string;
       guest_phone: string;
+      recipient_name?: string;
+      phone?: string;
+      line1?: string;
+      line2?: string;
+      city?: string;
+      state?: string;
+      postal_code?: string;
+      country_code?: string;
     }) => {
       const res = await checkoutAdapter.guestValidateCheckout(payload);
       return res;

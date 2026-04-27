@@ -16,6 +16,7 @@ use App\Models\Cart;
 use App\Models\State;
 use App\Models\User;
 use App\Traits\ApiResponseTrait;
+use Illuminate\Support\Facades\Schema;
 
 class AddressController extends Controller
 {
@@ -34,13 +35,14 @@ class AddressController extends Controller
         $address->country_id = $this->resolveCountryId($request);
         $address->state_id = $this->resolveStateId($request, $address->country_id);
         $address->city_id = $this->resolveCityId($request, $address->country_id, $address->state_id);
+        $this->fillAddressLabels($address, $request);
         $address->area_id = $this->resolveAreaId($request, $address->city_id);
         $address->postal_code = $request->postal_code;
         $address->phone = $request->phone;
         $address->set_default = $request->set_default ? 1 : 0;
         $address->save();
 
-        return $this->successResponse(null, translate('Shipping information has been added successfully'));
+        return $this->successResponse($this->formatAddress($address->fresh()), translate('Shipping information has been added successfully'));
     }
 
     public function updateShippingAddress(Request $request)
@@ -63,6 +65,7 @@ class AddressController extends Controller
             $address->state_id = $stateId;
         }
         $address->city_id = $cityId;
+        $this->fillAddressLabels($address, $request);
         $address->area_id = $areaId;
         $address->postal_code = $request->postal_code;
         $address->phone = $request->phone;
@@ -71,7 +74,7 @@ class AddressController extends Controller
         }
         $address->save();
 
-        return $this->successResponse(null, translate('Shipping information has been updated successfully'));
+        return $this->successResponse($this->formatAddress($address->fresh()), translate('Shipping information has been updated successfully'));
     }
 
     public function updateShippingAddressLocation(Request $request)
@@ -344,5 +347,36 @@ class AddressController extends Controller
         }
 
         return $fallback;
+    }
+
+    private function fillAddressLabels(Address $address, Request $request): void
+    {
+        if (Schema::hasColumn('addresses', 'country_name')) {
+            $address->country_name = $request->input('country_name', $request->input('country'));
+        }
+        if (Schema::hasColumn('addresses', 'state_name')) {
+            $address->state_name = $request->input('state_name', $request->input('state'));
+        }
+        if (Schema::hasColumn('addresses', 'city_name')) {
+            $address->city_name = $request->input('city_name', $request->input('city'));
+        }
+    }
+
+    private function formatAddress(Address $address): array
+    {
+        return [
+            'id' => (int) $address->id,
+            'user_id' => (int) $address->user_id,
+            'address' => $address->address,
+            'country_id' => $address->country_id ? (int) $address->country_id : null,
+            'state_id' => $address->state_id ? (int) $address->state_id : null,
+            'city_id' => $address->city_id ? (int) $address->city_id : null,
+            'country_name' => optional($address->country)->name ?? ($address->country_name ?? null),
+            'state_name' => optional($address->state)->name ?? ($address->state_name ?? null),
+            'city_name' => optional($address->city)->name ?? ($address->city_name ?? null),
+            'postal_code' => $address->postal_code,
+            'phone' => $address->phone,
+            'set_default' => (int) $address->set_default,
+        ];
     }
 }

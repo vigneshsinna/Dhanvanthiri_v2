@@ -24,6 +24,7 @@ trait InteractsWithGuestCheckoutSchema
             'carts',
             'addresses',
             'users',
+            'business_settings',
             'migrations',
         ] as $table) {
             Schema::dropIfExists($table);
@@ -62,6 +63,9 @@ trait InteractsWithGuestCheckoutSchema
             $table->unsignedInteger('country_id')->nullable();
             $table->unsignedInteger('state_id')->nullable();
             $table->unsignedInteger('city_id')->nullable();
+            $table->string('country_name')->nullable();
+            $table->string('state_name')->nullable();
+            $table->string('city_name')->nullable();
             $table->unsignedInteger('area_id')->nullable();
             $table->string('postal_code')->nullable();
             $table->string('phone')->nullable();
@@ -91,6 +95,13 @@ trait InteractsWithGuestCheckoutSchema
             $table->string('shipping_type')->nullable();
             $table->unsignedInteger('pickup_point')->nullable();
             $table->unsignedInteger('carrier_id')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('business_settings', function (Blueprint $table): void {
+            $table->increments('id');
+            $table->string('type')->nullable();
+            $table->longText('value')->nullable();
             $table->timestamps();
         });
     }

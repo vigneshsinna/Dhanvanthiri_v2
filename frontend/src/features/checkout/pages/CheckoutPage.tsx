@@ -349,12 +349,21 @@ export function CheckoutPage() {
       const res = await guestValidate.mutateAsync({
         guest_email: guestInfo.guest_email.trim(),
         guest_phone: guestInfo.guest_phone.trim(),
+        recipient_name: guestInfo.recipient_name.trim(),
+        phone: guestInfo.phone.trim() || guestInfo.guest_phone.trim(),
+        line1: guestInfo.line1.trim(),
+        line2: guestInfo.line2.trim() || undefined,
+        city: guestInfo.city.trim(),
+        state: guestInfo.state.trim(),
+        postal_code: guestInfo.postal_code.trim(),
+        country_code: guestInfo.country_code,
       });
-      const validation = unwrapData<{ valid: boolean; issues?: string[] }>(res);
+      const validation = unwrapData<{ valid: boolean; issues?: string[]; errors?: string[]; guest_checkout_token?: string }>(res);
       if (!validation.valid) {
-        dispatch(setCheckoutData({ error: validation.issues?.join(', ') || 'Checkout validation failed' }));
+        dispatch(setCheckoutData({ error: validation.issues?.join(', ') || validation.errors?.join(', ') || 'Checkout validation failed' }));
         return;
       }
+      dispatch(setCheckoutData({ guestCheckoutToken: validation.guest_checkout_token ?? null }));
       dispatch(setStep('payment'));
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Unable to validate checkout';
@@ -389,7 +398,7 @@ export function CheckoutPage() {
       if (checkout.gateway === 'cash_on_delivery' || checkout.gateway === 'cod') {
         dispatch(clearCart());
         dispatch(resetCheckout());
-        navigate('/checkout/confirmation', { state: { gateway: 'cod', orderNumber: paymentData.orderNumber } });
+        navigate('/checkout/confirmation', { state: { gateway: 'cod', orderNumber: paymentData.orderNumber, guestCheckoutToken: checkout.guestCheckoutToken } });
         return;
       }
 
@@ -421,7 +430,7 @@ export function CheckoutPage() {
               });
               dispatch(clearCart());
               dispatch(resetCheckout());
-              navigate('/checkout/confirmation', { state: { gateway: 'razorpay', orderNumber: paymentData.orderNumber } });
+              navigate('/checkout/confirmation', { state: { gateway: 'razorpay', orderNumber: paymentData.orderNumber, guestCheckoutToken: checkout.guestCheckoutToken } });
             } catch {
               dispatch(setCheckoutData({ isProcessing: false, error: 'Payment verification failed' }));
               dispatch(setStep('payment'));

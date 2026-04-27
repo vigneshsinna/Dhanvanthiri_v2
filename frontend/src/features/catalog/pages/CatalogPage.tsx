@@ -96,7 +96,7 @@ export function CatalogPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   // API data (used when backend is available)
-  const { data } = useProductsQuery({ perPage: 100, search: searchTerm || undefined });
+  const { data, isLoading: productsLoading } = useProductsQuery({ perPage: 100, search: searchTerm || undefined });
   const { data: _catData } = useCategoriesQuery();
   const addToCart = useAddCartItemMutation();
 
@@ -117,9 +117,13 @@ export function CatalogPage() {
 
   // Merge API with fallback
   const mergedProducts = useMemo(() => {
-    const products: Product[] = apiProducts.length > 0 ? apiProducts : (fallbackProducts as unknown as Product[]);
+    const products: Product[] = apiProducts.length > 0
+      ? apiProducts
+      : productsLoading
+        ? []
+        : (fallbackProducts as unknown as Product[]);
     return products;
-  }, [apiProducts]);
+  }, [apiProducts, productsLoading]);
 
   // Filter by category
   const filteredProducts = useMemo(() => {
@@ -317,16 +321,20 @@ export function CatalogPage() {
         <div className="catalog-container">
           {filteredProducts.length === 0 ? (
             <div className="catalog-empty">
-              <div className="catalog-empty-icon">🔍</div>
+              <div className="catalog-empty-icon">{productsLoading ? '...' : '🔍'}</div>
               <p className="catalog-empty-text">
-                {searchTerm ? `No products found for "${searchTerm}".` : PAGE.empty_state}
+                {productsLoading
+                  ? 'Loading products...'
+                  : searchTerm ? `No products found for "${searchTerm}".` : PAGE.empty_state}
               </p>
-              <button
-                className="catalog-empty-btn"
-                onClick={() => { setActiveCategory('all'); setSortBy('newest'); }}
-              >
-                {copy.clearFilters}
-              </button>
+              {!productsLoading && (
+                <button
+                  className="catalog-empty-btn"
+                  onClick={() => { setActiveCategory('all'); setSortBy('newest'); }}
+                >
+                  {copy.clearFilters}
+                </button>
+              )}
             </div>
           ) : (
             <div className="catalog-grid stagger-children">

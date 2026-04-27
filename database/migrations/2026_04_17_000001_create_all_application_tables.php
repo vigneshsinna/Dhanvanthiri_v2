@@ -849,6 +849,17 @@ return new class extends Migration
             });
         }
 
+        // ── App Translations ────────────────────────────────────
+        if (!Schema::hasTable('app_translations')) {
+            Schema::create('app_translations', function (Blueprint $table) {
+                $table->id();
+                $table->string('lang', 10)->nullable();
+                $table->string('lang_key')->nullable();
+                $table->string('lang_value')->nullable();
+                $table->timestamps();
+            });
+        }
+
         // ── Conversations ───────────────────────────────────────
         if (!Schema::hasTable('conversations')) {
             Schema::create('conversations', function (Blueprint $table) {
@@ -856,6 +867,8 @@ return new class extends Migration
                 $table->integer('sender_id');
                 $table->integer('receiver_id');
                 $table->string('title')->nullable();
+                $table->tinyInteger('receiver_viewed')->default(0);
+                $table->tinyInteger('sender_viewed')->default(0);
                 $table->timestamps();
             });
         }

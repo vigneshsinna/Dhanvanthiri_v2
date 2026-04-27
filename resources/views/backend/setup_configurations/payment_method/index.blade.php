@@ -16,7 +16,7 @@
                         </label>
                     </div>
                     <div class="card-body">
-                        @include('backend.setup_configurations.payment_method.partials.'.$payment_method->name)
+                        @includeIf('backend.setup_configurations.payment_method.partials.'.$payment_method->name)
                     </div>
                 </div>
             </div>

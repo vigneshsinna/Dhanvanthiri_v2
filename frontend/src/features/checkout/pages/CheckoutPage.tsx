@@ -66,6 +66,21 @@ function unwrapData<T>(payload: any): T {
   return payload;
 }
 
+function extractApiErrorMessage(err: unknown, fallback: string): string {
+  const data = (err as { response?: { data?: any } })?.response?.data;
+  const fields = data?.errors ?? data?.error?.fields;
+  if (fields && typeof fields === 'object') {
+    const messages = Object.values(fields)
+      .flatMap((value) => Array.isArray(value) ? value : [value])
+      .filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
+    if (messages.length > 0) {
+      return messages.join(', ');
+    }
+  }
+
+  return data?.message || fallback;
+}
+
 async function ensureRazorpayLoaded(): Promise<boolean> {
   if (typeof window === 'undefined') return false;
   if (typeof window.Razorpay !== 'undefined') return true;
@@ -366,8 +381,7 @@ export function CheckoutPage() {
       dispatch(setCheckoutData({ guestCheckoutToken: validation.guest_checkout_token ?? null }));
       dispatch(setStep('payment'));
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Unable to validate checkout';
-      dispatch(setCheckoutData({ error: msg }));
+      dispatch(setCheckoutData({ error: extractApiErrorMessage(err, 'Unable to validate checkout') }));
     }
   };
 

@@ -1,5 +1,3 @@
-import { resolveFallbackImage } from './fallbackData';
-
 const DEFAULT_API_ORIGIN = ((import.meta as any).env.VITE_API_BASE_URL?.replace(/\/api\/?$/, '')) || '';
 const PLACEHOLDER_IMAGE_PATTERN = /\/assets\/img\/placeholder(?:-[^./]+)?\.(jpg|jpeg|png|webp|svg)$/i;
 
@@ -48,8 +46,7 @@ export function resolveProductImageGallery(options: ProductImageOptions): string
     return usableImages;
   }
 
-  const fallbackImage = resolveFallbackImage(options.productName, options.productSlug, options.productId);
-  return fallbackImage ? [fallbackImage] : candidates;
+  return candidates.filter((imageUrl) => !isPlaceholderProductImage(imageUrl));
 }
 
 export function resolveProductImageUrl(options: ProductImageOptions): string | undefined {

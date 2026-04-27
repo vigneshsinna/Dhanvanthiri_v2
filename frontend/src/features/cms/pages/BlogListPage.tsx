@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { usePostsQuery } from '@/features/cms/api';
 import { PageLoader } from '@/components/ui/Spinner';
 import { Helmet } from 'react-helmet-async';
-import { fallbackBlogPosts } from '@/lib/fallbackData';
 import { getLocalizedText, getStorefrontLocale } from '@/lib/storefrontLocale';
 
 interface Post {
@@ -24,7 +23,7 @@ export function BlogListPage() {
   const [page, setPage] = useState(1);
   const { data, isLoading } = usePostsQuery({ page, per_page: 3 });
   const apiPosts: Post[] = data?.data?.data ?? data?.data ?? [];
-  const posts: Post[] = (apiPosts.length > 0 ? apiPosts : (fallbackBlogPosts as Post[])).slice(0, 3);
+  const posts: Post[] = apiPosts.slice(0, 3);
   const pagination = data?.data?.meta ?? data?.meta ?? null;
 
   if (isLoading) return <PageLoader />;

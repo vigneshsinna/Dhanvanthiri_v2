@@ -3,12 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useProductsQuery, useCategoriesQuery } from '@/features/catalog/api';
 import { useAddCartItemMutation } from '@/features/cart/api';
-import { fallbackProducts } from '@/lib/fallbackData';
 import {
-  productCatalogData,
-  categoryDescriptions,
   productsPageContent,
-  type ProductDetail,
 } from '@/features/catalog/data/productCatalogData';
 import { getLocalizedText, getStorefrontLocale } from '@/lib/storefrontLocale';
 import { getProductReviewSnapshot } from '@/features/catalog/lib/reviewsViewModel';
@@ -27,13 +23,15 @@ interface Product {
   review_count?: number;
   variants?: { id: number; name?: string; stock_quantity: number }[];
   tags?: { name: string }[];
+  category?: { id?: number; name: string; slug?: string };
   badge?: string;
   tamil_name?: string;
   average_rating?: number;
   reviews?: string;
   why_love?: string[];
+  pair_with?: string;
   storage?: string;
-  custom_labels?: string[];
+  custom_labels?: string[] | Record<string, string>;
   is_premium?: boolean;
   video_link?: string[];
   brand?: {
@@ -74,7 +72,7 @@ interface Product {
 
 }
 
-type CategoryFilter = 'all' | 'Thokku' | 'Urukai' | 'Podi';
+type CategoryFilter = string;
 type SortOption = 'newest' | 'price_asc' | 'price_desc' | 'best_sellers';
 
 const SITE_URL = 'https://dhanvanthirifoods.in';
@@ -97,7 +95,7 @@ export function CatalogPage() {
 
   // API data (used when backend is available)
   const { data, isLoading: productsLoading } = useProductsQuery({ perPage: 100, search: searchTerm || undefined });
-  const { data: _catData } = useCategoriesQuery();
+  const { data: catData } = useCategoriesQuery();
   const addToCart = useAddCartItemMutation();
 
   const apiProducts: Product[] = data?.data?.data ?? data?.data ?? [];
@@ -115,15 +113,24 @@ export function CatalogPage() {
     faq: getLocalizedText(currentLocale, { en: 'Frequently Asked Questions', ta: 'அடிக்கடி கேட்கப்படும் கேள்விகள்' }),
   };
 
-  // Merge API with fallback
-  const mergedProducts = useMemo(() => {
-    const products: Product[] = apiProducts.length > 0
-      ? apiProducts
-      : productsLoading
-        ? []
-        : (fallbackProducts as unknown as Product[]);
-    return products;
-  }, [apiProducts, productsLoading]);
+  const mergedProducts = useMemo(() => apiProducts, [apiProducts]);
+  const apiCategories = useMemo(() => {
+    const raw = catData?.data?.data ?? catData?.data ?? [];
+    return Array.isArray(raw) ? raw : [];
+  }, [catData]);
+  const categoryFilters = useMemo(() => {
+    const names = new Set<string>();
+    apiCategories.forEach((category: any) => {
+      if (category?.name) names.add(String(category.name));
+    });
+    mergedProducts.forEach((product) => {
+      if (product.category?.name) names.add(product.category.name);
+      product.tags?.forEach((tag) => {
+        if (tag.name) names.add(tag.name);
+      });
+    });
+    return ['all', ...Array.from(names)];
+  }, [apiCategories, mergedProducts]);
 
   // Filter by category
   const filteredProducts = useMemo(() => {
@@ -132,19 +139,14 @@ export function CatalogPage() {
     if (searchTerm) {
       const needle = searchTerm.toLowerCase();
       products = products.filter((p) => {
-        const canonicalSlug = p.slug.replace(/-[0-9a-f]{8,}$/i, '');
-        const detail = productCatalogData.find((d) => d.slug === canonicalSlug);
         const haystack = [
           p.name,
           p.slug,
           p.short_description,
           p.description,
           p.tamil_name,
-          detail?.title,
-          detail?.short_description,
-          detail?.category,
+          p.category?.name,
           ...(p.tags?.map((t) => t.name) ?? []),
-          ...(detail?.chips ?? []),
         ].filter(Boolean).join(' ').toLowerCase();
 
         return haystack.includes(needle);
@@ -153,9 +155,7 @@ export function CatalogPage() {
 
     if (activeCategory !== 'all') {
       products = products.filter((p) => {
-        const canonicalSlug = p.slug.replace(/-[0-9a-f]{8,}$/i, '');
-        const detail = productCatalogData.find((d) => d.slug === canonicalSlug);
-        if (detail) return detail.category === activeCategory;
+        if (p.category?.name) return p.category.name.toLowerCase() === activeCategory.toLowerCase();
         return p.tags?.some((t) => t.name.toLowerCase() === activeCategory.toLowerCase());
       });
     }
@@ -184,18 +184,14 @@ export function CatalogPage() {
     addToCart.mutate({ product_id: product.id, variant_id: variant?.id, quantity: 1 });
   };
 
-  const getDetail = (slug: string): ProductDetail | undefined => {
-    const canonicalSlug = slug.replace(/-[0-9a-f]{8,}$/i, '');
-    return productCatalogData.find((d) => d.slug === canonicalSlug);
-  };
-
   const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: mergedProducts.length, Thokku: 0, Urukai: 0, Podi: 0 };
+    const counts: Record<string, number> = { all: mergedProducts.length };
+    categoryFilters.slice(1).forEach((category) => {
+      counts[category] = 0;
+    });
     mergedProducts.forEach((p) => {
-      const canonicalSlug = p.slug.replace(/-[0-9a-f]{8,}$/i, '');
-      const detail = productCatalogData.find((d) => d.slug === canonicalSlug);
-      if (detail) {
-        counts[detail.category] = (counts[detail.category] || 0) + 1;
+      if (p.category?.name && counts[p.category.name] !== undefined) {
+        counts[p.category.name]++;
       } else if (p.tags) {
         p.tags.forEach((t) => {
           if (counts[t.name] !== undefined) counts[t.name]++;
@@ -203,7 +199,7 @@ export function CatalogPage() {
       }
     });
     return counts;
-  }, [mergedProducts]);
+  }, [categoryFilters, mergedProducts]);
 
   const jsonLd = useMemo(() => ({
     '@context': 'https://schema.org',
@@ -277,7 +273,7 @@ export function CatalogPage() {
         <div className="catalog-container">
           <div className="catalog-filters-bar animate-on-scroll top-down">
             <div className="catalog-category-tabs">
-              {(['all', 'Thokku', 'Urukai', 'Podi'] as CategoryFilter[]).map((cat) => (
+              {categoryFilters.map((cat) => (
                 <button
                   key={cat}
                   className={`catalog-tab ${activeCategory === cat ? 'active' : ''}`}
@@ -305,9 +301,6 @@ export function CatalogPage() {
           </div>
 
           {/* Category description */}
-          {activeCategory !== 'all' && categoryDescriptions[activeCategory] && (
-            <p className="catalog-category-desc">{categoryDescriptions[activeCategory]}</p>
-          )}
           {searchTerm && (
             <p className="catalog-category-desc" role="status">
               Search results for "{searchTerm}"
@@ -339,7 +332,6 @@ export function CatalogPage() {
           ) : (
             <div className="catalog-grid stagger-children">
               {filteredProducts.map((product) => {
-                const detail = getDetail(product.slug);
                 const inStock = product.variants?.some((v) => v.stock_quantity > 0) ?? true;
                 const imageUrl = resolveProductImageUrl({
                   primaryImageUrl: product.primary_image_url,
@@ -347,13 +339,15 @@ export function CatalogPage() {
                   productSlug: product.slug,
                   productId: product.id || 1,
                 });
-                const badge = product.badge || detail?.badge || '';
-                const category = detail?.category || product.tags?.[0]?.name || '';
-                const desc = product.short_description || detail?.short_description || '';
-                const chips = detail?.chips?.slice(0, 3) || [];
-                const pairWith = detail?.pair_with?.slice(0, 2).join(', ') || '';
-                const weight = detail?.weight || product.variants?.[0]?.name || '200g';
-                const tamilTitle = product.tamil_name || detail?.tamil_title || '';
+                const badge = product.badge || '';
+                const category = product.category?.name || product.tags?.[0]?.name || '';
+                const desc = product.short_description || product.description || '';
+                const labels = Array.isArray(product.custom_labels)
+                  ? product.custom_labels
+                  : Object.values(product.custom_labels || {});
+                const chips = labels.slice(0, 3);
+                const weight = product.variants?.[0]?.name || product.unit || '';
+                const tamilTitle = product.tamil_name || '';
                 const reviewSnapshot = getProductReviewSnapshot(product);
 
                 return (
@@ -380,7 +374,7 @@ export function CatalogPage() {
                       {category && <div className="catalog-card-category">{category.toUpperCase()}</div>}
                       <Link to={`/products/${product.slug}`} className="block">
                         <h3 className="catalog-card-title group-hover:text-brand-700 transition-colors">
-                          {detail?.title || product.name}
+                          {product.name}
                         </h3>
                         {tamilTitle && <div className="text-sm font-medium text-brand-700/80 mb-2">{tamilTitle}</div>}
                       </Link>
@@ -392,9 +386,7 @@ export function CatalogPage() {
                           ))}
                         </div>
                       )}
-                      {pairWith && (
-                        <div className="catalog-card-pairing">Best with: {pairWith}</div>
-                      )}
+                      {product.pair_with && <div className="catalog-card-pairing">Best with: {product.pair_with}</div>}
                       <div className="catalog-card-price-row">
                         <div className="catalog-card-price-left">
                           <span className="catalog-price">₹{product.price}</span>

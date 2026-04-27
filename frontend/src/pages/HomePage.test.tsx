@@ -3,11 +3,22 @@ import { renderWithProviders, screen, userEvent } from '@/test/test-utils';
 import { HomePage } from './HomePage';
 
 const mockAddToCart = vi.fn();
+const featuredProducts = [
+  {
+    id: 1,
+    name: 'Admin Poondu Thokku',
+    slug: 'admin-poondu-thokku',
+    price: 179,
+    primary_image_url: '/uploads/products/admin-poondu.png',
+    short_description: 'Managed in admin',
+    variants: [{ id: 10, name: '250g Jar', stock_quantity: 10 }],
+    tags: [{ name: 'Thokku' }],
+  },
+];
 
 // Mock all API hooks to avoid actual HTTP calls
 vi.mock('@/features/catalog/api', () => ({
-  useFeaturedProductsQuery: () => ({ data: null, isLoading: false }),
-  useCategoriesQuery: () => ({ data: null, isLoading: false }),
+  useFeaturedProductsQuery: () => ({ data: { data: featuredProducts }, isLoading: false }),
 }));
 
 vi.mock('@/features/cms/api', async (importOriginal) => {
@@ -52,12 +63,9 @@ describe('HomePage', () => {
     expect(shopLink).toBeTruthy();
   });
 
-  it('displays featured/best seller products from fallback data', () => {
+  it('displays featured/best seller products from backend data', () => {
     renderWithProviders(<HomePage />);
-    // Should show product names from fallback data
-    const allText = document.body.textContent ?? '';
-    // At least one fallback product should be visible
-    expect(allText).toContain('Thokku');
+    expect(screen.getByText('Admin Poondu Thokku')).toBeInTheDocument();
   });
 
   it('renders "Why Choose Us" section', () => {

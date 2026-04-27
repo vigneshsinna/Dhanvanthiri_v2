@@ -2,9 +2,24 @@ import { describe, it, expect, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import { renderWithProviders } from '@/test/test-utils';
 import { BlogPostPage } from './BlogPostPage';
-import { fallbackBlogPosts } from '@/lib/fallbackData';
 
-const mockSlug = fallbackBlogPosts[0]?.slug ?? 'test-post';
+const mockSlug = 'admin-blog-post';
+const apiPost = {
+  id: 1,
+  title: 'Admin Blog Post',
+  slug: mockSlug,
+  excerpt: 'Managed by admin',
+  body: '<p>Admin body content</p>',
+  published_at: '2026-04-01T00:00:00.000Z',
+};
+const relatedPost = {
+  id: 2,
+  title: 'Related Admin Post',
+  slug: 'related-admin-post',
+  excerpt: 'Also managed by admin',
+  body: '<p>Related body</p>',
+  published_at: '2026-04-02T00:00:00.000Z',
+};
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -16,24 +31,21 @@ vi.mock('react-router-dom', async () => {
 
 vi.mock('@/features/cms/api', () => ({
   usePostQuery: () => ({
-    data: null,
+    data: { data: apiPost },
     isLoading: false,
-    error: new Error('not found'),
+    error: null,
   }),
   usePostsQuery: () => ({
-    data: null,
+    data: { data: [apiPost, relatedPost] },
     isLoading: false,
-    error: new Error('not found'),
+    error: null,
   }),
 }));
 
 describe('BlogPostPage', () => {
-  it('renders fallback post title', () => {
+  it('renders CMS post title', () => {
     renderWithProviders(<BlogPostPage />);
-    const postTitle = fallbackBlogPosts[0]?.title;
-    if (postTitle) {
-      expect(screen.getByRole('heading', { name: postTitle })).toBeInTheDocument();
-    }
+    expect(screen.getByRole('heading', { name: apiPost.title })).toBeInTheDocument();
   });
 
   it('renders back to blog link', () => {
@@ -43,28 +55,12 @@ describe('BlogPostPage', () => {
 
   it('renders post body content', () => {
     renderWithProviders(<BlogPostPage />);
-    expect(document.querySelector('.blog-post-body-card')).toBeTruthy();
+    expect(screen.getByText(/admin body content/i)).toBeInTheDocument();
   });
 
   it('renders continue reading section with related posts', () => {
     renderWithProviders(<BlogPostPage />);
     expect(screen.getByRole('heading', { name: /continue reading/i })).toBeInTheDocument();
-    expect(screen.getAllByRole('article').length).toBeGreaterThan(1);
-  });
-});
-
-describe('BlogPostPage - not found', () => {
-  it('renders "Post Not Found" for unknown slug', () => {
-    vi.doMock('react-router-dom', async () => {
-      const actual = await vi.importActual('react-router-dom');
-      return { ...actual, useParams: () => ({ slug: 'nonexistent-slug' }) };
-    });
-    // The mock at module level still uses fallbackBlogPosts[0].slug, so the fallback match works.
-    // For a true not-found, the slug wouldn't match any fallback. This tests rendering logic.
-    renderWithProviders(<BlogPostPage />);
-    // Since our mock slug matches a fallback post, this will render the post
-    const elements = screen.queryAllByText(/post not found/i);
-    // If slug matches fallback, elements will be empty - that's expected
-    expect(elements.length).toBeGreaterThanOrEqual(0);
+    expect(screen.getByText(relatedPost.title)).toBeInTheDocument();
   });
 });

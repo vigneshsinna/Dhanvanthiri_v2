@@ -3,11 +3,24 @@ import { renderWithProviders, screen } from '@/test/test-utils';
 import { CatalogPage } from './CatalogPage';
 
 const mockUseProductsQuery = vi.fn();
+const apiProducts = [
+  {
+    id: 1,
+    name: 'Admin Poondu Thokku',
+    slug: 'admin-poondu-thokku',
+    price: 179,
+    primary_image_url: '/uploads/products/admin-poondu.png',
+    short_description: 'Managed in admin',
+    category: { name: 'Thokku', slug: 'thokku' },
+    variants: [{ id: 10, name: '250g Jar', stock_quantity: 10 }],
+  },
+];
+const apiCategories = [{ id: 1, name: 'Thokku', slug: 'thokku' }];
 
 // Mock all API hooks
 vi.mock('@/features/catalog/api', () => ({
   useProductsQuery: (filters: Record<string, unknown>) => mockUseProductsQuery(filters),
-  useCategoriesQuery: () => ({ data: null, isLoading: false }),
+  useCategoriesQuery: () => ({ data: { data: apiCategories }, isLoading: false }),
 }));
 
 vi.mock('@/features/cart/api', () => ({
@@ -26,7 +39,7 @@ vi.mock('react-helmet-async', () => ({
 describe('CatalogPage', () => {
   beforeEach(() => {
     mockUseProductsQuery.mockReset();
-    mockUseProductsQuery.mockReturnValue({ data: null, isLoading: false });
+    mockUseProductsQuery.mockReturnValue({ data: { data: apiProducts }, isLoading: false });
   });
 
   it('renders without crashing', () => {
@@ -34,11 +47,9 @@ describe('CatalogPage', () => {
     expect(document.body.textContent).toBeTruthy();
   });
 
-  it('displays product cards from fallback data', () => {
+  it('displays product cards from backend data', () => {
     renderWithProviders(<CatalogPage />);
-    // Should show some fallback product names
-    const allText = document.body.textContent ?? '';
-    expect(allText).toContain('Thokku');
+    expect(screen.getByText('Admin Poondu Thokku')).toBeInTheDocument();
   });
 
   it('shows category filter options', () => {

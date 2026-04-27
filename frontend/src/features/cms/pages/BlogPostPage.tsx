@@ -2,7 +2,6 @@ import { useParams, Link } from 'react-router-dom';
 import { usePostQuery, usePostsQuery } from '@/features/cms/api';
 import { PageLoader } from '@/components/ui/Spinner';
 import { Helmet } from 'react-helmet-async';
-import { fallbackBlogPosts } from '@/lib/fallbackData';
 import { getLocalizedText, getStorefrontLocale } from '@/lib/storefrontLocale';
 
 interface BlogPost {
@@ -115,10 +114,6 @@ export function BlogPostPage() {
   if (isLoading) return <PageLoader />;
 
   if (error || !post) {
-    post = (fallbackBlogPosts as BlogPost[]).find((entry) => entry.slug === slug);
-  }
-
-  if (!post) {
     return (
       <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center">
         <h1 className="text-xl font-semibold">Post Not Found</h1>
@@ -190,7 +185,7 @@ export function BlogPostPage() {
             </div>
           </div>
 
-          {getRelatedPosts(post, normalizePostsResponse(postsData).length > 0 ? normalizePostsResponse(postsData) : (fallbackBlogPosts as BlogPost[])).length > 0 && (
+          {getRelatedPosts(post, normalizePostsResponse(postsData)).length > 0 && (
             <section className="blog-post-related-section" aria-labelledby="continue-reading-title">
               <div className="blog-post-related-intro">
                 <span className="blog-post-kicker">From Our Journal</span>
@@ -201,7 +196,7 @@ export function BlogPostPage() {
               </div>
 
               <div className="blog-post-related-grid">
-                {getRelatedPosts(post, normalizePostsResponse(postsData).length > 0 ? normalizePostsResponse(postsData) : (fallbackBlogPosts as BlogPost[])).map((relatedPost) => (
+                {getRelatedPosts(post, normalizePostsResponse(postsData)).map((relatedPost) => (
                   <article key={relatedPost.slug} className="blog-post-related-card">
                     <Link to={`/blog/${relatedPost.slug}`} className="block">
                       <div className="blog-post-related-media aspect-[16/10] overflow-hidden rounded-[22px] bg-[#EDE4D7]">

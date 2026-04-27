@@ -47,23 +47,23 @@ describe('DynamicPage', () => {
     expect(screen.getByText(/we're working on this page/i)).toBeInTheDocument();
   });
 
-  it('renders fallback content for shipping policy when CMS API is unavailable', () => {
+  it('does not render bundled fallback content for shipping policy when CMS API is unavailable', () => {
     currentSlug = 'shipping-policy';
 
     renderWithProviders(<DynamicPage />);
 
-    expect(screen.getByRole('heading', { name: /shipping policy/i })).toBeInTheDocument();
-    expect(screen.queryByText(/coming soon/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/this shipping policy explains how dhanvanthiri foods processes/i)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /shipping policy/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/coming soon/i)).toBeInTheDocument();
+    expect(screen.queryByText(/this shipping policy explains how dhanvanthiri foods processes/i)).not.toBeInTheDocument();
   });
 
-  it('renders fallback content for terms and conditions when CMS API is unavailable', () => {
+  it('does not render bundled fallback content for terms and conditions when CMS API is unavailable', () => {
     currentSlug = 'terms-and-conditions';
 
     renderWithProviders(<DynamicPage />);
 
-    expect(screen.getByRole('heading', { name: /terms/i })).toBeInTheDocument();
-    expect(screen.queryByText(/coming soon/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/these terms .* explain the rules for using the dhanvanthiri foods website/i)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /terms/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/coming soon/i)).toBeInTheDocument();
+    expect(screen.queryByText(/these terms .* explain the rules for using the dhanvanthiri foods website/i)).not.toBeInTheDocument();
   });
 });

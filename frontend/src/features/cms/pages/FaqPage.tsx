@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useFaqsQuery } from '@/features/cms/api';
 import { PageLoader } from '@/components/ui/Spinner';
 import { Helmet } from 'react-helmet-async';
-import { fallbackFaqs } from '@/lib/fallbackData';
 import { getLocalizedText, getStorefrontLocale } from '@/lib/storefrontLocale';
 
 interface Faq {
@@ -17,7 +16,7 @@ export function FaqPage() {
   const t = (en: string, ta: string) => getLocalizedText(currentLocale, { en, ta });
   const { data, isLoading } = useFaqsQuery();
   const apiFaqs: Faq[] = data?.data ?? [];
-  const faqs: Faq[] = apiFaqs.length > 0 ? apiFaqs : fallbackFaqs;
+  const faqs: Faq[] = apiFaqs;
   const [openId, setOpenId] = useState<number | null>(null);
 
   if (isLoading) return <PageLoader />;

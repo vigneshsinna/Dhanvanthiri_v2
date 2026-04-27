@@ -2,7 +2,6 @@ import { useParams, Link } from 'react-router-dom';
 import { usePageQuery } from '@/features/cms/api';
 import { PageLoader } from '@/components/ui/Spinner';
 import { Helmet } from 'react-helmet-async';
-import { getFallbackPageBySlug } from '@/lib/fallbackData';
 import { LegalPageTemplate } from './LegalPageTemplate';
 import { isLegalPageSlug } from '@/features/cms/utils/legalPageContent';
 import { sanitizeHtml } from '@/lib/sanitizeHtml';
@@ -12,11 +11,10 @@ export function DynamicPage() {
   const { data, isLoading } = usePageQuery(slug || '');
   const apiPage = data?.data?.data;
   const apiPageHtml = apiPage?.content ?? apiPage?.body;
-  const fallbackPage = getFallbackPageBySlug(slug);
   const legalPage = isLegalPageSlug(slug);
 
   const hasValidApiPage = apiPage && typeof apiPage === 'object' && apiPage.title && apiPageHtml;
-  const page = hasValidApiPage ? apiPage : fallbackPage;
+  const page = hasValidApiPage ? apiPage : null;
 
   if (isLoading) return <PageLoader />;
 

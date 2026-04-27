@@ -2,11 +2,20 @@ import { describe, it, expect, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import { renderWithProviders } from '@/test/test-utils';
 import { BlogListPage } from './BlogListPage';
-import { fallbackBlogPosts } from '@/lib/fallbackData';
+
+const apiPosts = [
+  {
+    id: 1,
+    title: 'Admin Blog Post',
+    slug: 'admin-blog-post',
+    excerpt: 'Managed by admin',
+    published_at: '2026-04-01T00:00:00.000Z',
+  },
+];
 
 vi.mock('@/features/cms/api', () => ({
   usePostsQuery: () => ({
-    data: null,
+    data: { data: apiPosts },
     isLoading: false,
   }),
 }));
@@ -22,9 +31,9 @@ describe('BlogListPage', () => {
     expect(screen.getByText(/recipes, tips, and stories/i)).toBeInTheDocument();
   });
 
-  it('renders fallback blog posts', () => {
+  it('renders blog posts from the CMS API', () => {
     renderWithProviders(<BlogListPage />);
-    for (const post of fallbackBlogPosts) {
+    for (const post of apiPosts) {
       expect(screen.getAllByText(post.title).length).toBeGreaterThan(0);
     }
   });
@@ -39,7 +48,7 @@ describe('BlogListPage', () => {
   it('renders published dates', () => {
     renderWithProviders(<BlogListPage />);
     // Dates should be rendered in some format
-    for (const post of fallbackBlogPosts) {
+    for (const post of apiPosts) {
       const dt = new Date(post.published_at);
       const expected = dt.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
       expect(screen.getByText(expected)).toBeInTheDocument();

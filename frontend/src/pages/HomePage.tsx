@@ -1,10 +1,9 @@
 import { useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
-import { useFeaturedProductsQuery, useCategoriesQuery } from '@/features/catalog/api';
+import { useFeaturedProductsQuery } from '@/features/catalog/api';
 import { unwrapCmsCollection, useBannersQuery } from '@/features/cms/api';
 import { useAddCartItemMutation } from '@/features/cart/api';
-import { fallbackProducts, fallbackCategories } from '@/lib/fallbackData';
 import { resolveProductImageUrl } from '@/lib/productImage';
 import { getLocalizedText, getStorefrontLocale } from '@/lib/storefrontLocale';
 import { getProductReviewSnapshot } from '@/features/catalog/lib/reviewsViewModel';
@@ -59,20 +58,11 @@ export function HomePage() {
   const {
     data: featuredData,
     isLoading: featuredLoading,
-    isFetched: featuredFetched,
-    isError: featuredError,
   } = useFeaturedProductsQuery();
-  const {
-    data: catData,
-    isLoading: categoriesLoading,
-    isFetched: categoriesFetched,
-    isError: categoriesError,
-  } = useCategoriesQuery();
   const { data: bannerData } = useBannersQuery('home_hero');
   const addToCart = useAddCartItemMutation();
 
   const apiFeatured: Product[] = featuredData?.data?.data ?? featuredData?.data ?? [];
-  const apiCategories = catData?.data ?? [];
   const banners = unwrapCmsCollection<any>(bannerData);
   const heroBanner = banners.find((b: any) => b.is_active) ?? null;
 
@@ -84,18 +74,7 @@ export function HomePage() {
     return `${base}${url}`;
   };
 
-  // Use API products when available. While the backend is still resolving, show skeletons
-  // instead of flashing the bundled fallback product images.
-  const canUseFallbackProducts = !featuredLoading && (featuredFetched || featuredError);
-  const canUseFallbackCategories = !categoriesLoading && (categoriesFetched || categoriesError);
-  const featured: Product[] = (
-    apiFeatured.length > 0
-      ? apiFeatured
-      : canUseFallbackProducts
-        ? (fallbackProducts as unknown as Product[])
-        : []
-  ).slice(0, 8);
-  const categories = apiCategories.length > 0 || !canUseFallbackCategories ? apiCategories : fallbackCategories;
+  const featured: Product[] = apiFeatured.slice(0, 8);
   const showProductSkeletons = featuredLoading && featured.length === 0;
   const copy = {
     heroPill: getLocalizedText(currentLocale, {

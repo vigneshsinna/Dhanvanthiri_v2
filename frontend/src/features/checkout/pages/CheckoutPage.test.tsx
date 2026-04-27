@@ -1,6 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { fireEvent } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders, screen } from '@/test/test-utils';
 import { CheckoutPage } from './CheckoutPage';
+
+const guestValidateMutateAsync = vi.fn();
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
@@ -35,7 +39,7 @@ vi.mock('@/features/checkout/api', () => ({
   useCheckoutSummaryMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useCreatePaymentIntentMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useConfirmPaymentMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
-  useGuestValidateCheckoutMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useGuestValidateCheckoutMutation: () => ({ mutateAsync: guestValidateMutateAsync, isPending: false }),
   useGuestCheckoutSummaryMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useGuestCreatePaymentIntentMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useGuestConfirmPaymentMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
@@ -71,6 +75,10 @@ vi.mock('@/features/cart/api', () => ({
 }));
 
 describe('CheckoutPage', () => {
+  beforeEach(() => {
+    guestValidateMutateAsync.mockReset();
+  });
+
   it('renders without crashing when checkout collections are wrapped in nested data payloads', () => {
     renderWithProviders(<CheckoutPage />, {
       preloadedState: {
@@ -111,5 +119,68 @@ describe('CheckoutPage', () => {
 
     expect(screen.getByText(/shipping address/i)).toBeInTheDocument();
     expect(screen.getByText(/lakshmi/i)).toBeInTheDocument();
+  });
+
+  it('shows backend guest checkout validation field errors instead of a generic message', async () => {
+    const user = userEvent.setup();
+    guestValidateMutateAsync.mockRejectedValueOnce({
+      response: {
+        data: {
+          message: 'Validation failed',
+          errors: {
+            temp_user_id: ['A guest cart is required before checkout can continue.'],
+          },
+        },
+      },
+    });
+
+    renderWithProviders(<CheckoutPage />, {
+      preloadedState: {
+        auth: {
+          isAuthenticated: false,
+          accessToken: null,
+          user: null,
+        },
+        cart: {
+          items: [],
+          coupon: null,
+          subtotal: 179,
+          discountAmount: 0,
+          shippingCost: 0,
+          taxAmount: 0,
+          grandTotal: 179,
+          itemCount: 1,
+          cartToken: null,
+        },
+        checkout: {
+          step: 'address',
+          shippingAddressId: null,
+          billingAddressId: null,
+          shippingMethodId: 1,
+          billingSameAsShipping: true,
+          gateway: 'razorpay',
+          orderId: null,
+          orderNumber: null,
+          razorpayOrderId: null,
+          guestCheckoutToken: null,
+          guestOrderAccessToken: null,
+          guestOrderAccessExpiresAt: null,
+          isProcessing: false,
+          error: null,
+        },
+      },
+    });
+
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'buyer@example.com' } });
+    fireEvent.change(screen.getByLabelText(/^phone$/i), { target: { value: '9876543210' } });
+    fireEvent.change(screen.getByLabelText(/recipient name/i), { target: { value: 'Buyer' } });
+    fireEvent.change(screen.getByLabelText(/address line 1/i), { target: { value: '42 Temple Street' } });
+    fireEvent.change(screen.getByLabelText(/city/i), { target: { value: 'Chennai' } });
+    fireEvent.change(screen.getByLabelText(/state/i), { target: { value: 'Tamil Nadu' } });
+    fireEvent.change(screen.getByLabelText(/postal code/i), { target: { value: '600001' } });
+    await user.click(screen.getByRole('button', { name: /continue to payment/i }));
+
+    expect(await screen.findByText(/guest cart is required before checkout can continue/i)).toBeInTheDocument();
+    expect(screen.queryByText(/^validation failed$/i)).not.toBeInTheDocument();
   });
 });

@@ -9,8 +9,6 @@ import { PageLoader } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Helmet } from 'react-helmet-async';
-import { fallbackProducts } from '@/lib/fallbackData';
-import { getProductDetailBySlug, productCatalogData } from '@/features/catalog/data/productCatalogData';
 import { addToRecentlyViewed, getRecentlyViewed, type RecentlyViewedProduct } from '@/features/catalog/recentlyViewed';
 import { getProductReviewSnapshot, toReviewCollection } from '@/features/catalog/lib/reviewsViewModel';
 import { unwrapCollection } from '@/lib/collections';
@@ -73,13 +71,9 @@ export function ProductDetailPage() {
   const currentLocale = getStorefrontLocale();
   const t = (en: string, ta: string) => getLocalizedText(currentLocale, { en, ta });
 
-  // Use API product or fall back to static data
   const apiProduct = data?.data?.data ?? data?.data;
-  const fallbackProduct = !apiProduct ? fallbackProducts.find((p) => p.slug === slug) : null;
-  const product = apiProduct || fallbackProduct;
-
-  // Get rich details from catalog data
-  const detail = slug ? getProductDetailBySlug(slug) : undefined;
+  const product = apiProduct;
+  const detail: any = null;
 
   const [selectedVariant, setSelectedVariant] = useState<number | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -108,15 +102,6 @@ export function ProductDetailPage() {
   const [reviewPhotos, setReviewPhotos] = useState<File[]>([]);
   const [showReviewForm, setShowReviewForm] = useState(false);
 
-  // Related products (same category, excluding current)
-  const relatedProducts = useMemo(() => {
-    if (!detail) return [];
-    return productCatalogData
-      .filter((p) => p.category === detail.category && p.slug !== detail.slug)
-      .slice(0, 4);
-  }, [detail]);
-
-  // API recommendations (preferred) with fallback to static related products
   const { data: recommendationsData } = useRecommendationsQuery({
     product_id: product?.id,
     category_id: product?.category_id ?? product?.category?.id,
@@ -156,7 +141,7 @@ export function ProductDetailPage() {
     }
   }, [product?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (isLoading && !fallbackProduct) return <PageLoader />;
+  if (isLoading) return <PageLoader />;
   if (error && !product) {
     return (
       <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center">
@@ -189,6 +174,10 @@ export function ProductDetailPage() {
   const seoTitle = detail?.seo_title || `${productTitle} - Dhanvanthiri Foods`;
   const seoDesc = product.short_description || detail?.seo_description || product.meta_description || '';
   const reviewSnapshot = getProductReviewSnapshot(product);
+  const productAbout = product.about || product.description || '';
+  const productWhyLove = Array.isArray(product.why_love)
+    ? product.why_love
+    : String(product.why_love ?? '').split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean);
 
   const handleAddToCart = () => {
     addToCart.mutate({
@@ -384,7 +373,7 @@ export function ProductDetailPage() {
           {/* Chips */}
           {detail && detail.chips.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {detail.chips.map((chip, i) => (
+              {detail.chips.map((chip: string, i: number) => (
                 <span key={i} className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 border border-amber-100">
                   {chip}
                 </span>
@@ -414,7 +403,7 @@ export function ProductDetailPage() {
             <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm animate-on-scroll scale-in">
               <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">{t('Best Paired With', 'இணைந்து சாப்பிட')}</h3>
               <div className="flex flex-wrap gap-2">
-                {detail.pair_with.map((item, i) => (
+                {detail.pair_with.map((item: string, i: number) => (
                   <span key={i} className="rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
                     {item}
                   </span>
@@ -557,7 +546,7 @@ export function ProductDetailPage() {
               {t("Why You'll Love It", 'நீங்கள் ஏன் விரும்புவீர்கள்')}
             </h2>
             <ul className="space-y-3">
-              {detail.why_love.map((reason, i) => (
+              {detail.why_love.map((reason: string, i: number) => (
                 <li key={i} className="flex items-start gap-3">
                   <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
                     <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
@@ -572,11 +561,31 @@ export function ProductDetailPage() {
         </div>
       )}
 
-      {/* ─── If no detail data, fall back to API description ─── */}
-      {!detail && product.description && (
+      {/* Admin-managed product description */}
+      {productAbout && (
         <div className="mt-12 border-t pt-8 animate-on-scroll top-down">
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">{t('Description', 'விவரம்')}</h2>
-          <div className="prose prose-sm text-slate-600" dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.description) }} />
+          <h2 className="mb-4 text-xl font-semibold text-slate-900">{t('About This Product', 'இந்த தயாரிப்பை பற்றி')}</h2>
+          <div className="prose prose-sm text-slate-600" dangerouslySetInnerHTML={{ __html: sanitizeHtml(productAbout) }} />
+        </div>
+      )}
+
+      {productWhyLove.length > 0 && (
+        <div className="mt-8 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm animate-on-scroll scale-in">
+          <h2 className="mb-4 text-xl font-bold text-slate-900" style={{ fontFamily: "'Playfair Display', serif" }}>
+            {t("Why You'll Love It", 'நீங்கள் ஏன் விரும்புவீர்கள்')}
+          </h2>
+          <ul className="space-y-3">
+            {productWhyLove.map((reason: string, i: number) => (
+              <li key={i} className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
+                  <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </span>
+                <span className="text-sm text-slate-700">{reason}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -716,31 +725,23 @@ export function ProductDetailPage() {
       </div>
 
       {/* Recommendations section */}
-      {(apiRecommendations.length > 0 || relatedProducts.length > 0) && (
+      {apiRecommendations.length > 0 && (
         <div className="mt-12 border-t pt-8 animate-on-scroll top-down">
           <h2 className="mb-6 text-xl font-semibold" style={{ fontFamily: "'Playfair Display', serif" }}>
             {t('You May Also Like', 'நீங்களுக்கு பிடிக்கும்')}
           </h2>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 stagger-children">
-            {(apiRecommendations.length > 0 ? apiRecommendations : relatedProducts.map((item) => ({
-              id: 0,
-              name: item.title,
-              slug: item.slug,
-              price: item.price,
-              image: null,
-            }))).map((related) => {
-              const relFallback = fallbackProducts.find((fp) => fp.slug === related.slug);
+            {apiRecommendations.map((related) => {
               const relatedImages = unwrapCollection<ProductImage>((related as Recommendation).images);
               const relImage = resolveProductImageUrl({
                 primaryImageUrl:
                   (related as Recommendation).primary_image_url ||
                   (related as Recommendation).thumbnail_image ||
-                  related.image ||
-                  relFallback?.primary_image_url,
+                  related.image,
                 imagePaths: relatedImages.map((image) => image.url || image.path),
                 productName: related.name,
                 productSlug: related.slug,
-                productId: related.id || relFallback?.id || 1,
+                productId: related.id || 1,
               });
 
               return (

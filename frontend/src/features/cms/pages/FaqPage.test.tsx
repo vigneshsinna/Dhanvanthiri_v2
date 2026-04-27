@@ -3,12 +3,15 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/test/test-utils';
 import { FaqPage } from './FaqPage';
-import { fallbackFaqs } from '@/lib/fallbackData';
 
-// Mock the CMS API - return empty so fallback data is used
+const apiFaqs = [
+  { id: 1, question: 'How do you ship?', answer: 'Through admin configured shipping.', category: 'Shipping' },
+  { id: 2, question: 'Can I edit products?', answer: 'Products are managed in admin.', category: 'Products' },
+];
+
 vi.mock('@/features/cms/api', () => ({
   useFaqsQuery: () => ({
-    data: null,
+    data: { data: apiFaqs },
     isLoading: false,
   }),
 }));
@@ -24,17 +27,16 @@ describe('FaqPage', () => {
     expect(screen.getByText(/find answers to common questions/i)).toBeInTheDocument();
   });
 
-  it('renders fallback FAQ questions', () => {
+  it('renders FAQ questions from the CMS API', () => {
     renderWithProviders(<FaqPage />);
-    // Each fallback FAQ question should be rendered
-    for (const faq of fallbackFaqs) {
+    for (const faq of apiFaqs) {
       expect(screen.getByText(faq.question)).toBeInTheDocument();
     }
   });
 
   it('groups FAQs by category', () => {
     renderWithProviders(<FaqPage />);
-    const categories = [...new Set(fallbackFaqs.map(f => f.category))];
+    const categories = [...new Set(apiFaqs.map(f => f.category))];
     for (const cat of categories) {
       expect(screen.getByRole('heading', { name: cat })).toBeInTheDocument();
     }
@@ -43,21 +45,21 @@ describe('FaqPage', () => {
   it('toggles FAQ answer on click', async () => {
     const user = userEvent.setup();
     renderWithProviders(<FaqPage />);
-    const firstQuestion = screen.getByText(fallbackFaqs[0].question);
+    const firstQuestion = screen.getByText(apiFaqs[0].question);
     // Answer should not be visible initially
-    expect(screen.queryByText(fallbackFaqs[0].answer)).not.toBeInTheDocument();
+    expect(screen.queryByText(apiFaqs[0].answer)).not.toBeInTheDocument();
     // Click question
     await user.click(firstQuestion);
-    expect(screen.getByText(fallbackFaqs[0].answer)).toBeInTheDocument();
+    expect(screen.getByText(apiFaqs[0].answer)).toBeInTheDocument();
   });
 
   it('closes answer when clicking again', async () => {
     const user = userEvent.setup();
     renderWithProviders(<FaqPage />);
-    const firstQuestion = screen.getByText(fallbackFaqs[0].question);
+    const firstQuestion = screen.getByText(apiFaqs[0].question);
     await user.click(firstQuestion);
-    expect(screen.getByText(fallbackFaqs[0].answer)).toBeInTheDocument();
+    expect(screen.getByText(apiFaqs[0].answer)).toBeInTheDocument();
     await user.click(firstQuestion);
-    expect(screen.queryByText(fallbackFaqs[0].answer)).not.toBeInTheDocument();
+    expect(screen.queryByText(apiFaqs[0].answer)).not.toBeInTheDocument();
   });
 });

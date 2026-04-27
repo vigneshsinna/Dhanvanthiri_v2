@@ -29,7 +29,7 @@ describe('productImage', () => {
     ).toBe('http://localhost:8000/uploads/products/poondu.png');
   });
 
-  it('falls back to the local storefront asset when backend image is a placeholder', () => {
+  it('does not replace backend placeholders with local storefront product images', () => {
     expect(
       resolveProductImageUrl({
         primaryImageUrl: 'http://localhost:8000/assets/img/placeholder.jpg',
@@ -37,7 +37,7 @@ describe('productImage', () => {
         productSlug: 'poondu-thokku',
         productId: 1,
       }),
-    ).toBe('/images/products/Poondu Thokku (Garlic Mashed Pickle).jpg');
+    ).toBeUndefined();
   });
 
   it('filters placeholder gallery items and keeps usable image URLs', () => {

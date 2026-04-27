@@ -4,6 +4,20 @@ import { ProductDetailPage } from './ProductDetailPage';
 
 const useProductQueryMock = vi.fn();
 const useReviewsQueryMock = vi.fn();
+const apiProduct = {
+  id: 1,
+  name: 'Poondu Thokku',
+  slug: 'poondu-thokku',
+  price: 179,
+  description: '<p>Whole garlic cloves.</p>',
+  about: '<p>Garlic forward admin description.</p>',
+  primary_image_url: '/uploads/products/poondu.png',
+  images: [],
+  variants: [{ id: 10, name: '250g Jar', sku: 'PON-250', price_override: null, stock_quantity: 10 }],
+  tags: [{ name: 'Thokku' }],
+  avg_rating: 4.7,
+  review_count: 12,
+};
 
 // Mock useParams to return a known slug
 vi.mock('react-router-dom', async () => {
@@ -78,7 +92,7 @@ describe('ProductDetailPage', () => {
   beforeEach(() => {
     useProductQueryMock.mockReset();
     useProductQueryMock.mockReturnValue({
-      data: null,
+      data: { data: { data: apiProduct } },
       isLoading: false,
       error: null,
     });
@@ -86,7 +100,7 @@ describe('ProductDetailPage', () => {
     useReviewsQueryMock.mockReturnValue(null);
   });
 
-  it('renders product from fallback data when API returns null', () => {
+  it('renders product from backend data', () => {
     renderWithProviders(<ProductDetailPage />);
     const matches = screen.getAllByText(/poondu thokku/i);
     expect(matches.length).toBeGreaterThan(0);
@@ -156,7 +170,7 @@ describe('ProductDetailPage', () => {
     expect(screen.getByText(/official product review/i)).toBeInTheDocument();
   });
 
-  it('uses the storefront fallback image when the API only provides placeholder product images', () => {
+  it('does not replace backend placeholder images with local product images', () => {
     useProductQueryMock.mockReturnValue({
       data: {
         data: {
@@ -185,7 +199,7 @@ describe('ProductDetailPage', () => {
 
     renderWithProviders(<ProductDetailPage />);
 
-    const productImages = screen.getAllByAltText(/poondu thokku/i) as HTMLImageElement[];
-    expect(productImages.some((image) => image.getAttribute('src') === '/images/products/Poondu Thokku (Garlic Mashed Pickle).jpg')).toBe(true);
+    expect(screen.queryByAltText(/poondu thokku/i)).not.toBeInTheDocument();
+    expect(document.body.textContent).toContain('Poondu Thokku');
   });
 });

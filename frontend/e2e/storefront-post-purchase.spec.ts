@@ -121,7 +121,7 @@ async function mockOrderDetail(page: import('@playwright/test').Page, overrides:
     code: 'DV-E2E-123',
     delivery_status: 'delivered',
     payment_status: 'paid',
-    payment_type: 'cash_on_delivery',
+    payment_type: 'razorpay',
     grand_total: '180',
     subtotal: '180',
     tax: '0',

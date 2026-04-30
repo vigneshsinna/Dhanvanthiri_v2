@@ -1,12 +1,21 @@
 <!doctype html>
-@if(\App\Models\Language::where('code', Session::get('locale', Config::get('app.locale')))->first()->rtl == 1)
+@php
+    $locale = Session::get('locale', Config::get('app.locale'));
+    $currentLanguage = \App\Models\Language::where('code', $locale)->first();
+    $isRtl = optional($currentLanguage)->rtl == 1;
+    $siteName = get_setting('website_name');
+    $siteMotto = get_setting('site_motto');
+    $siteIcon = get_setting('site_icon');
+    $systemFont = get_setting('system_font_family');
+@endphp
+@if($isRtl)
 <html dir="rtl" lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 @else
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 @endif
 <head>
 	<meta name="csrf-token" content="{{ csrf_token() }}">
-	<meta name="app-url" content="{{ getBaseURL() }}">
+	<meta name="app-url" content="{{ rtrim(getBaseURL(), '/') }}">
 	<meta name="file-base-url" content="{{ getFileBaseURL() }}">
 
 	<!-- Required meta tags -->
@@ -14,15 +23,22 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
 	<!-- Favicon -->
-	<link rel="icon" href="{{ uploaded_asset(get_setting('site_icon')) }}">
-	<title>{{ get_setting('website_name').' | '.get_setting('site_motto') }}</title>
+	<link rel="icon" href="{{ uploaded_asset($siteIcon) }}">
+	<title>{{ $siteName.' | '.$siteMotto }}</title>
 
-	<!-- google font -->
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700">
+	<!-- Preload critical CSS -->
+	<link rel="preload" href="{{ static_asset('assets/css/vendors.css') }}" as="style">
+	<link rel="preload" href="{{ static_asset('assets/css/aiz-seller.css') }}" as="style">
+
+	<!-- Google font - non-blocking -->
+	<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700&display=swap" media="print" onload="this.media='all'">
+	<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700&display=swap"></noscript>
 
 	<!-- aiz core css -->
 	<link rel="stylesheet" href="{{ static_asset('assets/css/vendors.css') }}">
-    @if(\App\Models\Language::where('code', Session::get('locale', Config::get('app.locale')))->first()->rtl == 1)
+    @if($isRtl)
     <link rel="stylesheet" href="{{ static_asset('assets/css/bootstrap-rtl.min.css') }}">
     @endif
 	<link rel="stylesheet" href="{{ static_asset('assets/css/aiz-seller.css') }}">
@@ -32,7 +48,7 @@
     <style>
         body {
             font-size: 12px;
-            font-family: {!! !empty(get_setting('system_font_family')) ? get_setting('system_font_family') : "'Public Sans', sans-serif" !!}, sans-serif;
+            font-family: {!! !empty($systemFont) ? $systemFont : "'Public Sans', sans-serif" !!}, sans-serif;
         }
         #map{
             width: 100%;
@@ -47,31 +63,6 @@
         }
 
     </style>
-	<script>
-    	var AIZ = AIZ || {};
-        AIZ.local = {
-            nothing_selected: '{!! translate('Nothing selected', null, true) !!}',
-            nothing_found: '{!! translate('Nothing found', null, true) !!}',
-            choose_file: '{{ translate('Choose file') }}',
-            file_selected: '{{ translate('File selected') }}',
-            files_selected: '{{ translate('Files selected') }}',
-            add_more_files: '{{ translate('Add more files') }}',
-            adding_more_files: '{{ translate('Adding more files') }}',
-            drop_files_here_paste_or: '{{ translate('Drop files here, paste or') }}',
-            browse: '{{ translate('Browse') }}',
-            upload_complete: '{{ translate('Upload complete') }}',
-            upload_paused: '{{ translate('Upload paused') }}',
-            resume_upload: '{{ translate('Resume upload') }}',
-            pause_upload: '{{ translate('Pause upload') }}',
-            retry_upload: '{{ translate('Retry upload') }}',
-            cancel_upload: '{{ translate('Cancel upload') }}',
-            uploading: '{{ translate('Uploading') }}',
-            processing: '{{ translate('Processing') }}',
-            complete: '{{ translate('Complete') }}',
-            file: '{{ translate('File') }}',
-            files: '{{ translate('Files') }}',
-        }
-	</script>
 
 </head>
 <body class="">
@@ -95,12 +86,36 @@
     @yield('modal')
 
 
-	<script src="{{ static_asset('assets/js/vendors.js') }}" ></script>
-	<script src="{{ static_asset('assets/js/aiz-core.js') }}" ></script>
+	<script src="{{ static_asset('assets/js/vendors.js') }}"></script>
+	<script src="{{ static_asset('assets/js/aiz-core.js') }}"></script>
 
     @yield('script')
 
     <script type="text/javascript">
+        var AIZ = AIZ || {};
+        AIZ.local = {
+            nothing_selected: '{!! translate('Nothing selected', null, true) !!}',
+            nothing_found: '{!! translate('Nothing found', null, true) !!}',
+            choose_file: '{{ translate('Choose file') }}',
+            file_selected: '{{ translate('File selected') }}',
+            files_selected: '{{ translate('Files selected') }}',
+            add_more_files: '{{ translate('Add more files') }}',
+            adding_more_files: '{{ translate('Adding more files') }}',
+            drop_files_here_paste_or: '{{ translate('Drop files here, paste or') }}',
+            browse: '{{ translate('Browse') }}',
+            upload_complete: '{{ translate('Upload complete') }}',
+            upload_paused: '{{ translate('Upload paused') }}',
+            resume_upload: '{{ translate('Resume upload') }}',
+            pause_upload: '{{ translate('Pause upload') }}',
+            retry_upload: '{{ translate('Retry upload') }}',
+            cancel_upload: '{{ translate('Cancel upload') }}',
+            uploading: '{{ translate('Uploading') }}',
+            processing: '{{ translate('Processing') }}',
+            complete: '{{ translate('Complete') }}',
+            file: '{{ translate('File') }}',
+            files: '{{ translate('Files') }}',
+        }
+
 	    @foreach (session('flash_notification', collect())->toArray() as $message)
 	        AIZ.plugins.notify('{{ $message['level'] }}', '{{ $message['message'] }}');
             @if ($message['message'] == translate('Product has been inserted successfully'))

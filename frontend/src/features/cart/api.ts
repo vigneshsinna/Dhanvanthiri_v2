@@ -2,15 +2,46 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { cartAdapter } from '@/lib/headless';
 import { queryKeys } from '@/lib/query/keys';
 import { store } from '@/app/store';
-import { setCart } from './store/cartSlice';
+import { setCart, setCartToken } from './store/cartSlice';
+
+export function syncCartStateFromResponse(res: any) {
+  const cartPayload = res?.data?.data ?? res?.data ?? res;
+  if (!cartPayload) {
+    return;
+  }
+
+  const items = (cartPayload.items ?? []).map((item: any) => ({
+    id: item.id,
+    quantity: Number(item.quantity ?? 0),
+    unitPrice: Number(item.unit_price ?? item.unitPrice ?? 0),
+    lineTotal: Number(item.line_total ?? item.lineTotal ?? 0),
+    product: item.product,
+    variant: item.variant ?? null,
+    isInStock: item.is_in_stock ?? item.isInStock ?? true,
+  }));
+
+  store.dispatch(setCart({
+    items,
+    coupon: cartPayload.coupon ?? null,
+    subtotal: Number(cartPayload.subtotal ?? 0),
+    discountAmount: Number(cartPayload.discount_amount ?? cartPayload.discountAmount ?? 0),
+    shippingCost: cartPayload.shipping_cost ?? cartPayload.shippingCost ?? null,
+    taxAmount: cartPayload.tax_amount ?? cartPayload.taxAmount ?? null,
+    grandTotal: Number(cartPayload.grand_total ?? cartPayload.grandTotal ?? cartPayload.subtotal ?? 0),
+    itemCount: Number(cartPayload.item_count ?? cartPayload.itemCount ?? items.reduce((sum: number, item: any) => sum + (item.quantity ?? 0), 0)),
+  }));
+
+  if (cartPayload.cart_token !== undefined) {
+    store.dispatch(setCartToken(cartPayload.cart_token));
+  }
+}
 
 export function useCartQuery() {
   return useQuery({
     queryKey: queryKeys.cart.current,
     queryFn: async () => {
       const res = await cartAdapter.getCart();
-      // Sync cart state to Redux
-      store.dispatch(setCart(res.data as any));
+      syncCartStateFromResponse(res);
       return res;
     },
   });
@@ -19,7 +50,7 @@ export function useCartQuery() {
 export function useAddCartItemMutation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: { product_id: number; variant_id?: number; quantity: number }) => {
+    mutationFn: async (payload: { product_id: number; variant_id?: number; variant?: string; quantity: number }) => {
       const res = await cartAdapter.addItem(payload);
       return res;
     },

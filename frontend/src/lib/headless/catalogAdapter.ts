@@ -225,6 +225,15 @@ function normalizeProductList(v2Data: any): any {
 }
 
 function normalizeProductMini(product: V2ProductMini): any {
+  const pairWith = Array.isArray((product as any).pair_with)
+    ? (product as any).pair_with.join(' / ')
+    : ((product as any).pair_with ?? '');
+  const chips = Array.isArray((product as any).chips)
+    ? (product as any).chips
+    : Array.isArray((product as any).custom_labels)
+      ? (product as any).custom_labels
+      : Object.values((product as any).custom_labels || {});
+
   return {
     id: product.id,
     name: product.name,
@@ -233,7 +242,8 @@ function normalizeProductMini(product: V2ProductMini): any {
     compare_at_price: product.has_discount ? parsePrice(product.stroked_price) : undefined,
     primary_image_url: product.thumbnail_image,
     thumbnail_image: product.thumbnail_image,
-    short_description: '',
+    short_description: (product as any).short_description ?? '',
+    description: (product as any).description ?? '',
     avg_rating: product.rating,
     review_count: product.review_count ?? 0,
     has_discount: product.has_discount,
@@ -242,7 +252,19 @@ function normalizeProductMini(product: V2ProductMini): any {
     stroked_price: product.stroked_price,
     sales: product.sales,
     is_wholesale: product.is_wholesale,
-    variants: [{ id: product.id, name: '250g Jar', stock_quantity: 50 }],
+    badge: (product as any).badge ?? '',
+    tamil_name: (product as any).tamil_name ?? '',
+    custom_labels: chips,
+    chips,
+    taste_profile: (product as any).taste_profile ?? '',
+    pair_with: pairWith,
+    about: (product as any).about ?? '',
+    why_love: (product as any).why_love ?? [],
+    storage: (product as any).storage ?? '',
+    unit: (product as any).unit ?? '',
+    variants: Array.isArray((product as any).variants) && (product as any).variants.length > 0
+      ? (product as any).variants
+      : [{ id: product.id, name: (product as any).unit || '250g Jar', stock_quantity: 50 }],
   };
 }
 

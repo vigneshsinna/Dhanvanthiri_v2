@@ -2075,7 +2075,7 @@ return array(
     'Composer\\Semver\\Intervals' => $vendorDir . '/composer/semver/src/Intervals.php',
     'Composer\\Semver\\Semver' => $vendorDir . '/composer/semver/src/Semver.php',
     'Composer\\Semver\\VersionParser' => $vendorDir . '/composer/semver/src/VersionParser.php',
-    'CreateAdminUserSeeder' => $baseDir . '/database/seeds/CreateAdminUserSeeder.php',
+    'CreateAdminUserSeeder' => $baseDir . '/database/seeders/CreateAdminUserSeeder.php',
     'Cron\\AbstractField' => $vendorDir . '/dragonmantank/cron-expression/src/Cron/AbstractField.php',
     'Cron\\CronExpression' => $vendorDir . '/dragonmantank/cron-expression/src/Cron/CronExpression.php',
     'Cron\\DayOfMonthField' => $vendorDir . '/dragonmantank/cron-expression/src/Cron/DayOfMonthField.php',
@@ -2096,8 +2096,8 @@ return array(
     'DASPRiD\\Enum\\Exception\\SerializeNotSupportedException' => $vendorDir . '/dasprid/enum/src/Exception/SerializeNotSupportedException.php',
     'DASPRiD\\Enum\\Exception\\UnserializeNotSupportedException' => $vendorDir . '/dasprid/enum/src/Exception/UnserializeNotSupportedException.php',
     'DASPRiD\\Enum\\NullValue' => $vendorDir . '/dasprid/enum/src/NullValue.php',
-    'DatabaseSeeder' => $baseDir . '/database/seeds/DatabaseSeeder.php',
-    'Database\\Seeders\\LegacyStorefrontContentSeeder' => $baseDir . '/database/seeds/LegacyStorefrontContentSeeder.php',
+    'DatabaseSeeder' => $baseDir . '/database/seeders/DatabaseSeeder.php',
+    'Database\\Seeders\\LegacyStorefrontContentSeeder' => $baseDir . '/database/seeders/LegacyStorefrontContentSeeder.php',
     'DateError' => $vendorDir . '/symfony/polyfill-php83/Resources/stubs/DateError.php',
     'DateException' => $vendorDir . '/symfony/polyfill-php83/Resources/stubs/DateException.php',
     'DateInvalidOperationException' => $vendorDir . '/symfony/polyfill-php83/Resources/stubs/DateInvalidOperationException.php',
@@ -10295,7 +10295,7 @@ return array(
     'Stichoza\\GoogleTranslate\\Tokens\\GoogleTokenGenerator' => $vendorDir . '/stichoza/google-translate-php/src/Tokens/GoogleTokenGenerator.php',
     'Stichoza\\GoogleTranslate\\Tokens\\SampleTokenGenerator' => $vendorDir . '/stichoza/google-translate-php/src/Tokens/SampleTokenGenerator.php',
     'Stichoza\\GoogleTranslate\\Tokens\\TokenProviderInterface' => $vendorDir . '/stichoza/google-translate-php/src/Tokens/TokenProviderInterface.php',
-    'StorefrontContentSeeder' => $baseDir . '/database/seeds/StorefrontContentSeeder.php',
+    'StorefrontContentSeeder' => $baseDir . '/database/seeders/StorefrontContentSeeder.php',
     'Stringable' => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/Stringable.php',
     'Stripe\\Account' => $vendorDir . '/stripe/stripe-php/lib/Account.php',
     'Stripe\\AccountLink' => $vendorDir . '/stripe/stripe-php/lib/AccountLink.php',
@@ -14805,3 +14805,4 @@ return array(
     'setasign\\Fpdi\\Tfpdf\\Fpdi' => $vendorDir . '/setasign/fpdi/src/Tfpdf/Fpdi.php',
     'voku\\helper\\ASCII' => $vendorDir . '/voku/portable-ascii/src/voku/helper/ASCII.php',
 );
+

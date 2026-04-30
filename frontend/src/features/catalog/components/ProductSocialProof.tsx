@@ -166,8 +166,7 @@ export function FrequentlyBoughtTogether({ productId }: { productId: number }) {
     if (crossSells.length === 0) return null;
 
     const handleAdd = (product: CrossSellProduct) => {
-        const variant = product.variants?.[0];
-        addToCart.mutate({ product_id: product.id, variant_id: variant?.id, quantity: 1 });
+        addToCart.mutate({ product_id: product.id, quantity: 1 });
     };
 
     return (

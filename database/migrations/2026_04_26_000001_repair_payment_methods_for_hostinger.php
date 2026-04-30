@@ -87,6 +87,7 @@ return new class extends Migration
             'mercadopago',
             'paymob',
             'tap',
+            'phonepe',
         ];
     }
 };

@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 type CheckoutStep = 'address' | 'payment' | 'processing' | 'confirmation';
-type PaymentGateway = 'razorpay' | 'cash_on_delivery' | 'wallet' | 'stripe' | 'paypal' | 'paystack' | 'instamojo' | string;
+type PaymentGateway = 'razorpay' | 'phonepe' | string;
 
 interface CheckoutState {
   step: CheckoutStep;

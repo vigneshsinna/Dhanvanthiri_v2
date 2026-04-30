@@ -269,9 +269,18 @@ Route::group(['prefix' => 'v2', 'middleware' => ['app_language']], function () {
 
         Route::get('bkash/begin', 'App\Http\Controllers\Api\V2\BkashController@begin')->middleware('auth:sanctum');
         Route::get('nagad/begin', 'App\Http\Controllers\Api\V2\NagadController@begin')->middleware('auth:sanctum');
-        Route::post('payments/pay/wallet', 'App\Http\Controllers\Api\V2\WalletController@processPayment')->middleware('auth:sanctum');
-        Route::post('payments/pay/cod', 'App\Http\Controllers\Api\V2\PaymentController@cashOnDelivery')->middleware('auth:sanctum');
-        Route::post('payments/pay/manual', 'App\Http\Controllers\Api\V2\PaymentController@manualPayment')->middleware('auth:sanctum');
+        Route::post('payments/pay/wallet', fn () => response()->json([
+            'success' => false,
+            'message' => 'Wallet payment is not available. Use Razorpay or PhonePe.',
+        ], 422))->middleware('auth:sanctum');
+        Route::post('payments/pay/cod', fn () => response()->json([
+            'success' => false,
+            'message' => 'Cash on Delivery is not available. Use Razorpay or PhonePe.',
+        ], 422))->middleware('auth:sanctum');
+        Route::post('payments/pay/manual', fn () => response()->json([
+            'success' => false,
+            'message' => 'Manual/offline payment is not available. Use Razorpay or PhonePe.',
+        ], 422))->middleware('auth:sanctum');
         Route::post('order/store', [OrderController::class, 'store'])->middleware('auth:sanctum');
         Route::post('checkout/validate', [StorefrontCheckoutBridgeController::class, 'validateCheckout'])->middleware('auth:sanctum');
         Route::post('checkout/summary', [StorefrontCheckoutBridgeController::class, 'summary'])->middleware('auth:sanctum');
@@ -592,6 +601,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     Route::delete('faqs/{id}', [AdminBridgeController::class, 'faqsDestroy']);
 
     Route::get('payment-methods', [AdminBridgeController::class, 'paymentMethods']);
+    Route::put('payment-methods/{code}', [AdminBridgeController::class, 'paymentMethodUpdate']);
     Route::get('payment-methods/razorpay/health', [AdminBridgeController::class, 'razorpayHealth']);
 
     // ── Dashboard ──

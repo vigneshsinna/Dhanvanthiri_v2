@@ -47,7 +47,10 @@ const slice = createSlice({
         localStorage.removeItem('cart_token');
       }
     },
-    clearCart: () => ({ ...initialState, cartToken: initialState.cartToken }),
+    clearCart: () => {
+      localStorage.removeItem('cart_token');
+      return { ...initialState, cartToken: null };
+    },
   },
 });
 

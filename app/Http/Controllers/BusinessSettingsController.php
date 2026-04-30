@@ -143,7 +143,10 @@ class BusinessSettingsController extends Controller
     public function payment_method_update(Request $request)
     {
         foreach ($request->types as $key => $type) {
-            $this->overWriteEnvFile($type, $request[$type]);
+            BusinessSetting::updateOrCreate(
+                ['type' => $type],
+                ['value' => $request[$type]]
+            );
         }
 
         $business_settings = BusinessSetting::where('type', $request->payment_method . '_sandbox')->first();
@@ -171,7 +174,7 @@ class BusinessSettingsController extends Controller
             }
         }
 
-        // Artisan::call('cache:clear');
+        \Cache::forget('business_settings');
 
         flash(translate("Settings updated successfully"))->success();
         return back();

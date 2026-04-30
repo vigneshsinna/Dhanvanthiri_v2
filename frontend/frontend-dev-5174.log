@@ -1,0 +1,44 @@
+
+> dhanvanthiri-frontend@0.1.0 dev
+> vite --host 127.0.0.1 --port 5174
+
+
+  [32m[1mVITE[22m v6.4.1[39m  [2mready in [0m[1m384[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5174[22m/[39m
+[2m7:06:48 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/cms/pages/ContactPage.tsx, /src/features/payment/pages/OrderConfirmationPage.tsx, /src/features/orders/pages/OrderTrackingPage.tsx, /src/pages/HomePage.tsx, /src/features/cms/pages/BlogListPage.tsx, /src/features/cms/pages/FaqPage.tsx, /src/components/layout/AppLayout.tsx, /src/features/cms/pages/DynamicPage.tsx, /src/features/cms/pages/BlogPostPage.tsx, /src/components/layout/GlobalAlerts.tsx, /src/components/layout/PromotionalPopups.tsx, /src/features/catalog/pages/CatalogPage.tsx, /src/features/orders/pages/OrderDetailPage.tsx, /src/features/catalog/pages/ProductDetailPage.tsx, /src/features/catalog/components/ProductSocialProof.tsx, /src/features/cart/pages/CartPage.tsx, /src/features/checkout/pages/CheckoutPage.tsx, /src/features/wishlist/pages/WishlistPage.tsx, /src/features/orders/pages/OrderListPage.tsx, /src/features/auth/pages/SecurityPage.tsx, /src/features/auth/pages/ResetPasswordPage.tsx, /src/features/auth/pages/RegisterPage.tsx, /src/features/auth/pages/ForgotPasswordPage.tsx, /src/features/auth/pages/ProfilePage.tsx, /src/features/auth/pages/LoginPage.tsx[22m
+[2m7:06:48 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/HomePage.tsx, /src/index.css, /src/features/catalog/pages/CatalogPage.tsx, /src/features/cart/pages/CartPage.tsx, /src/components/layout/AppLayout.tsx, /src/features/checkout/pages/CheckoutPage.tsx, /src/features/wishlist/pages/WishlistPage.tsx, /src/features/catalog/pages/ProductDetailPage.tsx, /src/features/catalog/components/ProductSocialProof.tsx[22m
+[2m7:06:48 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/wishlist/pages/WishlistPage.tsx, /src/index.css, /src/features/catalog/pages/ProductDetailPage.tsx[22m
+[2m7:06:48 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/HomePage.tsx, /src/index.css[22m
+[2m7:06:48 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/catalog/pages/CatalogPage.tsx, /src/index.css[22m
+[2m7:06:48 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/catalog/components/ProductSocialProof.tsx, /src/index.css[22m
+[2m7:06:58 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/catalog/pages/ProductDetailPage.tsx, /src/index.css[22m
+[2m7:07:12 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/catalog/pages/ProductDetailPage.tsx, /src/index.css[22m
+[2m7:12:19 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/app/router.tsx[22m
+[2m12:34:10 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/index.css, /src/features/cms/pages/ContactPage.tsx, /src/features/payment/pages/OrderConfirmationPage.tsx, /src/features/orders/pages/OrderTrackingPage.tsx, /src/pages/HomePage.tsx, /src/features/cms/pages/BlogListPage.tsx, /src/features/cms/pages/FaqPage.tsx, /src/components/layout/AppLayout.tsx, /src/features/cms/pages/DynamicPage.tsx, /src/features/cms/pages/BlogPostPage.tsx, /src/components/layout/GlobalAlerts.tsx, /src/components/layout/PromotionalPopups.tsx, /src/features/catalog/pages/CatalogPage.tsx, /src/features/orders/pages/OrderDetailPage.tsx, /src/features/catalog/pages/ProductDetailPage.tsx, /src/features/catalog/components/ProductSocialProof.tsx, /src/features/cart/pages/CartPage.tsx, /src/features/checkout/pages/CheckoutPage.tsx, /src/features/wishlist/pages/WishlistPage.tsx, /src/features/orders/pages/OrderListPage.tsx, /src/features/auth/pages/SecurityPage.tsx, /src/features/auth/pages/ResetPasswordPage.tsx, /src/features/auth/pages/RegisterPage.tsx, /src/features/auth/pages/ForgotPasswordPage.tsx, /src/features/auth/pages/ProfilePage.tsx, /src/features/auth/pages/LoginPage.tsx[22m
+[2m12:44:34 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/checkout/pages/CheckoutPage.tsx, /src/index.css[22m
+[2m12:49:08 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/checkout/pages/CheckoutPage.tsx, /src/index.css[22m
+[2m12:51:12 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/checkout/pages/CheckoutPage.tsx, /src/index.css[22m
+[2m12:51:26 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/features/cart/store/cartSlice.ts[22m
+[2m12:53:57 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/features/checkout/store/checkoutSlice.ts[22m
+[2m12:54:16 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/test/msw-handlers.ts[22m
+[2m12:54:34 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/features/checkout/__tests__/payment-methods.test.ts[22m
+[2m12:54:54 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/features/checkout/pages/CheckoutPage.test.tsx[22m
+[2m1:02:14 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/lib/headless/checkoutAdapter.test.ts[22m
+[2m1:14:01 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/payment/pages/OrderConfirmationPage.tsx, /src/index.css[22m
+[2m1:15:18 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/features/admin/pages/AdminOrdersPage.tsx[22m
+[2m1:15:38 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/features/admin/pages/AdminPaymentsPage.tsx[22m
+[2m1:17:22 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/features/admin/pages/AdminOrderDetailPage.tsx[22m
+[2m1:18:59 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/features/admin/pages/AdminOrderDetailPage.tsx[22m
+[2m1:23:30 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/payment/pages/OrderConfirmationPage.tsx, /src/index.css[22m
+[2m1:26:33 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/features/checkout/pages/CheckoutPage.test.tsx[22m
+[2m9:33:41 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/HomePage.tsx, /src/index.css, /src/features/catalog/pages/CatalogPage.tsx, /src/features/cart/pages/CartPage.tsx, /src/components/layout/AppLayout.tsx, /src/features/checkout/pages/CheckoutPage.tsx, /src/features/wishlist/pages/WishlistPage.tsx, /src/features/catalog/pages/ProductDetailPage.tsx, /src/features/catalog/components/ProductSocialProof.tsx[22m
+[2m9:34:03 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/layout/AppLayout.tsx, /src/index.css[22m
+[2m9:35:00 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/checkout/pages/CheckoutPage.tsx, /src/index.css[22m
+[2m9:37:49 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/features/checkout/pages/CheckoutPage.test.tsx[22m
+[2m9:38:11 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/features/checkout/pages/CheckoutPage.test.tsx[22m
+[2m11:12:05 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/features/checkout/pages/CheckoutPage.test.tsx[22m
+[2m11:39:37 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/features/catalog/pages/ProductDetailPage.tsx, /src/index.css[22m
+[2m11:43:30 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/features/admin/api.ts[22m
+[2m11:45:39 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/features/admin/pages/AdminPaymentMethodsPage.tsx[22m
+[2m11:46:11 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/features/admin/api.ts[22m

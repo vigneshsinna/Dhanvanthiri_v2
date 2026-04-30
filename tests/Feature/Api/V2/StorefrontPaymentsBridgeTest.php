@@ -17,7 +17,7 @@ class StorefrontPaymentsBridgeTest extends TestCase
 {
     private const SYSTEM_KEY = '0d279f87add587c1c6d046cd59ee012d';
 
-    public function test_authenticated_customer_can_create_a_cash_on_delivery_intent_through_the_storefront_bridge(): void
+    public function test_authenticated_customer_cannot_create_a_cash_on_delivery_intent_through_the_storefront_bridge(): void
     {
         $customer = $this->makeCustomer();
         $seller = $this->makeAdmin();
@@ -51,12 +51,10 @@ class StorefrontPaymentsBridgeTest extends TestCase
             'billing_same_as_shipping' => true,
         ]);
 
-        $response->assertOk()
-            ->assertJsonPath('data.gateway', 'cash_on_delivery')
-            ->assertJsonPath('data.status', 'confirmed');
+        $response->assertStatus(422);
 
-        $this->assertDatabaseMissing('carts', ['id' => $cart->id]);
-        $this->assertDatabaseHas('orders', [
+        $this->assertDatabaseHas('carts', ['id' => $cart->id]);
+        $this->assertDatabaseMissing('orders', [
             'user_id' => $customer->id,
             'payment_type' => 'cash_on_delivery',
         ]);
@@ -148,7 +146,7 @@ class StorefrontPaymentsBridgeTest extends TestCase
             'published' => 1,
             'approved' => 1,
             'current_stock' => 10,
-            'cash_on_delivery' => 1,
+            'cash_on_delivery' => 0,
             'discount_start_date' => null,
         ]);
         $product->save();

@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\V2;
 use App\Models\CombinedOrder;
 use App\Models\Order;
 use App\Models\User;
+use App\Support\Checkout\PaymentGatewayConfig;
 use Illuminate\Http\Request;
 use Razorpay\Api\Api;
 
@@ -19,7 +20,7 @@ class RazorpayController
         $user_id = $request->user_id;
         $user = User::find($user_id);
 
-        $api = new Api(env('RAZOR_KEY'), env('RAZOR_SECRET'));
+        $api = $this->api();
         $res = $api->order->create(array('receipt' => '123', 'amount' => round($amount * 100), 'currency' => 'INR', 'notes' => array('key1' => 'value3', 'key2' => 'value2')));
 
         if ($payment_type == 'cart_payment') {
@@ -44,7 +45,7 @@ class RazorpayController
         //Input items of form
         $input = $request->all();
         //get API Configuration
-        $api = new Api(env('RAZOR_KEY'), env('RAZOR_SECRET'));
+        $api = $this->api();
 
         //Fetch payment information by razorpay_payment_id
         $payment = $api->payment->fetch($input['razorpay_payment_id']);
@@ -99,5 +100,11 @@ class RazorpayController
         } catch (\Exception $e) {
             return response()->json(['result' => false, 'message' => $e->getMessage()]);
         }
+    }
+
+    private function api(): Api
+    {
+        $config = app(PaymentGatewayConfig::class)->razorpay();
+        return new Api((string) $config['key_id'], (string) $config['key_secret']);
     }
 }

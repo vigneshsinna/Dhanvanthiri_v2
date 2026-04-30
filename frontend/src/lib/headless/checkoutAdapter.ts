@@ -15,6 +15,8 @@
 import { headlessApi, parsePrice } from './client';
 import { store } from '@/app/store';
 
+const ALLOWED_PAYMENT_METHODS = new Set(['razorpay', 'phonepe']);
+
 function checkoutState() {
   return store.getState().checkout;
 }
@@ -181,7 +183,7 @@ export const checkoutAdapter: any = {
           is_default: false,
           type: 'online' as const,
           _raw: m,
-        }))
+        })).filter((m: any) => ALLOWED_PAYMENT_METHODS.has(String(m.code).toLowerCase()))
       : [];
     return { data: { data: normalized } };
   },

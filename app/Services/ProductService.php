@@ -146,6 +146,9 @@ class ProductService
 
         $collection['has_warranty'] = isset($collection['has_warranty']) ? 1 : 0;
 
+        // Rich product detail fields
+        $collection = $this->processRichDetailFields($collection);
+
         $data = $collection->merge(compact(
             'user_id',
             'approved',
@@ -305,6 +308,9 @@ class ProductService
         }
 
         $collection['has_warranty'] = isset($collection['has_warranty']) ? 1 : 0;
+
+        // Rich product detail fields
+        $collection = $this->processRichDetailFields($collection);
         
         unset($collection['button']);
         
@@ -680,5 +686,27 @@ class ProductService
         return $products->get();
     }
 
-    
+    /**
+     * Process rich product detail fields from the admin form.
+     * Converts comma-separated text inputs into JSON-encoded arrays
+     * for why_love, pair_with, and chips fields.
+     */
+    private function processRichDetailFields($collection)
+    {
+        // Convert comma-separated text to JSON arrays
+        $jsonArrayFields = ['why_love', 'pair_with', 'chips'];
+        foreach ($jsonArrayFields as $field) {
+            if (isset($collection[$field]) && is_string($collection[$field])) {
+                $items = array_filter(array_map('trim', explode(',', $collection[$field])));
+                $collection[$field] = json_encode(array_values($items));
+            } elseif (!isset($collection[$field])) {
+                $collection[$field] = json_encode([]);
+            }
+        }
+
+        // Ensure is_premium is set as a boolean integer
+        $collection['is_premium'] = isset($collection['is_premium']) ? 1 : 0;
+
+        return $collection;
+    }
 }

@@ -10,4 +10,5 @@ class PaymentMethod extends Model
 {
     use HasFactory,PreventDemoModeChanges;
 
+    protected $guarded = [];
 }

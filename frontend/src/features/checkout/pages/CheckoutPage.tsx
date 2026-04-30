@@ -15,13 +15,15 @@ import {
   usePaymentMethodsQuery,
   type PaymentMethod,
 } from '@/features/checkout/api';
-import { useShippingRatesQuery } from '@/features/cart/api';
+import { useCartQuery, useShippingRatesQuery } from '@/features/cart/api';
 import { clearCart } from '@/features/cart/store/cartSlice';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { PageLoader } from '@/components/ui/Spinner';
 import { unwrapCollection } from '@/lib/collections';
 import { getLocalizedText, getStorefrontLocale } from '@/lib/storefrontLocale';
+
+const ALLOWED_PAYMENT_METHODS = new Set(['razorpay', 'phonepe']);
 
 interface Address {
   id: number;
@@ -117,6 +119,7 @@ export function CheckoutPage() {
   const checkout = useAppSelector((s) => s.checkout);
   const cart = useAppSelector((s) => s.cart);
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
+  const { isLoading: loadingCart, isFetching: fetchingCart } = useCartQuery();
 
   const { data: addressData, isLoading: loadingAddresses } = useAddressesQuery();
   const addresses = isAuthenticated ? unwrapCollection<Address>(addressData) : [];
@@ -146,7 +149,8 @@ export function CheckoutPage() {
 
   const { data: paymentMethodsData } = usePaymentMethodsQuery();
   const paymentMethods: PaymentMethod[] = useMemo(() => {
-    return unwrapCollection<PaymentMethod>(paymentMethodsData).filter((m) => m.is_enabled);
+    return unwrapCollection<PaymentMethod>(paymentMethodsData)
+      .filter((m) => m.is_enabled && ALLOWED_PAYMENT_METHODS.has(String(m.code).toLowerCase()));
   }, [paymentMethodsData]);
 
   const createAddress = useCreateAddressMutation();
@@ -273,22 +277,6 @@ export function CheckoutPage() {
       const paymentData = parseIntentPayload(res);
       dispatch(setCheckoutData({ orderId: paymentData.orderId, orderNumber: paymentData.orderNumber, razorpayOrderId: paymentData.razorpayOrderId }));
 
-      // COD — order is immediately confirmed
-      if (checkout.gateway === 'cash_on_delivery' || checkout.gateway === 'cod') {
-        dispatch(clearCart());
-        dispatch(resetCheckout());
-        navigate('/checkout/confirmation', { state: { gateway: 'cod', orderNumber: paymentData.orderNumber } });
-        return;
-      }
-
-      // Wallet — order is paid via wallet balance
-      if (checkout.gateway === 'wallet') {
-        dispatch(clearCart());
-        dispatch(resetCheckout());
-        navigate('/checkout/confirmation', { state: { gateway: 'wallet', orderNumber: paymentData.orderNumber } });
-        return;
-      }
-
       // Razorpay — open modal
       if (checkout.gateway === 'razorpay') {
         const options = {
@@ -339,18 +327,21 @@ export function CheckoutPage() {
         return;
       }
 
-      // Other online gateways (Stripe, PayPal, etc.) — redirect if URL provided
-      const rawData = (res as any)?.data?._raw || (res as any)?.data || {};
-      const redirectUrl = rawData.payment_url || rawData.redirect_url || rawData.checkout_url;
-      if (redirectUrl) {
-        window.location.href = redirectUrl;
+      if (checkout.gateway === 'phonepe') {
+        const rawData = (res as any)?.data?._raw || (res as any)?.data || {};
+        const redirectUrl = rawData.payment_url || rawData.redirect_url || rawData.checkout_url;
+        if (redirectUrl) {
+          window.location.href = redirectUrl;
+          return;
+        }
+
+        dispatch(setCheckoutData({ isProcessing: false, error: 'PhonePe payment link was not returned. Please try again.' }));
+        dispatch(setStep('payment'));
         return;
       }
 
-      // Fallback — order created, payment pending
-      dispatch(clearCart());
-      dispatch(resetCheckout());
-      navigate('/checkout/confirmation', { state: { gateway: checkout.gateway, orderNumber: paymentData.orderNumber } });
+      dispatch(setCheckoutData({ isProcessing: false, error: 'Unsupported payment method selected. Please choose Razorpay or PhonePe.' }));
+      dispatch(setStep('payment'));
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Payment creation failed';
       dispatch(setCheckoutData({ isProcessing: false, error: msg }));
@@ -408,22 +399,6 @@ export function CheckoutPage() {
       const paymentData = parseIntentPayload(res);
       dispatch(setCheckoutData({ orderId: paymentData.orderId, orderNumber: paymentData.orderNumber, razorpayOrderId: paymentData.razorpayOrderId }));
 
-      // COD — order immediately confirmed
-      if (checkout.gateway === 'cash_on_delivery' || checkout.gateway === 'cod') {
-        dispatch(clearCart());
-        dispatch(resetCheckout());
-        navigate('/checkout/confirmation', { state: { gateway: 'cod', orderNumber: paymentData.orderNumber, guestCheckoutToken: checkout.guestCheckoutToken } });
-        return;
-      }
-
-      // Wallet — unlikely for guest but handle it
-      if (checkout.gateway === 'wallet') {
-        dispatch(clearCart());
-        dispatch(resetCheckout());
-        navigate('/checkout/confirmation', { state: { gateway: 'wallet', orderNumber: paymentData.orderNumber } });
-        return;
-      }
-
       // Razorpay — open modal
       if (checkout.gateway === 'razorpay') {
         const options = {
@@ -475,18 +450,21 @@ export function CheckoutPage() {
         return;
       }
 
-      // Other online gateways — redirect if URL provided
-      const rawData = (res as any)?.data?._raw || (res as any)?.data || {};
-      const redirectUrl = rawData.payment_url || rawData.redirect_url || rawData.checkout_url;
-      if (redirectUrl) {
-        window.location.href = redirectUrl;
+      if (checkout.gateway === 'phonepe') {
+        const rawData = (res as any)?.data?._raw || (res as any)?.data || {};
+        const redirectUrl = rawData.payment_url || rawData.redirect_url || rawData.checkout_url;
+        if (redirectUrl) {
+          window.location.href = redirectUrl;
+          return;
+        }
+
+        dispatch(setCheckoutData({ isProcessing: false, error: 'PhonePe payment link was not returned. Please try again.' }));
+        dispatch(setStep('payment'));
         return;
       }
 
-      // Fallback
-      dispatch(clearCart());
-      dispatch(resetCheckout());
-      navigate('/checkout/confirmation', { state: { gateway: checkout.gateway, orderNumber: paymentData.orderNumber } });
+      dispatch(setCheckoutData({ isProcessing: false, error: 'Unsupported payment method selected. Please choose Razorpay or PhonePe.' }));
+      dispatch(setStep('payment'));
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Payment creation failed';
       dispatch(setCheckoutData({ isProcessing: false, error: msg }));
@@ -495,6 +473,12 @@ export function CheckoutPage() {
   };
 
   if (isAuthenticated && loadingAddresses) {
+    return <PageLoader />;
+  }
+
+  const isRecoveringPersistedCart = Boolean(cart.cartToken) && cart.itemCount === 0 && (loadingCart || fetchingCart);
+
+  if (isRecoveringPersistedCart && checkout.step !== 'confirmation') {
     return <PageLoader />;
   }
 
@@ -690,6 +674,7 @@ export function CheckoutPage() {
                 <Button variant="outline" onClick={() => dispatch(setStep('address'))}>{t('Back', 'பின்செல்')}</Button>
                 <Button
                   loading={checkout.isProcessing}
+                  disabled={!selectedMethod}
                   onClick={() => {
                     dispatch(setStep('processing'));
                     if (isAuthenticated) {
@@ -699,11 +684,7 @@ export function CheckoutPage() {
                     }
                   }}
                 >
-                  {checkout.gateway === 'cash_on_delivery' || checkout.gateway === 'cod'
-                    ? t('Place Order (COD)', 'ஆர்டர் செய்க (COD)')
-                    : checkout.gateway === 'wallet'
-                    ? t('Pay with Wallet', 'வாலட் மூலம் செலுத்து')
-                    : t(`Pay with ${selectedMethod?.name || checkout.gateway}`, `${selectedMethod?.name || checkout.gateway} மூலம் செலுத்து`)}
+                  {t(`Pay with ${selectedMethod?.name || checkout.gateway}`, `Pay with ${selectedMethod?.name || checkout.gateway}`)}
                 </Button>
               </div>
             </div>
@@ -715,10 +696,8 @@ export function CheckoutPage() {
               <h2 className="mt-4 text-lg font-semibold">{t('Processing Payment...', 'பணம் செலுத்துதல் செயல்படுகிறது...')}</h2>
               <p className="mt-2 text-sm text-slate-600">
                 {checkout.gateway === 'razorpay'
-                  ? t('Please complete the payment in the Razorpay window.', 'Razorpay சாளரத்தில் பணம் செலுத்துதலை முடிக்கவும்.')
-                  : checkout.gateway === 'cash_on_delivery' || checkout.gateway === 'cod'
-                  ? t('Placing your order...', 'உங்கள் ஆர்டரை வைக்கிறது...')
-                  : t('Please wait while we process your payment...', 'உங்கள் பணம் செலுத்துதலை செயல்படுத்தும் வரை காத்திருங்கள்...')}
+                  ? t('Please complete the payment in the Razorpay window.', 'Please complete the payment in the Razorpay window.')
+                  : t('Please wait while we process your payment...', 'Please wait while we process your payment...')}
               </p>
             </div>
           )}

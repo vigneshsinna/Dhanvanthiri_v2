@@ -50,7 +50,7 @@ export function AdminPaymentsPage() {
         >
           <option value="">All Gateways</option>
           <option value="razorpay">Razorpay</option>
-          <option value="cod">Cash on Delivery</option>
+          <option value="phonepe">PhonePe</option>
         </select>
         <select
           value={status}
@@ -90,8 +90,8 @@ export function AdminPaymentsPage() {
                   {row.order_number ? `#${row.order_number}` : `Order #${row.order_id}`}
                 </td>
                 <td className="px-4 py-3">
-                  <Badge variant={row.gateway === 'cod' ? 'warning' : 'info'}>
-                    {row.gateway === 'cod' ? 'COD' : 'Razorpay'}
+                  <Badge variant="info">
+                    {row.gateway === 'phonepe' ? 'PhonePe' : 'Razorpay'}
                   </Badge>
                 </td>
                 <td className="px-4 py-3 text-slate-950">₹{currency.format(row.amount)}</td>

@@ -5,9 +5,10 @@ const wishlistKeys = {
   list: ['wishlist'] as const,
 };
 
-export function useWishlistQuery() {
+export function useWishlistQuery(enabled = true) {
   return useQuery({
     queryKey: wishlistKeys.list,
+    enabled,
     queryFn: async () => {
       const res = await accountAdapter.getWishlist();
       return res;

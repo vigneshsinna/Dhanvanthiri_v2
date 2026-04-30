@@ -78,6 +78,28 @@ type SortOption = 'newest' | 'price_asc' | 'price_desc' | 'best_sellers';
 const SITE_URL = 'https://dhanvanthirifoods.in';
 const PAGE = productsPageContent;
 
+const stripHtml = (value: unknown) =>
+  String(value ?? '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const toTextList = (value: unknown): string[] => {
+  if (Array.isArray(value)) return value.map(stripHtml).filter(Boolean);
+  if (value && typeof value === 'object') return Object.values(value).map(stripHtml).filter(Boolean);
+  return typeof value === 'string' ? value.split(/[\n,]/).map(stripHtml).filter(Boolean) : [];
+};
+
+function ProductCardImage({ src, alt }: { src?: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+
+  if (!src || failed) {
+    return <div className="flex h-full w-full items-center justify-center text-5xl text-brand-700/30">🫙</div>;
+  }
+
+  return <img src={src} alt={alt} loading="lazy" onError={() => setFailed(true)} />;
+}
+
 const trustIcons: Record<string, string> = {
   'Small Batch Handmade': '🫙',
   'Preservative-Free': '🌿',
@@ -180,8 +202,7 @@ export function CatalogPage() {
   }, [mergedProducts, activeCategory, sortBy, searchTerm]);
 
   const handleAddToCart = (product: Product) => {
-    const variant = product.variants?.[0];
-    addToCart.mutate({ product_id: product.id, variant_id: variant?.id, quantity: 1 });
+    addToCart.mutate({ product_id: product.id, quantity: 1 });
   };
 
   const categoryCounts = useMemo(() => {
@@ -341,32 +362,19 @@ export function CatalogPage() {
                 });
                 const badge = product.badge || '';
                 const category = product.category?.name || product.tags?.[0]?.name || '';
-                const desc = product.short_description || product.description || '';
-                const labels = Array.isArray(product.custom_labels)
-                  ? product.custom_labels
-                  : Object.values(product.custom_labels || {});
+                const desc = stripHtml(product.short_description || product.description || '');
+                const labels = toTextList(product.custom_labels);
                 const chips = labels.slice(0, 3);
                 const weight = product.variants?.[0]?.name || product.unit || '';
                 const tamilTitle = product.tamil_name || '';
+                const pairWith = toTextList(product.pair_with).join(' / ') || stripHtml(product.pair_with);
                 const reviewSnapshot = getProductReviewSnapshot(product);
 
                 return (
                   <article key={product.id} className="catalog-card group animate-on-scroll scale-in" data-testid="storefront-product-card">
                     <Link to={`/products/${product.slug}`} className="block">
                       <div className="catalog-card-img">
-                        <img
-                          src={imageUrl || ''}
-                          alt={product.name}
-                          loading="lazy"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            e.currentTarget.parentElement?.classList.add('catalog-card-img-fallback');
-                            const fallback = document.createElement('div');
-                            fallback.className = 'catalog-card-img-emoji';
-                            fallback.textContent = '🫙';
-                            e.currentTarget.after(fallback);
-                          }}
-                        />
+                        <ProductCardImage src={imageUrl} alt={product.name} />
                         {badge && <div className="catalog-card-badge">{badge}</div>}
                       </div>
                     </Link>
@@ -386,7 +394,7 @@ export function CatalogPage() {
                           ))}
                         </div>
                       )}
-                      {product.pair_with && <div className="catalog-card-pairing">Best with: {product.pair_with}</div>}
+                      {pairWith && <div className="catalog-card-pairing">Best with: {pairWith}</div>}
                       <div className="catalog-card-price-row">
                         <div className="catalog-card-price-left">
                           <span className="catalog-price">₹{product.price}</span>

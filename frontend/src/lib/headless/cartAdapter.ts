@@ -165,11 +165,11 @@ export const cartAdapter: any = {
     return normalizeCart(groups, summary);
   },
 
-  async addItem(payload: { product_id: number; variant_id?: number; quantity: number }) {
+  async addItem(payload: { product_id: number; variant_id?: number; variant?: string; quantity: number }) {
     const context = cartContext();
     const res = await headlessApi.post('/carts/add', {
       id: payload.product_id,
-      variant: payload.variant_id ? String(payload.variant_id) : '',
+      variant: payload.variant ?? '',
       quantity: payload.quantity,
       // The V2 backend rejects cart writes when this legacy field is empty.
       cost_matrix: 'headless-storefront',

@@ -23,8 +23,15 @@ interface ProductForm {
   cost_price: string;
   short_description: string;
   description: string;
+  badge: string;
+  tamil_name: string;
   brand_id: string;
-  custom_labels: string; // Comma separated for now
+  custom_labels: string;
+  taste_profile: string;
+  pair_with: string;
+  about: string;
+  why_love: string;
+  storage: string;
   status: string;
   weight: string;
   stock_quantity: string;
@@ -43,8 +50,15 @@ const emptyForm: ProductForm = {
   cost_price: '',
   short_description: '',
   description: '',
+  badge: '',
+  tamil_name: '',
   brand_id: '',
   custom_labels: '',
+  taste_profile: '',
+  pair_with: '',
+  about: '',
+  why_love: '',
+  storage: '',
   status: 'draft',
   weight: '',
   stock_quantity: '',
@@ -88,8 +102,15 @@ export function AdminProductDetailPage() {
         cost_price: String(p.cost_price ?? ''),
         short_description: p.short_description ?? '',
         description: p.description ?? '',
+        badge: p.badge ?? '',
+        tamil_name: p.tamil_name ?? '',
         brand_id: String(p.brand_id ?? ''),
-        custom_labels: p.custom_labels ? Object.values(p.custom_labels).join(', ') : '',
+        custom_labels: toEditableList(p.custom_labels),
+        taste_profile: p.taste_profile ?? '',
+        pair_with: toEditableList(p.pair_with),
+        about: p.about ?? '',
+        why_love: toEditableList(p.why_love),
+        storage: p.storage ?? '',
         status: p.status ?? 'draft',
         weight: String(p.weight ?? ''),
         stock_quantity: String(p.stock_quantity ?? ''),
@@ -113,6 +134,18 @@ export function AdminProductDetailPage() {
     setThumbnailFile(file);
   };
 
+  const toEditableList = (value: unknown) => {
+    if (Array.isArray(value)) return value.filter(Boolean).join('\n');
+    if (value && typeof value === 'object') return Object.values(value).filter(Boolean).join('\n');
+    return typeof value === 'string' ? value : '';
+  };
+
+  const splitEditableList = (value: string) =>
+    value
+      .split(/[\n,]/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+
   const set = (key: keyof ProductForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
@@ -130,12 +163,17 @@ export function AdminProductDetailPage() {
     if (form.cost_price) fd.append('cost_price', form.cost_price);
     if (form.short_description) fd.append('short_description', form.short_description);
     if (form.description) fd.append('description', form.description);
+    if (form.badge) fd.append('badge', form.badge);
+    if (form.tamil_name) fd.append('tamil_name', form.tamil_name);
     if (form.brand_id) fd.append('brand_id', form.brand_id);
     if (form.custom_labels) {
-      const labelsArray = form.custom_labels.split(',').map(l => l.trim()).filter(Boolean);
-      const labelsObj = Object.fromEntries(labelsArray.map((l, i) => [i, l])); // Simplistic keying
-      fd.append('custom_labels', JSON.stringify(labelsObj));
+      fd.append('custom_labels', JSON.stringify(splitEditableList(form.custom_labels)));
     }
+    if (form.taste_profile) fd.append('taste_profile', form.taste_profile);
+    if (form.pair_with) fd.append('pair_with', JSON.stringify(splitEditableList(form.pair_with)));
+    if (form.about) fd.append('about', form.about);
+    if (form.why_love) fd.append('why_love', JSON.stringify(splitEditableList(form.why_love)));
+    if (form.storage) fd.append('storage', form.storage);
     fd.append('status', form.status);
     if (form.weight) fd.append('weight', form.weight);
     if (form.stock_quantity) fd.append('stock_quantity', form.stock_quantity);
@@ -185,6 +223,11 @@ export function AdminProductDetailPage() {
           <Input label="Product Name" value={form.name} onChange={set('name')} required />
           <Input label="Slug" value={form.slug} onChange={set('slug')} placeholder="auto-generated-from-name" />
           <Input label="SKU" value={form.sku} onChange={set('sku')} required />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <Input label="Tamil Name" value={form.tamil_name} onChange={set('tamil_name')} placeholder="Native storefront title" />
+          <Input label="Product Badge" value={form.badge} onChange={set('badge')} placeholder="Customer Favourite, Best Seller" />
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
@@ -259,13 +302,61 @@ export function AdminProductDetailPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">About This Product</label>
+            <textarea
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[120px]"
+              value={form.about}
+              onChange={set('about')}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Why You'll Love It</label>
+            <textarea
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[120px]"
+              value={form.why_love}
+              onChange={set('why_love')}
+              placeholder="One point per line"
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Taste Profile</label>
+            <textarea
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[90px]"
+              value={form.taste_profile}
+              onChange={set('taste_profile')}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Best Paired With</label>
+            <textarea
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[90px]"
+              value={form.pair_with}
+              onChange={set('pair_with')}
+              placeholder="One item per line"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Storage Instructions</label>
+            <textarea
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[90px]"
+              value={form.storage}
+              onChange={set('storage')}
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
           <Input label="Meta Title" value={form.meta_title} onChange={set('meta_title')} />
           <Input label="Meta Description" value={form.meta_description} onChange={set('meta_description')} />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">Custom Labels (comma separated)</label>
-          <Input value={form.custom_labels} onChange={set('custom_labels')} placeholder="New, Best Seller, Seasonal" />
+          <label className="mb-1 block text-sm font-medium text-slate-700">Custom Labels</label>
+          <Input value={form.custom_labels} onChange={set('custom_labels')} placeholder="Bold, Garlicy, Best with rice" />
         </div>
 
         {/* Product image */}

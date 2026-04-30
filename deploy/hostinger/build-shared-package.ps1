@@ -72,6 +72,8 @@ function Write-ProductionEnv {
         $commentedLocalLines = Get-Content -Path $localEnvSource | ForEach-Object {
             if ([string]::IsNullOrWhiteSpace($_)) {
                 ''
+            } elseif ($_ -match '^(RAZOR|RAZORPAY|PHONEPE)_') {
+                '# ' + ($_ -replace '=.*$', '=REDACTED_ADMIN_MANAGED')
             } else {
                 '# ' + $_
             }
@@ -117,10 +119,8 @@ function Write-ProductionEnv {
         '',
         'PAYMENT_DEFAULT_GATEWAY=razorpay',
         '',
-        'RAZORPAY_KEY_ID=REPLACE_WITH_LIVE_RAZORPAY_KEY_ID',
-        'RAZORPAY_KEY_SECRET=REPLACE_WITH_LIVE_RAZORPAY_KEY_SECRET',
-        'RAZORPAY_WEBHOOK_SECRET=REPLACE_WITH_RAZORPAY_WEBHOOK_SECRET',
-        'RAZORPAY_BASE_URL=https://api.razorpay.com/v1',
+        '# Payment gateway credentials are managed in the backend Admin > Payment Methods screen.',
+        '# Do not put Razorpay or PhonePe secrets in this .env unless you intentionally need legacy fallback.',
         '',
         'MAIL_MAILER=smtp',
         'MAIL_HOST=smtp.hostinger.com',
@@ -215,13 +215,18 @@ schema_status_repair.sql -> Optional phpMyAdmin repair for legacy databases
 ## Upload Order
 
 1. Upload or extract this folder's contents into `public_html/`
-2. Review `core/.env`, replace the placeholder production values, and keep the commented local block only as reference
+2. Review `core/.env`, replace database/mail placeholders, and keep payment gateway credentials in Admin > Payment Methods
 3. If this package was built without `core/vendor/`, run `composer install --no-dev --optimize-autoloader`
 4. Open `https://your-domain.example/install.php?key=INSTALL_KEY`
-5. In the installer, run Migrate Database, Repair Production Admin, Production Check, Seed Products Only, and Optimize
-6. If admin login fails on an existing database, run Seed / Reset Admin Users
-7. If the error is `Unknown column 'status'` or `Unknown column 'active'`, run Repair Production Admin or Repair Payment Methods; if shell access is unavailable, import `schema_status_repair.sql` in phpMyAdmin
-8. Delete `install.php` after setup is complete
+5. In the installer, run Migrate Database
+6. Run Repair Production Admin, Repair Payment Methods, and Repair Product Catalog Columns
+7. Run Seed Storefront Content Only to copy header/footer/settings, About, FAQ, Contact, policies, blogs, and blog images into admin-managed records
+8. Run Enrich Products Only to copy product details, SKU/stock data, product images, categories, product badges/chips, descriptions, reviews/stars metadata, and detail-page content into admin-managed records
+9. In Admin > Payment Methods, enable/configure Razorpay and PhonePe credentials, then run Production Check and Optimize/Clear Cache
+10. If admin login fails on an existing database, run Seed / Reset Admin Users
+11. Avoid the broad Seed Database action on an existing live catalog unless you intentionally want to rebuild the baseline product catalog
+12. If the error is `Unknown column 'status'` or `Unknown column 'active'`, run Repair Production Admin or Repair Payment Methods; if shell access is unavailable, import `schema_status_repair.sql` in phpMyAdmin
+13. Delete `install.php` after setup is complete
 
 ## Manual Laravel Commands
 
@@ -229,7 +234,8 @@ schema_status_repair.sql -> Optional phpMyAdmin repair for legacy databases
 cd /home/<user>/public_html/core
 composer install --no-dev --optimize-autoloader
 php artisan migrate --force
-php artisan db:seed --force
+php artisan db:seed --class=Database\\Seeders\\LegacyStorefrontContentSeeder --force
+php artisan db:seed --class=Database\\Seeders\\DhanvathiriProductsSeeder --force
 php artisan config:cache
 php artisan view:cache
 ```
@@ -353,9 +359,9 @@ Write-Host '  2. Upload it to Hostinger public_html'
 Write-Host '  3. Review and update core/.env placeholders'
 if ($shouldIncludeVendor) {
     Write-Host "  4. Open install.php?key=$installKey"
-    Write-Host '  5. Run Migrate Database, Seed Database, and Optimize in the installer'
+Write-Host '  5. Run Migrate Database, repairs, Seed Storefront Content Only, Enrich Products Only, and Optimize in the installer'
 } else {
     Write-Host '  4. Install Composer dependencies in core/ using SSH or terminal access'
     Write-Host "  5. Open install.php?key=$installKey"
-    Write-Host '  6. Run Migrate Database, Seed Database, and Optimize in the installer'
+    Write-Host '  6. Run Migrate Database, repairs, Seed Storefront Content Only, Enrich Products Only, and Optimize in the installer'
 }

@@ -56,7 +56,8 @@ The packaged root `index.php` is a Hostinger-ready front controller that resolve
    - `APP_ENV=production`
    - `APP_DEBUG=false`
    - `APP_URL=https://dhanvanthirifoods.in`
-   - `DB_*`, `RAZORPAY_*`, and mail settings
+   - `DB_*` and mail settings
+   - Configure Razorpay and PhonePe inside the backend Admin > Payment Methods screen, not in `.env`.
 3. If `core/vendor/` is missing because you built with `-SkipVendor`, run Laravel dependency installation on the server:
 
 ```bash

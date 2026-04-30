@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PrivateRoute } from '@/components/guards';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
@@ -78,6 +78,7 @@ export const router = createBrowserRouter([
       { path: 'blog', element: <BlogListPage /> },
       { path: 'blog/:slug', element: <BlogPostPage /> },
       { path: 'contact', element: <ContactPage /> },
+      { path: 'about', element: <Navigate to="/pages/about" replace /> },
       { path: 'pages/contact', element: <ContactPage /> },
       { path: 'pages/:slug', element: <DynamicPage /> },
       { path: 'faq', element: <FaqPage /> },

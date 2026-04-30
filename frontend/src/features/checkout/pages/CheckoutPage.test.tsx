@@ -5,6 +5,11 @@ import { renderWithProviders, screen } from '@/test/test-utils';
 import { CheckoutPage } from './CheckoutPage';
 
 const guestValidateMutateAsync = vi.fn();
+let cartQueryState = {
+  data: null as any,
+  isLoading: false,
+  isFetching: false,
+};
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
@@ -48,6 +53,8 @@ vi.mock('@/features/checkout/api', () => ({
       data: {
         data: [
           { code: 'razorpay', name: 'Razorpay', description: 'Pay securely', is_enabled: true },
+          { code: 'phonepe', name: 'PhonePe', description: 'Pay with PhonePe', is_enabled: true },
+          { code: 'cash_on_delivery', name: 'Cash on Delivery', description: 'Pay later', is_enabled: true },
         ],
       },
     },
@@ -56,6 +63,7 @@ vi.mock('@/features/checkout/api', () => ({
 }));
 
 vi.mock('@/features/cart/api', () => ({
+  useCartQuery: () => cartQueryState,
   useShippingRatesQuery: () => ({
     data: {
       data: {
@@ -77,6 +85,7 @@ vi.mock('@/features/cart/api', () => ({
 describe('CheckoutPage', () => {
   beforeEach(() => {
     guestValidateMutateAsync.mockReset();
+    cartQueryState = { data: null, isLoading: false, isFetching: false };
   });
 
   it('renders without crashing when checkout collections are wrapped in nested data payloads', () => {
@@ -182,5 +191,92 @@ describe('CheckoutPage', () => {
 
     expect(await screen.findByText(/guest cart is required before checkout can continue/i)).toBeInTheDocument();
     expect(screen.queryByText(/^validation failed$/i)).not.toBeInTheDocument();
+  });
+
+  it('filters checkout payment methods to Razorpay and PhonePe only', async () => {
+    renderWithProviders(<CheckoutPage />, {
+      preloadedState: {
+        auth: {
+          isAuthenticated: false,
+          accessToken: null,
+          user: null,
+        },
+        cart: {
+          items: [],
+          coupon: null,
+          subtotal: 179,
+          discountAmount: 0,
+          shippingCost: 0,
+          taxAmount: 0,
+          grandTotal: 179,
+          itemCount: 1,
+          cartToken: 'guest-cart-token',
+        },
+        checkout: {
+          step: 'payment',
+          shippingAddressId: null,
+          billingAddressId: null,
+          shippingMethodId: 1,
+          billingSameAsShipping: true,
+          gateway: 'razorpay',
+          orderId: null,
+          orderNumber: null,
+          razorpayOrderId: null,
+          guestCheckoutToken: 'guest-checkout-token',
+          guestOrderAccessToken: null,
+          guestOrderAccessExpiresAt: null,
+          isProcessing: false,
+          error: null,
+        },
+      },
+    });
+
+    expect((await screen.findAllByText(/razorpay/i)).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/phonepe/i).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/cash on delivery/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/\bcod\b/i)).not.toBeInTheDocument();
+  });
+
+  it('waits for persisted guest cart rehydration before showing the empty cart state', () => {
+    cartQueryState = { data: null, isLoading: true, isFetching: true };
+
+    renderWithProviders(<CheckoutPage />, {
+      preloadedState: {
+        auth: {
+          isAuthenticated: false,
+          accessToken: null,
+          user: null,
+        },
+        cart: {
+          items: [],
+          coupon: null,
+          subtotal: 0,
+          discountAmount: 0,
+          shippingCost: null,
+          taxAmount: null,
+          grandTotal: 0,
+          itemCount: 0,
+          cartToken: 'persisted-guest-token',
+        },
+        checkout: {
+          step: 'address',
+          shippingAddressId: null,
+          billingAddressId: null,
+          shippingMethodId: null,
+          billingSameAsShipping: true,
+          gateway: 'razorpay',
+          orderId: null,
+          orderNumber: null,
+          razorpayOrderId: null,
+          guestCheckoutToken: null,
+          guestOrderAccessToken: null,
+          guestOrderAccessExpiresAt: null,
+          isProcessing: false,
+          error: null,
+        },
+      },
+    });
+
+    expect(screen.queryByText(/your cart is empty/i)).not.toBeInTheDocument();
   });
 });

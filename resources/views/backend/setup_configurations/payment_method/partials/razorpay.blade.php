@@ -8,7 +8,7 @@
         </div>
         <div class="col-md-8">
             <input type="text" class="form-control" name="RAZOR_KEY"
-                value="{{ env('RAZOR_KEY') }}" placeholder="{{ translate('RAZOR KEY') }}"
+                value="{{ get_setting('RAZOR_KEY') ?: get_setting('razorpay_key_id') }}" placeholder="{{ translate('RAZOR KEY') }}"
                 required>
         </div>
     </div>
@@ -19,7 +19,7 @@
         </div>
         <div class="col-md-8">
             <input type="text" class="form-control" name="RAZOR_SECRET"
-                value="{{ env('RAZOR_SECRET') }}"
+                value="{{ get_setting('RAZOR_SECRET') ?: get_setting('razorpay_key_secret') }}"
                 placeholder="{{ translate('RAZOR SECRET') }}" required>
         </div>
     </div>

@@ -32,6 +32,7 @@ describe('Public payment methods', () => {
     const methods = res.data.data.data;
     expect(methods.length).toBeGreaterThanOrEqual(1);
     expect(methods.some((m: any) => m.code === 'razorpay')).toBe(true);
+    expect(methods.some((m: any) => m.code === 'phonepe')).toBe(true);
   });
 
   it('each method has required fields', async () => {
@@ -49,6 +50,9 @@ describe('Public payment methods', () => {
     const res = await api.get('/payment-methods');
     const methods = res.data.data.data;
     expect(methods.some((m: any) => m.code === 'cod')).toBe(false);
+    expect(methods.some((m: any) => m.code === 'cash_on_delivery')).toBe(false);
+    expect(methods.some((m: any) => m.code === 'manual_payment')).toBe(false);
+    expect(methods.some((m: any) => m.code === 'offline_payment')).toBe(false);
   });
 });
 
@@ -80,14 +84,15 @@ describe('Admin payment methods', () => {
     });
   });
 
-  it('GET /admin/payment-methods lists razorpay only for super admins', async () => {
+  it('GET /admin/payment-methods lists only online allowlisted gateways for super admins', async () => {
     loginSuperAdmin();
     const res = await api.get('/admin/payment-methods');
     expect(res.status).toBe(200);
     const methods = res.data.data.data;
-    expect(methods.length).toBe(1);
     expect(methods.some((m: any) => m.code === 'razorpay')).toBe(true);
+    expect(methods.some((m: any) => m.code === 'phonepe')).toBe(true);
     expect(methods.some((m: any) => m.code === 'cod')).toBe(false);
+    expect(methods.some((m: any) => m.code === 'cash_on_delivery')).toBe(false);
   });
 
   it('GET /admin/payment-methods/razorpay/health returns status', async () => {

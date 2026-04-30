@@ -6,8 +6,7 @@ import { PromotionalPopups } from '@/components/layout/PromotionalPopups';
 import { useLogoutMutation, useMeQuery } from '@/features/auth/api';
 import { isItUserRole } from '@/features/auth/roleDisplay';
 import { clearCredentials, setCredentials } from '@/features/auth/store/authSlice';
-import { useCartQuery } from '@/features/cart/api';
-import { setCart, setCartToken } from '@/features/cart/store/cartSlice';
+import { syncCartStateFromResponse, useCartQuery } from '@/features/cart/api';
 import { useWebsiteSettingsQuery } from '@/features/cms/api';
 import { getLocalizedText, getStorefrontLocale } from '@/lib/storefrontLocale';
 import { useAppDispatch, useAppSelector } from '@/lib/utils/hooks';
@@ -139,36 +138,8 @@ export function AppLayout() {
 
   const { data: cartData } = useCartQuery();
   useEffect(() => {
-    const cartPayload = cartData?.data?.data ?? cartData?.data;
-    if (!cartPayload) {
-      return;
-    }
-
-    const items = (cartPayload.items ?? []).map((item: any) => ({
-      id: item.id,
-      quantity: item.quantity,
-      unitPrice: item.unit_price ?? item.unitPrice ?? 0,
-      lineTotal: item.line_total ?? item.lineTotal ?? 0,
-      product: item.product,
-      variant: item.variant ?? null,
-      isInStock: item.is_in_stock ?? true,
-    }));
-
-    dispatch(setCart({
-      items,
-      coupon: cartPayload.coupon ?? null,
-      subtotal: cartPayload.subtotal ?? 0,
-      discountAmount: cartPayload.discount_amount ?? 0,
-      shippingCost: cartPayload.shipping_cost ?? null,
-      taxAmount: cartPayload.tax_amount ?? null,
-      grandTotal: cartPayload.grand_total ?? cartPayload.subtotal ?? 0,
-      itemCount: cartPayload.item_count ?? items.reduce((sum: number, item: any) => sum + (item.quantity ?? 0), 0),
-    }));
-
-    if (cartPayload.cart_token !== undefined) {
-      dispatch(setCartToken(cartPayload.cart_token));
-    }
-  }, [cartData, dispatch]);
+    syncCartStateFromResponse(cartData);
+  }, [cartData]);
 
   useEffect(() => {
     setMobileMenuOpen(false);

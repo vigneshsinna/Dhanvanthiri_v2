@@ -11,6 +11,7 @@ use App\Http\Controllers\WalletController;
 use App\Http\Controllers\SellerPackageController;
 use App\Models\Order;
 use App\Models\User;
+use App\Support\Checkout\PaymentGatewayConfig;
 use Illuminate\Support\Facades\Auth;
 use Razorpay\Api\Api;
 use Session;
@@ -21,7 +22,7 @@ class RazorpayController extends Controller
     public function pay(Request $request)
     {
         $payment_track = array();
-        $api = new Api(env('RAZOR_KEY'), env('RAZOR_SECRET'));
+        $api = $this->api();
         if (Session::has('payment_type')) {
             $paymentType = Session::get('payment_type');
             $paymentData = Session::get('payment_data');
@@ -63,7 +64,7 @@ class RazorpayController extends Controller
         //Input items of form
         $input = $request->all();
         //get API Configuration
-        $api = new Api(env('RAZOR_KEY'), env('RAZOR_SECRET'));
+        $api = $this->api();
 
         //Fetch payment information by razorpay_payment_id
         $payment = $api->payment->fetch($input['razorpay_payment_id']);
@@ -124,5 +125,11 @@ class RazorpayController extends Controller
                 }
             }
         }
+    }
+
+    private function api(): Api
+    {
+        $config = app(PaymentGatewayConfig::class)->razorpay();
+        return new Api((string) $config['key_id'], (string) $config['key_secret']);
     }
 }

@@ -6,7 +6,6 @@ import {
   useAdminOrderQuery,
   useAdminOrderTrackingQuery,
   useAdminUpdateOrderStatusMutation,
-  useAdminMarkCollectedMutation,
 } from '@/features/admin/api';
 import { AdminPageHeader } from '@/features/admin/components/AdminPageHeader';
 import { Badge } from '@/components/ui/Badge';
@@ -114,7 +113,6 @@ export function AdminOrderDetailPage() {
   const { data: trackingData, isLoading: isTrackingLoading } = useAdminOrderTrackingQuery(orderId, Number.isFinite(orderId) && orderId > 0);
   const updateStatus = useAdminUpdateOrderStatusMutation();
   const createShipment = useAdminCreateShipmentMutation();
-  const markCollected = useAdminMarkCollectedMutation();
 
   const order = useMemo(() => data?.data?.data ?? data?.data ?? null, [data]);
   const orderMeta = useMemo(() => data?.data?.meta ?? data?.meta ?? {}, [data]);
@@ -138,9 +136,6 @@ export function AdminOrderDetailPage() {
   const allowedTransitions: string[] = Array.isArray(orderMeta.allowed_transitions)
     ? orderMeta.allowed_transitions
     : (fallbackNextStatuses[order.status] ?? []);
-
-  const isCoD = payments.some((p: any) => p.gateway === 'cod');
-  const isCoDPending = isCoD && payments.some((p: any) => p.status === 'pending');
 
   // Shipping address from the addresses array
   const shippingAddress = addresses.find((a: any) => a.type === 'shipping');
@@ -172,29 +167,11 @@ export function AdminOrderDetailPage() {
         title={
           <div className="flex items-center gap-2">
             {order.order_number}
-            {isCoD && <Badge variant="warning" className="text-sm">COD</Badge>}
           </div>
         }
         description="Track invoice, shipping, status transitions, and return activity from one order workspace."
         actions={(
           <div className="flex flex-wrap items-center gap-2">
-            {isCoDPending && (
-              <Button
-                variant="outline"
-                className="border-green-600 text-green-700 hover:bg-green-50 hover:text-green-800"
-                loading={markCollected.isPending}
-                onClick={async () => {
-                  try {
-                    await markCollected.mutateAsync({ id: order.id });
-                    refetch();
-                  } catch (e) {
-                    // console.error(e)
-                  }
-                }}
-              >
-                Mark Payment as Collected
-              </Button>
-            )}
             {invoiceData ? (
               <Button variant="outline" onClick={handleDownloadInvoice}>Download Invoice</Button>
             ) : (
@@ -229,14 +206,6 @@ export function AdminOrderDetailPage() {
               <Metric label="Payments" value={String(payments.length)} />
               <Metric label="Return Requests" value={String(returnRequests.length)} />
             </div>
-            {isCoD && (
-              <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-sm">
-                <span className="text-slate-500 font-medium">Payment Status (COD)</span>
-                <Badge variant={isCoDPending ? 'warning' : 'success'}>
-                  {isCoDPending ? 'Pending Collection' : 'Paid & Collected'}
-                </Badge>
-              </div>
-            )}
           </div>
 
           {/* Contact & Address */}

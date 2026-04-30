@@ -31,7 +31,37 @@ describe('AdminPaymentMethodsPage', () => {
       },
     });
 
-    expect(await screen.findByText(/Razorpay \(Online Payment\)/i)).toBeInTheDocument();
+    expect((await screen.findAllByText(/Razorpay \(Online Payment\)/i)).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText(/PhonePe/i)).length).toBeGreaterThan(0);
+    expect(screen.getByLabelText(/Client ID/i)).toHaveValue('PHONEPEUAT');
+    expect(screen.getByLabelText(/Client Secret/i)).toHaveValue('********');
+    expect(screen.queryByText(/Cash on Delivery/i)).not.toBeInTheDocument();
+  });
+
+  it('saves PhonePe admin settings without exposing COD', async () => {
+    const user = userEvent.setup();
+
+    store.dispatch(setCredentials({
+      accessToken: 'super-admin-token',
+      user: { id: 100, name: 'IT User', email: 'it@example.com', role: 'super_admin' },
+    }));
+
+    renderWithProviders(<AdminPaymentMethodsPage />, {
+      route: '/admin/payment-methods',
+      preloadedState: {
+        auth: {
+          isAuthenticated: true,
+          accessToken: 'super-admin-token',
+          user: { id: 100, name: 'IT User', email: 'it@example.com', role: 'super_admin' },
+        },
+      },
+    });
+
+    await user.clear(await screen.findByLabelText(/Client Version/i));
+    await user.type(screen.getByLabelText(/Client Version/i), '2');
+    await user.click(screen.getByRole('button', { name: /save phonepe/i }));
+
+    expect((await screen.findAllByText(/PhonePe/i)).length).toBeGreaterThan(0);
     expect(screen.queryByText(/Cash on Delivery/i)).not.toBeInTheDocument();
   });
 

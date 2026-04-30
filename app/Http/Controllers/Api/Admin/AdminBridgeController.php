@@ -11,10 +11,12 @@ use App\Models\Product;
 use App\Models\ProductStock;
 use App\Models\Upload;
 use App\Models\User;
+use App\Support\Checkout\PaymentGatewayConfig;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 use Razorpay\Api\Api;
 
@@ -404,22 +406,31 @@ class AdminBridgeController extends Controller
     {
         $this->ensureSuperAdmin($request);
 
-        $enabled = $this->razorpayConfigured() || (int) get_setting('razorpay') === 1;
-
         return response()->json([
             'success' => true,
             'data' => [
-                'data' => [
-                    [
-                        'code' => 'razorpay',
-                        'name' => 'Razorpay (Online Payment)',
-                        'description' => 'UPI, cards, net banking, wallets via Razorpay.',
-                        'is_enabled' => $enabled,
-                        'is_default' => true,
-                        'type' => 'online',
-                        'can_toggle' => false,
-                    ],
-                ],
+                'data' => app(PaymentGatewayConfig::class)->allForAdmin(),
+            ],
+        ]);
+    }
+
+    public function paymentMethodUpdate(Request $request, string $code): JsonResponse
+    {
+        $this->ensureSuperAdmin($request);
+
+        try {
+            $updated = app(PaymentGatewayConfig::class)->save($code, $request->all());
+        } catch (\InvalidArgumentException $e) {
+            throw ValidationException::withMessages([
+                'gateway' => [$e->getMessage()],
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment method updated',
+            'data' => [
+                'data' => $updated,
             ],
         ]);
     }
@@ -428,11 +439,12 @@ class AdminBridgeController extends Controller
     {
         $this->ensureSuperAdmin($request);
 
-        $keyId = (string) env('RAZOR_KEY', '');
-        $keySecret = (string) env('RAZOR_SECRET', '');
+        $config = app(PaymentGatewayConfig::class)->razorpay();
+        $keyId = (string) ($config['key_id'] ?? '');
+        $keySecret = (string) ($config['key_secret'] ?? '');
         $hasKeyId = $keyId !== '';
         $hasKeySecret = $keySecret !== '';
-        $hasWebhookSecret = (string) env('RAZOR_WEBHOOK_SECRET', '') !== '';
+        $hasWebhookSecret = (string) ($config['webhook_secret'] ?? '') !== '';
 
         if (!$hasKeyId || !$hasKeySecret) {
             return response()->json([
@@ -500,7 +512,16 @@ class AdminBridgeController extends Controller
             'brand_id' => ['nullable', 'integer'],
             'price' => [$partial ? 'sometimes' : 'required', 'numeric', 'min:0'],
             'cost_price' => ['nullable', 'numeric', 'min:0'],
+            'short_description' => ['nullable', 'string'],
             'description' => ['nullable', 'string'],
+            'badge' => ['nullable', 'string', 'max:255'],
+            'tamil_name' => ['nullable', 'string', 'max:255'],
+            'custom_labels' => ['nullable', 'string'],
+            'taste_profile' => ['nullable', 'string'],
+            'pair_with' => ['nullable', 'string'],
+            'about' => ['nullable', 'string'],
+            'why_love' => ['nullable', 'string'],
+            'storage' => ['nullable', 'string'],
             'status' => ['nullable', 'in:draft,active,archived'],
             'weight' => ['nullable', 'numeric', 'min:0'],
             'stock_quantity' => ['nullable', 'integer', 'min:0'],
@@ -592,13 +613,23 @@ class AdminBridgeController extends Controller
             'user_id' => $user->id,
             'category_id' => $payload['category_id'] ?? $product?->category_id,
             'brand_id' => $payload['brand_id'] ?? $product?->brand_id,
+            'short_description' => $payload['short_description'] ?? $product?->short_description,
             'description' => $payload['description'] ?? $product?->description,
+            'badge' => $payload['badge'] ?? $product?->badge,
+            'tamil_name' => $payload['tamil_name'] ?? $product?->tamil_name,
+            'custom_labels' => $payload['custom_labels'] ?? $product?->custom_labels,
+            'chips' => $payload['custom_labels'] ?? $product?->chips,
+            'taste_profile' => $payload['taste_profile'] ?? $product?->taste_profile,
+            'pair_with' => $payload['pair_with'] ?? $product?->pair_with,
+            'about' => $payload['about'] ?? $product?->about,
+            'why_love' => $payload['why_love'] ?? $product?->why_love,
+            'storage' => $payload['storage'] ?? $product?->storage,
             'unit_price' => $payload['price'] ?? $product?->unit_price ?? 0,
             'purchase_price' => $payload['cost_price'] ?? $product?->purchase_price ?? 0,
             'published' => $status === 'active' ? 1 : 0,
             'draft' => $status === 'draft' ? 1 : 0,
             'approved' => 1,
-            'cash_on_delivery' => 1,
+            'cash_on_delivery' => 0,
             'current_stock' => $stockQuantity,
             'weight' => $payload['weight'] ?? $product?->weight,
             'low_stock_quantity' => $payload['low_stock_threshold'] ?? $product?->low_stock_quantity ?? 5,
@@ -630,6 +661,15 @@ class AdminBridgeController extends Controller
             'price' => (float) $product->unit_price,
             'status' => $this->productStatus($product),
             'primary_image_url' => $image,
+            'short_description' => $product->short_description ?? '',
+            'badge' => $product->badge ?? '',
+            'tamil_name' => $product->tamil_name ?? '',
+            'custom_labels' => json_decode((string) $product->chips) ?? json_decode((string) $product->custom_labels) ?? [],
+            'taste_profile' => $product->taste_profile ?? '',
+            'pair_with' => json_decode((string) $product->pair_with) ?? [],
+            'about' => $product->about ?? '',
+            'why_love' => json_decode((string) $product->why_love) ?? [],
+            'storage' => $product->storage ?? '',
             'variants' => $product->stocks->map(fn (ProductStock $stock) => [
                 'id' => $stock->id,
                 'stock_quantity' => (int) $stock->qty,
@@ -655,8 +695,16 @@ class AdminBridgeController extends Controller
             'price' => (float) $product->unit_price,
             'compare_price' => null,
             'cost_price' => (float) $product->purchase_price,
-            'short_description' => '',
+            'short_description' => (string) ($product->short_description ?? ''),
             'description' => (string) $product->description,
+            'badge' => (string) ($product->badge ?? ''),
+            'tamil_name' => (string) ($product->tamil_name ?? ''),
+            'custom_labels' => json_decode((string) $product->chips) ?? json_decode((string) $product->custom_labels) ?? [],
+            'taste_profile' => (string) ($product->taste_profile ?? ''),
+            'pair_with' => json_decode((string) $product->pair_with) ?? [],
+            'about' => (string) ($product->about ?? ''),
+            'why_love' => json_decode((string) $product->why_love) ?? [],
+            'storage' => (string) ($product->storage ?? ''),
             'status' => $this->productStatus($product),
             'weight' => $product->weight,
             'stock_quantity' => (int) ($primaryStock?->qty ?? $product->current_stock ?? 0),
@@ -664,7 +712,6 @@ class AdminBridgeController extends Controller
             'meta_title' => $product->meta_title,
             'meta_description' => $product->meta_description,
             'primary_image_url' => $image,
-            'custom_labels' => [],
         ];
     }
 
@@ -934,7 +981,7 @@ class AdminBridgeController extends Controller
 
     private function razorpayConfigured(): bool
     {
-        return (string) env('RAZOR_KEY', '') !== '' && (string) env('RAZOR_SECRET', '') !== '';
+        return app(PaymentGatewayConfig::class)->hasCredentials('razorpay');
     }
 
     private function productImageUrl(Product $product): ?string

@@ -180,7 +180,7 @@ export function AdminOrdersPage() {
         >
           <option value="">All Payment Methods</option>
           <option value="razorpay">Razorpay</option>
-          <option value="cod">Cash on Delivery</option>
+          <option value="phonepe">PhonePe</option>
         </select>
       </div>
 
@@ -204,8 +204,8 @@ export function AdminOrdersPage() {
                 <td className="px-4 py-3 font-medium text-slate-900">
                   <div className="flex items-center gap-2">
                     {order.orderNumber}
-                    {order.paymentMethod === 'cod' ? (
-                      <Badge variant="warning" className="text-[10px] py-0 px-1.5 h-4 leading-none">COD</Badge>
+                    {order.paymentMethod === 'phonepe' ? (
+                      <Badge variant="info" className="text-[10px] py-0 px-1.5 h-4 leading-none">PhonePe</Badge>
                     ) : null}
                   </div>
                 </td>
@@ -276,7 +276,8 @@ function humanizeLabel(value: string) {
 }
 
 function humanizePaymentMethod(value: string) {
-  if (value === 'cod') return 'COD';
+  if (value === 'phonepe') return 'PhonePe';
+  if (value === 'razorpay') return 'Razorpay';
   if (value === '-') return '-';
   return humanizeLabel(value);
 }

@@ -519,6 +519,7 @@ export const adminHandlers = [
   http.get(`${BASE}/payment-methods`, () => ok({
     data: [
       { code: 'razorpay', name: 'Online Payment (Razorpay)', description: 'Pay securely using UPI, cards, net banking, or wallets.', is_enabled: true, is_default: true, type: 'online' },
+      { code: 'phonepe', name: 'PhonePe', description: 'Pay securely with PhonePe.', is_enabled: true, is_default: false, type: 'online' },
     ],
   })),
 
@@ -527,8 +528,52 @@ export const adminHandlers = [
     if (authRole(request) !== 'super_admin') return err(403, 'Forbidden');
     return ok({
       data: [
-        { code: 'razorpay', name: 'Razorpay (Online Payment)', description: 'UPI, cards, net banking, wallets via Razorpay.', is_enabled: true, is_default: true, type: 'online', can_toggle: false },
+        {
+          code: 'razorpay',
+          name: 'Razorpay (Online Payment)',
+          description: 'UPI, cards, net banking, wallets via Razorpay.',
+          is_enabled: true,
+          is_default: true,
+          type: 'online',
+          can_toggle: false,
+          settings: { key_id: 'rzp_test_123', key_secret: '********', webhook_secret: '********' },
+        },
+        {
+          code: 'phonepe',
+          name: 'PhonePe',
+          description: 'PhonePe payment gateway.',
+          is_enabled: true,
+          is_default: false,
+          type: 'online',
+          can_toggle: true,
+          environment: 'sandbox',
+          settings: {
+            client_id: 'PHONEPEUAT',
+            client_version: '1',
+            client_secret: '********',
+            base_url: 'https://api-preprod.phonepe.com/apis/pg-sandbox',
+            redirect_url: 'https://puregrains.test/payment/phonepe/redirect',
+            callback_url: 'https://puregrains.test/api/v2/phonepe/callbackUrl',
+            timeout_seconds: '20',
+          },
+        },
       ],
+    });
+  }),
+  http.put(`${BASE}/admin/payment-methods/:code`, async ({ request, params }) => {
+    if (authRole(request) !== 'super_admin') return err(403, 'Forbidden');
+    const body = await request.json() as any;
+    return ok({
+      data: {
+        code: params.code,
+        name: params.code === 'phonepe' ? 'PhonePe' : 'Razorpay',
+        description: params.code === 'phonepe' ? 'PhonePe Standard Checkout.' : 'UPI, cards, net banking, wallets via Razorpay.',
+        is_enabled: body.is_enabled,
+        is_default: params.code === 'razorpay',
+        type: 'online',
+        environment: body.environment ?? 'sandbox',
+        settings: body.settings ?? {},
+      },
     });
   }),
   http.get(`${BASE}/admin/payment-methods/razorpay/health`, () => ok({

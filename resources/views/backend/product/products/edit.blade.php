@@ -209,6 +209,67 @@
                                 </div>
                             </div>
 
+                            <!-- Product Details (Frontend) -->
+                            <h5 class="mb-3 mt-5 pb-3 fs-17 fw-700" style="border-bottom: 1px dashed #e4e5eb;">{{translate('Product Details (Frontend)')}}</h5>
+                            <div class="w-100">
+                                <!-- Tamil Name -->
+                                <div class="form-group mb-2">
+                                    <label class="col-from-label fs-13">{{translate('Tamil Name')}}</label>
+                                    <input type="text" class="form-control" name="tamil_name" value="{{ $product->tamil_name }}" placeholder="{{ translate('e.g. பூண்டு தொக்கு') }}">
+                                    <small class="text-muted">{{translate('The product name in Tamil, displayed on the product detail page.')}}</small>
+                                </div>
+                                <!-- Badge -->
+                                <div class="form-group mb-2">
+                                    <label class="col-from-label fs-13">{{translate('Badge')}}</label>
+                                    <input type="text" class="form-control" name="badge" value="{{ $product->badge }}" placeholder="{{ translate('e.g. Best Seller, Customer Favourite') }}">
+                                    <small class="text-muted">{{translate('A short label badge shown on the product card.')}}</small>
+                                </div>
+                                <!-- About This Product -->
+                                <div class="form-group mb-2">
+                                    <label class="col-from-label fs-13">{{translate('About This Product')}}</label>
+                                    <textarea class="aiz-text-editor" name="about">{{ $product->about }}</textarea>
+                                </div>
+                                <!-- Why You'll Love It -->
+                                <div class="form-group mb-2">
+                                    <label class="col-from-label fs-13">{{translate("Why You'll Love It")}}</label>
+                                    <textarea class="form-control" name="why_love" rows="3" placeholder="{{ translate('Comma separated, e.g. 100% Natural, No Preservatives, Rich Flavor') }}">{{ is_array(json_decode($product->why_love)) ? implode(', ', json_decode($product->why_love)) : $product->why_love }}</textarea>
+                                    <small class="text-muted">{{translate('Enter reasons separated by commas. Each will appear as a bullet point.')}}</small>
+                                </div>
+                                <!-- Taste Profile -->
+                                <div class="form-group mb-2">
+                                    <label class="col-from-label fs-13">{{translate('Taste Profile')}}</label>
+                                    <input type="text" class="form-control" name="taste_profile" value="{{ $product->taste_profile }}" placeholder="{{ translate('e.g. Bold, garlicky, tangy, spiced') }}">
+                                </div>
+                                <!-- Best Paired With -->
+                                <div class="form-group mb-2">
+                                    <label class="col-from-label fs-13">{{translate('Best Paired With')}}</label>
+                                    <textarea class="form-control" name="pair_with" rows="2" placeholder="{{ translate('Comma separated, e.g. Hot rice, Dosa, Idli, Chapati') }}">{{ is_array(json_decode($product->pair_with)) ? implode(', ', json_decode($product->pair_with)) : $product->pair_with }}</textarea>
+                                    <small class="text-muted">{{translate('Enter pairing items separated by commas.')}}</small>
+                                </div>
+                                <!-- Chips / Labels -->
+                                <div class="form-group mb-2">
+                                    <label class="col-from-label fs-13">{{translate('Chips / Labels')}}</label>
+                                    <textarea class="form-control" name="chips" rows="2" placeholder="{{ translate('Comma separated, e.g. Garlicky, Bold, Traditional') }}">{{ is_array(json_decode($product->chips)) ? implode(', ', json_decode($product->chips)) : $product->chips }}</textarea>
+                                    <small class="text-muted">{{translate('Short label chips displayed on the product card and detail page.')}}</small>
+                                </div>
+                                <!-- Storage Instructions -->
+                                <div class="form-group mb-2">
+                                    <label class="col-from-label fs-13">{{translate('Storage Instructions')}}</label>
+                                    <input type="text" class="form-control" name="storage" value="{{ $product->storage }}" placeholder="{{ translate('e.g. Store in a cool, dry place. Refrigerate after opening.') }}">
+                                </div>
+                                <!-- Is Premium -->
+                                <div class="form-group row mb-2">
+                                    <label class="col-md-3 col-from-label fs-13">{{translate('Is Premium')}}</label>
+                                    <div class="col-md-9">
+                                        <label class="aiz-switch aiz-switch-success mb-0">
+                                            <input type="checkbox" name="is_premium" value="1" @if($product->is_premium) checked @endif>
+                                            <span></span>
+                                        </label>
+                                        <small class="text-muted">{{translate('Mark this product as a premium product.')}}</small>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Refund -->
                             @if (addon_is_activated('refund_request'))
                                 <h5 class="mb-3 mt-5 pb-3 fs-17 fw-700" style="border-bottom: 1px dashed #e4e5eb;">{{translate('Refund')}}</h5>

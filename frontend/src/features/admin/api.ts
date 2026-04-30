@@ -423,6 +423,8 @@ export interface AdminPaymentMethod {
   description: string;
   type: 'online' | 'offline';
   is_enabled: boolean;
+  environment?: string | null;
+  settings?: Record<string, any>;
   config?: Record<string, unknown>;
 }
 
@@ -451,6 +453,20 @@ export function useAdminPaymentMethodsQuery(enabled = true) {
     queryFn: async () => {
       const res = await api.get('/admin/payment-methods');
       return unwrapPaymentMethodCollection(res.data);
+    },
+  });
+}
+
+export function useUpdateAdminPaymentMethodMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ code, payload }: { code: string; payload: Record<string, unknown> }) => {
+      const res = await api.put(`/admin/payment-methods/${code}`, payload);
+      return unwrapPaymentMethodDetails(res.data);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.admin.paymentMethods() });
+      qc.invalidateQueries({ queryKey: ['admin', 'razorpay-health'] });
     },
   });
 }

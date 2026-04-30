@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { useFeaturedProductsQuery } from '@/features/catalog/api';
@@ -26,6 +26,28 @@ interface Product {
 
 const SITE_URL = "https://dhanvanthirifoods.in";
 const BRAND = "Dhanvanthiri Foods";
+
+const stripHtml = (value: unknown) =>
+  String(value ?? '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const toTextList = (value: unknown): string[] => {
+  if (Array.isArray(value)) return value.map(stripHtml).filter(Boolean);
+  if (value && typeof value === 'object') return Object.values(value).map(stripHtml).filter(Boolean);
+  return typeof value === 'string' ? value.split(/[\n,]/).map(stripHtml).filter(Boolean) : [];
+};
+
+function ProductCardImage({ src, alt }: { src?: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+
+  if (!src || failed) {
+    return <div className="flex h-full w-full items-center justify-center text-5xl text-brand-700/30">🫙</div>;
+  }
+
+  return <img src={src} alt={alt} loading="lazy" onError={() => setFailed(true)} />;
+}
 
 // Per-product metadata for rich cards
 const productMeta: Record<string, { category?: string; desc?: string; chips?: string[]; pairing?: string; badge?: string }> = {
@@ -117,8 +139,7 @@ export function HomePage() {
   };
 
   const handleAddToCart = (product: Product) => {
-    const variant = product.variants?.[0];
-    addToCart.mutate({ product_id: product.id, variant_id: variant?.id, quantity: 1 });
+    addToCart.mutate({ product_id: product.id, quantity: 1 });
   };
 
   const meta = {
@@ -275,17 +296,21 @@ export function HomePage() {
               const canonicalSlug = p.slug.replace(/-[0-9a-f]{8,}$/i, '');
               const pm = productMeta[canonicalSlug] || {};
               const category = pm.category || (p as any).tags?.[0]?.name || '';
-              const desc = pm.desc || p.short_description || '';
-              const chips = pm.chips || [];
-              const pairing = pm.pairing || '';
-              const badge = pm.badge || '';
+              const backendLabels = toTextList((p as any).chips).length > 0
+                ? toTextList((p as any).chips)
+                : toTextList((p as any).custom_labels);
+              const backendPairing = toTextList((p as any).pair_with).join(' / ') || stripHtml((p as any).pair_with);
+              const desc = stripHtml(p.short_description || (p as any).description || pm.desc || '');
+              const chips = backendLabels.length > 0 ? backendLabels : (pm.chips || []);
+              const pairing = backendPairing || pm.pairing || '';
+              const badge = (p as any).badge || pm.badge || '';
               const weight = p.variants?.[0]?.name || '200g Jar';
               const reviewSnapshot = getProductReviewSnapshot(p);
               return (
                 <div key={p.id} className="home-card group animate-on-scroll fade-up" data-testid="storefront-product-card">
                   <Link to={`/products/${p.slug}`} className="block">
                     <div className="cardImg">
-                      <img src={imageUrl || ''} alt={p.name} loading="lazy" />
+                      <ProductCardImage src={imageUrl} alt={p.name} />
                       {badge && <div className="cardBadge">{badge}</div>}
                     </div>
                   </Link>
@@ -300,10 +325,9 @@ export function HomePage() {
                       <div className="cardTitle group-hover:text-brand-700 transition-colors">{p.name}</div>
                     </Link>
                     {desc && <p className="cardDesc">{desc}</p>}
-                    {(chips.length > 0 || Object.values(p.custom_labels || {}).length > 0) && (
+                    {chips.length > 0 && (
                       <div className="cardChips">
                         {chips.map((c: string, i: number) => <span key={`c_${i}`} className="chip">{c}</span>)}
-                        {Object.values(p.custom_labels || {}).map((c: string, i: number) => <span key={`l_${i}`} className="chip bg-brand-100 text-brand-800">{c}</span>)}
                       </div>
                     )}
                     {pairing && <div className="cardPairing">Best with: {pairing}</div>}

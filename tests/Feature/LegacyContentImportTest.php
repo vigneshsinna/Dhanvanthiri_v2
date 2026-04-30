@@ -17,6 +17,9 @@ class LegacyContentImportTest extends TestCase
     /** @test */
     public function legacy_import_seeds_products_with_live_images_and_descriptions(): void
     {
+        require_once database_path('seeders/DhanvathiriProductsSeeder.php');
+
+        Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\DhanvathiriProductsSeeder']);
         Artisan::call('db:seed', ['--class' => 'LegacyStorefrontContentSeeder']);
         Artisan::call('db:seed', ['--class' => 'LegacyStorefrontContentSeeder']);
 
@@ -30,7 +33,7 @@ class LegacyContentImportTest extends TestCase
         $admin = $this->makeAdminUser();
         Sanctum::actingAs($admin);
 
-        $adminResponse = $this->getJson('/api/admin/products');
+        $adminResponse = $this->getJson('/api/admin/products?per_page=100');
         $adminProduct = collect($adminResponse->json('data.data'))->firstWhere('slug', 'poondu-thokku');
 
         $this->assertNotNull($adminProduct);
@@ -77,6 +80,7 @@ class LegacyContentImportTest extends TestCase
         $blogPost = collect($blogList->json('blogs.data'))->firstWhere('slug', 'art-of-traditional-pickle-making');
         $this->assertNotNull($blogPost);
         $this->assertStringContainsString('/uploads/', (string) $blogPost['banner']);
+        $this->assertNotNull($blogPost['published_at']);
 
         $faqResponse = $this->apiGet('/api/v2/faqs');
         $faq = collect($faqResponse->json('data'))->firstWhere('id', 1);
@@ -92,6 +96,58 @@ class LegacyContentImportTest extends TestCase
         $contact = $contactResponse->json('data');
         $this->assertSame('contact-us', $contact['slug']);
         $this->assertSame('dhanvanthrifoods777@gmail.com', $contact['contact']['email']);
+
+        $refundResponse = $this->apiGet('/api/v2/pages/refund-policy');
+        $refundResponse->assertJsonPath('data.slug', 'refund-policy');
+    }
+
+    /** @test */
+    public function default_database_seeder_copies_storefront_shell_and_content_into_admin_owned_tables(): void
+    {
+        Artisan::call('db:seed');
+
+        $this->assertDatabaseHas((new BusinessSetting())->getTable(), [
+            'type' => 'website_name',
+            'value' => 'Dhanvanthiri Foods',
+        ]);
+
+        $this->assertDatabaseHas((new BusinessSetting())->getTable(), [
+            'type' => 'header_announcement',
+            'value' => 'Free shipping on orders above Rs.499 | Freshly handmade with love',
+        ]);
+
+        $this->assertDatabaseHas((new BusinessSetting())->getTable(), [
+            'type' => 'about_us_description',
+            'value' => 'Traditional South Indian pickles and thokku, handcrafted with authentic family recipes passed down through generations.',
+        ]);
+
+        $this->assertNotNull(Page::where('slug', 'about')->first());
+        $this->assertNotNull(Page::where('slug', 'faq')->first());
+        $this->assertNotNull(Page::where('slug', 'contact-us')->first());
+
+        $blogList = $this->apiGet('/api/v2/blog-list');
+        $this->assertNotEmpty($blogList->json('blogs.data'));
+        $this->assertNotNull($blogList->json('blogs.data.0.published_at'));
+
+        $settings = $this->apiGet('/api/v2/storefront/settings');
+        $settings->assertJsonPath('data.website.name', 'Dhanvanthiri Foods')
+            ->assertJsonPath('data.website.announcement', 'Free shipping on orders above Rs.499 | Freshly handmade with love')
+            ->assertJsonPath('data.website.footerDescription', 'Traditional South Indian pickles and thokku, handcrafted with authentic family recipes passed down through generations.')
+            ->assertJsonPath('data.navigation.primary.0.label', 'Products')
+            ->assertJsonPath('data.navigation.primary.1.label', 'Blog')
+            ->assertJsonPath('data.navigation.primary.2.label', 'FAQ')
+            ->assertJsonPath('data.navigation.primary.3.label', 'About');
+
+        $contact = $this->apiGet('/api/v2/pages/contact');
+        $contact->assertJsonPath('data.slug', 'contact-us')
+            ->assertJsonPath('data.contact.email', 'dhanvanthrifoods777@gmail.com');
+
+        $product = Product::where('slug', 'karuveppilai-thokku')->first();
+        $this->assertNotNull($product);
+        $this->assertNotEmpty($product->thumbnail_img);
+
+        $refundResponse = $this->apiGet('/api/v2/pages/refund-policy');
+        $refundResponse->assertJsonPath('data.slug', 'refund-policy');
     }
 
     private function apiGet(string $uri)

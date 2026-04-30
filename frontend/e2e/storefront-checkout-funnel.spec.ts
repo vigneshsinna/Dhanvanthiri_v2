@@ -107,10 +107,7 @@ test.describe('Storefront checkout funnel', () => {
     await page.getByRole('button', { name: /continue to payment/i }).click();
     await expect(page.getByRole('heading', { name: /order review|payment/i })).toBeVisible({ timeout: 15_000 });
 
-    const cod = page.getByLabel(/cash|cod|delivery/i).first();
-    if (await cod.isVisible().catch(() => false)) {
-      await cod.check();
-    }
+    await expect(page.getByLabel(/cash|cod|delivery/i).first()).toHaveCount(0);
 
     const payButton = page.getByRole('button', { name: /place order|pay with/i }).last();
     await expect(payButton).toBeEnabled();

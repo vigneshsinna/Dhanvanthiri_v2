@@ -80,24 +80,8 @@ function bootstrapLaravelForInstaller()
 function paymentMethodNamesForInstaller(): array
 {
     return [
-        'paypal',
-        'stripe',
-        'sslcommerz',
-        'instamojo',
         'razorpay',
-        'paystack',
-        'voguepay',
-        'payhere',
-        'ngenius',
-        'iyzico',
-        'nagad',
-        'bkash',
-        'aamarpay',
-        'authorizenet',
-        'payku',
-        'mercadopago',
-        'paymob',
-        'tap',
+        'phonepe',
     ];
 }
 
@@ -221,13 +205,38 @@ function repairPaymentMethodsForInstaller(): array
     }
 
     $now = Illuminate\Support\Carbon::now();
+    Illuminate\Support\Facades\DB::table('business_settings')->updateOrInsert(
+        ['type' => 'cash_payment'],
+        ['value' => '0', 'updated_at' => $now, 'created_at' => $now]
+    );
+    Illuminate\Support\Facades\DB::table('business_settings')->updateOrInsert(
+        ['type' => 'wallet_system'],
+        ['value' => '0', 'updated_at' => $now, 'created_at' => $now]
+    );
+    Illuminate\Support\Facades\DB::table('business_settings')->updateOrInsert(
+        ['type' => 'razorpay'],
+        ['value' => '1', 'updated_at' => $now, 'created_at' => $now]
+    );
+    Illuminate\Support\Facades\DB::table('business_settings')->updateOrInsert(
+        ['type' => 'phonepe_payment'],
+        ['value' => '1', 'updated_at' => $now, 'created_at' => $now]
+    );
+    Illuminate\Support\Facades\DB::table('business_settings')->updateOrInsert(
+        ['type' => 'phonepe_version'],
+        ['value' => '2', 'updated_at' => $now, 'created_at' => $now]
+    );
+
+    Illuminate\Support\Facades\DB::table('payment_methods')
+        ->whereNotIn('name', paymentMethodNamesForInstaller())
+        ->update(['active' => 0, 'updated_at' => $now]);
+
     foreach (paymentMethodNamesForInstaller() as $name) {
         $exists = Illuminate\Support\Facades\DB::table('payment_methods')->where('name', $name)->exists();
         Illuminate\Support\Facades\DB::table('payment_methods')->updateOrInsert(
             ['name' => $name],
             [
                 'image' => null,
-                'active' => 0,
+                'active' => 1,
                 'status' => 1,
                 'addon_identifier' => null,
                 'updated_at' => $now,
@@ -261,6 +270,7 @@ function repairProductCatalogColumnsForInstaller(): array
     $output = '';
     $columns = [
         'tamil_name' => ['string', 191, true, null],
+        'short_description' => ['text', null, true, null],
         'badge' => ['string', 191, true, null],
         'chips' => ['text', null, true, null],
         'taste_profile' => ['string', 191, true, null],
@@ -369,7 +379,8 @@ if ($action === 'menu') {
     echo '<a class="btn warn" href="?key=' . h($requestKey) . '&action=repair_payment_methods">Repair Payment Methods</a>';
     echo '<a class="btn warn" href="?key=' . h($requestKey) . '&action=repair_product_catalog">Repair Product Catalog Columns</a>';
     echo '<a class="btn warn" href="?key=' . h($requestKey) . '&action=production_check">Production Check</a>';
-    echo '<a class="btn warn" href="?key=' . h($requestKey) . '&action=seed_products">Seed Products Only</a>';
+    echo '<a class="btn warn" href="?key=' . h($requestKey) . '&action=seed_products">Enrich Products Only</a>';
+    echo '<a class="btn warn" href="?key=' . h($requestKey) . '&action=seed_storefront_content">Seed Storefront Content Only</a>';
     echo '<a class="btn alt" href="?key=' . h($requestKey) . '&action=clear_cache">Clear Cache</a>';
     echo '<a class="btn warn" href="?key=' . h($requestKey) . '&action=debug">Debug</a>';
     echo '</p>';
@@ -502,14 +513,23 @@ if ($action === 'seed') {
     echo '<h2>Seed Database</h2><pre>';
     echo h("Run this only on a fresh install or when you explicitly want the baseline catalog and admin accounts.\n\n");
 
-    // Fix: Composer classmap may point to database/seeds (old) instead of database/seeders (new).
-    // Manually register seeder classes so the autoloader can find them.
-    $seedersDir = __DIR__ . '/core/database/seeders';
-    if (is_dir($seedersDir)) {
-        foreach (glob($seedersDir . '/*.php') as $seederFile) {
-            require_once $seederFile;
+    try {
+        bootstrapLaravelForInstaller();
+
+        // Fix: Composer classmap may point to database/seeds (old) instead of database/seeders (new).
+        // Manually register seeder classes after Laravel is bootstrapped so Seeder dependencies exist.
+        $seedersDir = __DIR__ . '/core/database/seeders';
+        if (is_dir($seedersDir)) {
+            foreach (glob($seedersDir . '/*.php') as $seederFile) {
+                require_once $seederFile;
+            }
+            echo h("Registered seeder classes from database/seeders/\n");
         }
-        echo h("Registered seeder classes from database/seeders/\n");
+    } catch (Throwable $exception) {
+        echo h("Seeder bootstrap failed: " . $exception->getMessage() . "\n" . $exception->getTraceAsString() . "\n");
+        echo '</pre><p class="fail">Database seed failed before Artisan could run. Check core/vendor and core/.env.</p>';
+        renderPageEnd();
+        exit;
     }
 
     $result = runArtisan('db:seed', ['--force' => true]);
@@ -537,13 +557,59 @@ if ($action === 'seed_admin_users') {
     exit;
 }
 
+if ($action === 'seed_storefront_content') {
+    @set_time_limit(300);
+    @ini_set('max_execution_time', '300');
+
+    echo '<h2>Seed Storefront Content Only</h2><pre>';
+    echo h("This copies the packaged storefront-controlled text and images into admin-managed records.\n");
+    echo h("It updates site settings, header/footer content, blog categories/posts/banners, FAQ, About, Contact, and policy pages.\n");
+    echo h("It does not reset products, product stocks, categories, orders, users, or admin accounts.\n\n");
+
+    try {
+        bootstrapLaravelForInstaller();
+
+        $requiredTables = ['business_settings', 'blogs', 'blog_categories', 'pages', 'uploads', 'users'];
+        foreach ($requiredTables as $table) {
+            if (!Illuminate\Support\Facades\Schema::hasTable($table)) {
+                throw new RuntimeException("Required table is missing: {$table}");
+            }
+        }
+
+        $seedersDir = __DIR__ . '/core/database/seeders';
+        foreach (['StorefrontContentSeeder.php', 'LegacyStorefrontContentSeeder.php'] as $seederName) {
+            $seederFile = $seedersDir . '/' . $seederName;
+            if (file_exists($seederFile)) {
+                require_once $seederFile;
+            }
+        }
+
+        $result = runArtisan('db:seed', [
+            '--class' => 'Database\\Seeders\\LegacyStorefrontContentSeeder',
+            '--force' => true,
+        ]);
+        echo h($result['output']);
+
+        echo $result['status'] === 0
+            ? '</pre><p class="ok">Storefront content copied into admin-managed records successfully.</p>'
+            : '</pre><p class="fail">Storefront content seed failed. Check the output above.</p>';
+    } catch (Throwable $exception) {
+        echo h("Storefront content seeding failed before completion: " . $exception->getMessage() . "\n");
+        echo h($exception->getTraceAsString() . "\n");
+        echo '</pre><p class="fail">Storefront content seed failed. Check the output above.</p>';
+    }
+
+    renderPageEnd();
+    exit;
+}
+
 if ($action === 'seed_products') {
     @set_time_limit(600);
     @ini_set('max_execution_time', '600');
 
-    echo '<h2>Seed Products Only</h2><pre>';
-    echo h("This seeds the Dhanvathiri catalog products. It does not reset admin users.\n");
-    echo h("Warning: the current seeder truncates products, product_categories, and product_stocks before inserting the packaged catalog.\n\n");
+    echo '<h2>Enrich Products Only</h2><pre>';
+    echo h("This upserts/enriches the Dhanvathiri catalog products from the packaged storefront data. It does not reset admin users.\n");
+    echo h("Existing matching products are updated by slug; existing stock SKUs are preserved when present.\n\n");
     @ob_flush();
     @flush();
 
@@ -568,6 +634,7 @@ if ($action === 'seed_products') {
             'category_id',
             'photos',
             'thumbnail_img',
+            'short_description',
             'unit_price',
             'published',
             'approved',
@@ -614,7 +681,7 @@ if ($action === 'seed_products') {
         }
 
         echo $result['status'] === 0
-            ? '</pre><p class="ok">Product catalog seeded successfully.</p>'
+            ? '</pre><p class="ok">Product catalog enriched successfully.</p>'
             : '</pre><p class="fail">Product seeding failed. Check the output above.</p>';
     } catch (Throwable $exception) {
         echo h("Product seeding failed before completion: " . $exception->getMessage() . "\n");

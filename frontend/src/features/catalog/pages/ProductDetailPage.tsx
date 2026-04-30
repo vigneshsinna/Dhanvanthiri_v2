@@ -60,12 +60,22 @@ interface Recommendation {
 const SITE_URL = 'https://dhanvanthirifoods.in';
 const API_ORIGIN = ((import.meta as any).env.VITE_API_BASE_URL?.replace(/\/api\/?$/, '')) || '';
 
+function SafeProductImage({ src, alt, className }: { src?: string; alt: string; className?: string }) {
+  const [failed, setFailed] = useState(false);
+
+  if (!src || failed) {
+    return <div className={`flex h-full w-full items-center justify-center text-4xl text-brand-700/30 ${className ?? ''}`}>🫙</div>;
+  }
+
+  return <img src={src} alt={alt} className={`h-full w-full ${className ?? ''}`} loading="lazy" onError={() => setFailed(true)} />;
+}
+
 export function ProductDetailPage() {
   const { slug } = useParams();
   const { data, isLoading, error } = useProductQuery(slug || '');
   const addToCart = useAddCartItemMutation();
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
-  const { data: wishlistData } = useWishlistQuery();
+  const { data: wishlistData } = useWishlistQuery(isAuthenticated);
   const addToWishlist = useAddToWishlistMutation();
   const removeFromWishlist = useRemoveFromWishlistMutation();
   const currentLocale = getStorefrontLocale();
@@ -73,7 +83,7 @@ export function ProductDetailPage() {
 
   const apiProduct = data?.data?.data ?? data?.data;
   const product = apiProduct;
-  const detail: any = null;
+  const detail: any = apiProduct;
 
   const [selectedVariant, setSelectedVariant] = useState<number | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -182,7 +192,6 @@ export function ProductDetailPage() {
   const handleAddToCart = () => {
     addToCart.mutate({
       product_id: product.id,
-      variant_id: activeVariant?.id,
       quantity,
     });
   };
@@ -384,8 +393,8 @@ export function ProductDetailPage() {
           {/* Tags from API */}
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
-              {tags.map((tag: { name: string }) => (
-                <Badge key={tag.name} variant="success">{tag.name}</Badge>
+              {tags.map((tag: { name: string }, i: number) => (
+                <Badge key={`${tag.name}-${i}`} variant="success">{tag.name}</Badge>
               ))}
             </div>
           )}
@@ -522,31 +531,33 @@ export function ProductDetailPage() {
         </div>
       </div>
 
-      {/* ─── About & Why You'll Love It ─── */}
-      {detail && (
-        <div className="mt-12 grid gap-8 lg:grid-cols-2 stagger-children">
-          {/* About This Product */}
-          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm animate-on-scroll scale-in">
+      {/* ─── About & Description ─── */}
+      <div className="mt-12 grid gap-8 lg:grid-cols-2 stagger-children">
+        <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm animate-on-scroll scale-in">
+          {(productAbout || product.description) && (
             <h2 className="mb-4 text-xl font-bold text-slate-900" style={{ fontFamily: "'Playfair Display', serif" }}>
               {t('About This Product', 'இந்த தயாரிப்பை பற்றி')}
             </h2>
-            <p className="text-sm leading-relaxed text-slate-600">{detail.about}</p>
+          )}
+          
+          {productAbout && (
+            <div className="prose prose-sm text-slate-600 mb-4" dangerouslySetInnerHTML={{ __html: sanitizeHtml(productAbout) }} />
+          )}
 
-            {/* Description from API */}
-            {product.description && (
-              <div className="mt-4 border-t border-slate-100 pt-4">
-                <div className="prose prose-sm text-slate-600" dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.description) }} />
-              </div>
-            )}
-          </div>
+          {/* Description from API */}
+          {product.description && (
+            <div className={`prose prose-sm text-slate-600 ${productAbout ? 'mt-4 border-t border-slate-100 pt-4' : ''}`} dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.description) }} />
+          )}
+        </div>
 
-          {/* Why You'll Love It */}
+        {/* Why You'll Love It */}
+        {productWhyLove && productWhyLove.length > 0 && (
           <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm animate-on-scroll scale-in">
             <h2 className="mb-4 text-xl font-bold text-slate-900" style={{ fontFamily: "'Playfair Display', serif" }}>
               {t("Why You'll Love It", 'நீங்கள் ஏன் விரும்புவீர்கள்')}
             </h2>
             <ul className="space-y-3">
-              {detail.why_love.map((reason: string, i: number) => (
+              {productWhyLove.map((reason: string, i: number) => (
                 <li key={i} className="flex items-start gap-3">
                   <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
                     <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
@@ -558,36 +569,8 @@ export function ProductDetailPage() {
               ))}
             </ul>
           </div>
-        </div>
-      )}
-
-      {/* Admin-managed product description */}
-      {productAbout && (
-        <div className="mt-12 border-t pt-8 animate-on-scroll top-down">
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">{t('About This Product', 'இந்த தயாரிப்பை பற்றி')}</h2>
-          <div className="prose prose-sm text-slate-600" dangerouslySetInnerHTML={{ __html: sanitizeHtml(productAbout) }} />
-        </div>
-      )}
-
-      {productWhyLove.length > 0 && (
-        <div className="mt-8 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm animate-on-scroll scale-in">
-          <h2 className="mb-4 text-xl font-bold text-slate-900" style={{ fontFamily: "'Playfair Display', serif" }}>
-            {t("Why You'll Love It", 'நீங்கள் ஏன் விரும்புவீர்கள்')}
-          </h2>
-          <ul className="space-y-3">
-            {productWhyLove.map((reason: string, i: number) => (
-              <li key={i} className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
-                  <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                </span>
-                <span className="text-sm text-slate-700">{reason}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* ─── Size Chart ─── */}
       {product.size_chart && product.size_chart.headers && product.size_chart.rows && (
@@ -751,16 +734,10 @@ export function ProductDetailPage() {
                   className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md animate-on-scroll scale-in"
                 >
                   <div className="aspect-[4/3] overflow-hidden bg-slate-50">
-                    <img
+                    <SafeProductImage
                       src={relImage}
                       alt={related.name}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.parentElement?.classList.add('flex', 'items-center', 'justify-center');
-                        e.currentTarget.insertAdjacentHTML('afterend', '<div class="text-4xl">?</div>');
-                      }}
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                   </div>
                   <div className="p-4">
@@ -811,16 +788,10 @@ export function ProductDetailPage() {
                     className="group overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md animate-on-scroll scale-in"
                   >
                     <div className="aspect-[4/3] overflow-hidden bg-slate-50">
-                      <img
+                      <SafeProductImage
                         src={image}
                         alt={backendItem?.name || item.name}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        loading="lazy"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.parentElement?.classList.add('flex', 'items-center', 'justify-center');
-                          e.currentTarget.insertAdjacentHTML('afterend', '<div class="text-4xl">?</div>');
-                        }}
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     </div>
                     <div className="p-4">

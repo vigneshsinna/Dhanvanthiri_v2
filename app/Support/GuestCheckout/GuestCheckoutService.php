@@ -8,16 +8,20 @@ use App\Models\CombinedOrder;
 use App\Models\GuestCheckoutSession;
 use App\Models\Order;
 use App\Models\User;
+use App\Support\Checkout\AllowedPaymentMethods;
+use App\Support\Checkout\PaymentGatewayConfig;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Razorpay\Api\Api;
+use Throwable;
 
 class GuestCheckoutService
 {
@@ -79,59 +83,53 @@ class GuestCheckoutService
     public function createPaymentIntent(array $payload): array
     {
         $session = $this->resolveCheckoutSessionForPayment((string) $payload['guest_checkout_token']);
-        $gateway = strtolower((string) $payload['gateway']);
+        $gateway = AllowedPaymentMethods::normalize($payload['gateway'] ?? '');
 
-        if ($gateway === 'wallet') {
+        if (! AllowedPaymentMethods::isAllowed($gateway)) {
             throw ValidationException::withMessages([
-                'gateway' => ['Wallet checkout requires a signed-in customer account.'],
+                'gateway' => ['Only Razorpay and PhonePe payments are available for checkout.'],
             ]);
         }
 
+        $this->assertGatewayConfigured($gateway);
         $combinedOrder = $this->ensureCombinedOrder($session, $gateway);
         $orderNumber = $this->resolveOrderNumber($combinedOrder);
         $orderAccess = $this->issueOrderAccessToken($session, $orderNumber);
 
-        if ($gateway === 'cash_on_delivery' || $gateway === 'cod') {
-            $session->forceFill([
-                'status' => GuestCheckoutSession::STATUS_ORDER_COMPLETED,
-                'order_code' => $orderNumber,
-            ])->save();
-
-            return [
-                'order_id' => $combinedOrder->id,
-                'order_number' => $orderNumber,
-                'gateway' => 'cash_on_delivery',
-                'status' => 'confirmed',
-                'payment_status' => 'cod',
-                'order_access_token' => $orderAccess['token'],
-                'order_access_expires_at' => $orderAccess['expires_at'],
-            ];
-        }
-
-        if ($gateway !== 'razorpay') {
+        if ($gateway === 'phonepe') {
             $session->forceFill([
                 'status' => GuestCheckoutSession::STATUS_PAYMENT_PENDING,
                 'order_code' => $orderNumber,
             ])->save();
 
+            $phonePeIntent = $this->createPhonePeIntent($combinedOrder, (int) $session->guest_user_id);
+
             return [
                 'order_id' => $combinedOrder->id,
                 'order_number' => $orderNumber,
-                'gateway' => $gateway,
+                'gateway' => 'phonepe',
                 'status' => 'pending_payment',
                 'order_access_token' => $orderAccess['token'],
                 'order_access_expires_at' => $orderAccess['expires_at'],
-            ];
+            ] + $phonePeIntent;
         }
 
         [$api, $keyId] = $this->razorpayApi();
         $amountMinor = max(100, (int) round((float) $combinedOrder->grand_total * 100));
-        $razorpayOrder = $api->order->create([
-            'receipt' => 'guest-' . $combinedOrder->id . '-' . now()->timestamp,
-            'amount' => $amountMinor,
-            'currency' => 'INR',
-            'notes' => ['combined_order_id' => $combinedOrder->id],
-        ]);
+        try {
+            $razorpayOrder = $api->order->create([
+                'receipt' => 'guest-' . $combinedOrder->id . '-' . now()->timestamp,
+                'amount' => $amountMinor,
+                'currency' => 'INR',
+                'notes' => ['combined_order_id' => $combinedOrder->id],
+            ]);
+        } catch (Throwable $e) {
+            report($e);
+
+            throw ValidationException::withMessages([
+                'gateway' => ['Unable to start Razorpay payment. Please check the gateway configuration and try again.'],
+            ]);
+        }
 
         $session->forceFill([
             'status' => GuestCheckoutSession::STATUS_PAYMENT_PENDING,
@@ -799,7 +797,10 @@ class GuestCheckoutService
         if ($tempCartQuery->exists()) {
             $tempCartQuery->update([
                 'user_id' => $guestUser->id,
-                'temp_user_id' => null,
+                // Keep the browser cart token attached until payment succeeds.
+                // The storefront is still a guest session at this point, so
+                // clearing temp_user_id makes refresh/back navigation look empty.
+                'temp_user_id' => $tempUserId,
                 'address_id' => $address->id,
             ]);
 
@@ -836,9 +837,15 @@ class GuestCheckoutService
         ];
 
         foreach ($carts as $key => $cart) {
-            $cart->shipping_type = 'home_delivery';
-            $cart->pickup_point = 0;
-            $cart->carrier_id = 0;
+            if (Schema::hasColumn('carts', 'shipping_type')) {
+                $cart->shipping_type = 'home_delivery';
+            }
+            if (Schema::hasColumn('carts', 'pickup_point')) {
+                $cart->pickup_point = 0;
+            }
+            if (Schema::hasColumn('carts', 'carrier_id')) {
+                $cart->carrier_id = 0;
+            }
             $cart->shipping_cost = getShippingCost($carts, $key, $shippingInfo);
             $cart->save();
         }
@@ -846,8 +853,9 @@ class GuestCheckoutService
 
     private function razorpayApi(): array
     {
-        $keyId = (string) env('RAZOR_KEY', '');
-        $keySecret = (string) env('RAZOR_SECRET', '');
+        $config = app(PaymentGatewayConfig::class)->razorpay();
+        $keyId = (string) ($config['key_id'] ?? '');
+        $keySecret = (string) ($config['key_secret'] ?? '');
 
         if ($keyId === '' || $keySecret === '') {
             throw ValidationException::withMessages([
@@ -856,5 +864,110 @@ class GuestCheckoutService
         }
 
         return [new Api($keyId, $keySecret), $keyId];
+    }
+
+    private function assertGatewayConfigured(string $gateway): void
+    {
+        if (! app(PaymentGatewayConfig::class)->isEnabled($gateway)) {
+            throw ValidationException::withMessages([
+                'gateway' => [ucfirst($gateway) . ' is disabled in admin payment management.'],
+            ]);
+        }
+
+        if ($gateway === 'razorpay') {
+            $this->razorpayApi();
+            return;
+        }
+
+        if ($gateway === 'phonepe') {
+            if (! app(PaymentGatewayConfig::class)->hasCredentials('phonepe')) {
+                throw ValidationException::withMessages([
+                    'gateway' => ['PhonePe credentials are not configured in admin payment management.'],
+                ]);
+            }
+        }
+    }
+
+    private function createPhonePeIntent(CombinedOrder $combinedOrder, int $userId): array
+    {
+        $config = app(PaymentGatewayConfig::class)->phonepe();
+        $isSandbox = ($config['environment'] ?? 'sandbox') === 'sandbox';
+        $baseUrl = rtrim((string) $config['base_url'], '/');
+        $tokenUrl = $isSandbox
+            ? $baseUrl . '/v1/oauth/token'
+            : $baseUrl . '/identity-manager/v1/oauth/token';
+        $payUrl = $isSandbox
+            ? $baseUrl . '/checkout/v2/pay'
+            : $baseUrl . '/pg/checkout/v2/pay';
+
+        try {
+            $tokenResponse = Http::asForm()->timeout((int) $config['timeout_seconds'])->post($tokenUrl, [
+                'client_id' => $config['client_id'],
+                'client_secret' => $config['client_secret'],
+                'grant_type' => 'client_credentials',
+                'client_version' => $config['client_version'],
+            ]);
+        } catch (Throwable $e) {
+            report($e);
+
+            throw ValidationException::withMessages([
+                'gateway' => ['Unable to connect to PhonePe. Please try again later.'],
+            ]);
+        }
+
+        $tokenData = $tokenResponse->json() ?: [];
+        if (! $tokenResponse->successful() || empty($tokenData['access_token'])) {
+            throw ValidationException::withMessages([
+                'gateway' => ['PhonePe authentication failed. Please check the gateway credentials.'],
+            ]);
+        }
+
+        $merchantTransactionId = 'cart_payment-' . $combinedOrder->id . '-' . $userId . '-' . random_int(10000, 99999);
+        $payload = [
+            'merchantOrderId' => $merchantTransactionId,
+            'merchantUserId' => (string) $userId,
+            'amount' => max(100, (int) round((float) $combinedOrder->grand_total * 100)),
+            'paymentFlow' => [
+                'type' => 'PG_CHECKOUT',
+                'message' => 'Proceeding with payment',
+                'merchantUrls' => [
+                    'redirectUrl' => $config['redirect_url'] ?: route('api.phonepe.redirecturl'),
+                    'callbackUrl' => $config['callback_url'] ?: route('api.phonepe.callbackUrl'),
+                ],
+            ],
+            'metaInfo' => [
+                'userId' => (string) $userId,
+                'paymentType' => 'cart_payment',
+                'combinedOrderId' => (string) $combinedOrder->id,
+            ],
+        ];
+
+        try {
+            $payResponse = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'Authorization' => 'O-Bearer ' . $tokenData['access_token'],
+            ])->timeout((int) $config['timeout_seconds'])->post($payUrl, $payload);
+        } catch (Throwable $e) {
+            report($e);
+
+            throw ValidationException::withMessages([
+                'gateway' => ['Unable to start PhonePe payment. Please try again later.'],
+            ]);
+        }
+
+        $payData = $payResponse->json() ?: [];
+        $redirectUrl = $payData['redirectUrl'] ?? $payData['data']['redirectUrl'] ?? null;
+        if (! $payResponse->successful() || ! $redirectUrl) {
+            throw ValidationException::withMessages([
+                'gateway' => ['PhonePe payment link could not be created. Please check the gateway configuration.'],
+            ]);
+        }
+
+        return [
+            'payment_url' => $redirectUrl,
+            'redirect_url' => $redirectUrl,
+            'phonepe_order_id' => $payData['orderId'] ?? $payData['data']['orderId'] ?? null,
+            'merchant_transaction_id' => $merchantTransactionId,
+        ];
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V2;
 
 use App\Models\CombinedOrder;
 use App\Models\Order;
+use App\Support\Checkout\PaymentGatewayConfig;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Redirect;
@@ -28,6 +29,7 @@ class PhonepeController extends Controller
         $merchantUserId = $request->user_id;
         $amount = $request->amount;
         $userId = $request->user_id;
+        $config = app(PaymentGatewayConfig::class)->phonepe();
 
         if ($paymentType == 'cart_payment') {
             $combined_order = CombinedOrder::find($request->combined_order_id);
@@ -42,21 +44,22 @@ class PhonepeController extends Controller
         } elseif ($paymentType == 'seller_package_payment' || $paymentType == 'customer_package_payment') {
             $merchantTransactionId = $paymentType . '-' . $request->package_id . '-' . $userId . '-' . rand(0, 100000);
         }
-        $isSandbox = get_setting('phonepe_sandbox') == 1;
+        $isSandbox = ($config['environment'] ?? 'sandbox') === 'sandbox';
+        $baseUrl = rtrim((string) $config['base_url'], '/');
         $tokenUrl = $isSandbox
-            ? 'https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token'
-            : 'https://api.phonepe.com/apis/identity-manager/v1/oauth/token';
+            ? $baseUrl . '/v1/oauth/token'
+            : $baseUrl . '/identity-manager/v1/oauth/token';
 
         $payUrl = $isSandbox
-            ? 'https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/pay'
-            : 'https://api.phonepe.com/apis/pg/checkout/v2/pay';
+            ? $baseUrl . '/checkout/v2/pay'
+            : $baseUrl . '/pg/checkout/v2/pay';
 
         // Get OAuth2 Token
-        $tokenResponse = Http::asForm()->post($tokenUrl, [
-            'client_id' => env('PHONEPE_CLIENT_ID'),
-            'client_secret' => env('PHONEPE_CLIENT_SECRET'),
+        $tokenResponse = Http::asForm()->timeout((int) $config['timeout_seconds'])->post($tokenUrl, [
+            'client_id' => $config['client_id'],
+            'client_secret' => $config['client_secret'],
             'grant_type' => 'client_credentials',
-            'client_version' => env('PHONEPE_CLIENT_VERSION'),
+            'client_version' => $config['client_version'],
         ]);
 
         $tokenData = $tokenResponse->json();
@@ -75,8 +78,8 @@ class PhonepeController extends Controller
                 'type' => 'PG_CHECKOUT',
                 'message' => 'Proceeding with payment',
                 'merchantUrls' => [
-                    'redirectUrl' => route('phonepe.redirecturl'),
-                    'callbackUrl' => route('phonepe.callbackUrl'),
+                    'redirectUrl' => $config['redirect_url'] ?: route('phonepe.redirecturl'),
+                    'callbackUrl' => $config['callback_url'] ?: route('phonepe.callbackUrl'),
                 ],
             ],
             'metaInfo' => [
@@ -88,7 +91,7 @@ class PhonepeController extends Controller
         $payResponse = Http::withHeaders([
             'Content-Type' => 'application/json',
             'Authorization' => 'O-Bearer ' . $accessToken,
-        ])->post($payUrl, $payload);
+        ])->timeout((int) $config['timeout_seconds'])->post($payUrl, $payload);
 
         $payData = $payResponse->json();
 
@@ -162,10 +165,12 @@ class PhonepeController extends Controller
 
     private function getPhonePeOrderStatus($moid, $accessToken)
     {
-        $isSandbox = get_setting('phonepe_sandbox') == 1;
+        $config = app(PaymentGatewayConfig::class)->phonepe();
+        $isSandbox = ($config['environment'] ?? 'sandbox') === 'sandbox';
+        $baseUrl = rtrim((string) $config['base_url'], '/');
         $checkStatusUrl = $isSandbox
-            ? "https://api-preprod.phonepe.com/apis/pg-sandbox/checkout/v2/order/{$moid}/status"
-            : "https://api.phonepe.com/apis/pg/checkout/v2/order/{$moid}/status";
+            ? "{$baseUrl}/checkout/v2/order/{$moid}/status"
+            : "{$baseUrl}/pg/checkout/v2/order/{$moid}/status";
 
 
         $url = $checkStatusUrl;
@@ -173,7 +178,7 @@ class PhonepeController extends Controller
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'Authorization' => 'O-Bearer ' . $accessToken,
-            ])->get($url);
+            ])->timeout((int) $config['timeout_seconds'])->get($url);
 
             return response()->json([
                 'status' => 'success',
@@ -221,11 +226,12 @@ class PhonepeController extends Controller
 
     public function getPhonePayCredentials()
     {
+        $config = app(PaymentGatewayConfig::class)->phonepe();
         $credentials = [
-            'mode' => get_setting('phonepe_sandbox') ? "SANDBOX" : "PRODUCTION",
-            'client_id' => env('PHONEPE_CLIENT_ID'),
-            'client_secret' => env('PHONEPE_CLIENT_SECRET'),
-            'client_version' => env('PHONEPE_CLIENT_VERSION'),
+            'mode' => $config['environment'] === 'sandbox' ? 'SANDBOX' : 'PRODUCTION',
+            'client_id' => $config['client_id'],
+            'client_secret' => $config['client_secret'] !== '' ? '********' : '',
+            'client_version' => $config['client_version'],
         ];
         return response()->json($credentials);
        

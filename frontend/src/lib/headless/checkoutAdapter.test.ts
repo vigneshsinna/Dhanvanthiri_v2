@@ -211,17 +211,17 @@ describe('checkoutAdapter', () => {
         data: {
           order_id: 88,
           order_number: 'ORD-88',
-          gateway: 'cash_on_delivery',
-          status: 'confirmed',
+          gateway: 'phonepe',
+          status: 'pending_payment',
         },
       },
     } as any);
 
-    const intent = await checkoutAdapter.guestCreatePaymentIntent({ gateway: 'cash_on_delivery' });
+    const intent = await checkoutAdapter.guestCreatePaymentIntent({ gateway: 'phonepe' });
 
     expect(mockedPost).toHaveBeenLastCalledWith('/guest/payments/intent', {
       guest_checkout_token: 'guest-checkout-token',
-      gateway: 'cash_on_delivery',
+      gateway: 'phonepe',
     });
     expect(intent.data.order_number).toBe('ORD-88');
   });
@@ -284,18 +284,18 @@ describe('checkoutAdapter', () => {
     }));
   });
 
-  it('uses payment_type_key as the checkout gateway code for cash on delivery', async () => {
+  it('filters payment methods to Razorpay and PhonePe only', async () => {
     mockedGet.mockResolvedValue({
       data: [
+        { payment_type: 'razorpay', payment_type_key: 'razorpay', name: 'Razorpay' },
+        { payment_type: 'phonepe', payment_type_key: 'phonepe', name: 'PhonePe' },
         { payment_type: 'cash_payment', payment_type_key: 'cash_on_delivery', name: 'Cash Payment' },
+        { payment_type: 'manual_payment', payment_type_key: 'manual_payment_1', name: 'Bank Transfer' },
       ],
     } as any);
 
     const response = await checkoutAdapter.getPaymentMethods();
 
-    expect(response.data.data[0]).toEqual(expect.objectContaining({
-      code: 'cash_on_delivery',
-      name: 'Cash Payment',
-    }));
+    expect(response.data.data.map((method: any) => method.code)).toEqual(['razorpay', 'phonepe']);
   });
 });

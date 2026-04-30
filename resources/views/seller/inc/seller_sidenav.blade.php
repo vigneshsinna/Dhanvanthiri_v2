@@ -411,17 +411,17 @@
 
                 @if (get_setting('conversation_system') == 1)
                     @php
-                        $conversation = \App\Models\Conversation::where('sender_id', Auth::user()->id)
+                        $conversationCount = \App\Models\Conversation::where('sender_id', Auth::user()->id)
                             ->where('sender_viewed', 0)
-                            ->get();
+                            ->count();
                     @endphp
                     <li class="aiz-side-nav-item">
                         <a href="{{ route('seller.conversations.index') }}"
                             class="aiz-side-nav-link {{ areActiveRoutes(['seller.conversations.index', 'seller.conversations.show']) }}">
                             <i class="las la-comment aiz-side-nav-icon"></i>
                             <span class="aiz-side-nav-text">{{ translate('Conversations') }}</span>
-                            @if (count($conversation) > 0)
-                                <span class="badge badge-success">({{ count($conversation) }})</span>
+                            @if ($conversationCount > 0)
+                                <span class="badge badge-success">({{ $conversationCount }})</span>
                             @endif
                         </a>
                     </li>

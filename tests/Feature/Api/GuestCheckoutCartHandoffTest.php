@@ -35,7 +35,7 @@ class GuestCheckoutCartHandoffTest extends TestCase
         $this->assertDatabaseHas('carts', [
             'id' => $cart->id,
             'user_id' => $guestUser->id,
-            'temp_user_id' => null,
+            'temp_user_id' => $tempUserId,
         ]);
         $this->assertSame($tempUserId, $session->temp_user_id);
         $this->assertSame(GuestCheckoutSession::STATUS_CART_BOUND, $session->status);

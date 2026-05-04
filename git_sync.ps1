@@ -1,5 +1,6 @@
-# Git-Aware Sync for Hostinger (Backend + Frontend)
-# Maps Backend to 'core/' and Frontend to 'app/'
+# Hybrid Sync for Hostinger (Individual Backend + Zipped Frontend)
+# Backend -> core/ (Individual)
+# Frontend -> app/ (Zipped for speed)
 
 $sshHost = "217.21.74.44"
 $sshPort = 65002
@@ -7,25 +8,19 @@ $sshUser = "u362580417"
 $remoteRoot = "/home/u362580417/domains/dhanvanthrifoods.com/public_html"
 $sshArgs = @("-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=15")
 
-Write-Host "--- Starting Backend & Frontend Sync ---" -ForegroundColor Cyan
+Write-Host "--- Starting Hybrid Backend & Frontend Sync ---" -ForegroundColor Cyan
 
-# 1. Get changed files from Git
-$gitFiles = git status --porcelain | ForEach-Object { 
+# --- 1. BACKEND SYNC (Individual files from Git) ---
+$backendFiles = git status --porcelain | ForEach-Object { 
     $line = $_.Trim()
     if ($line -notmatch '^D ') { 
         $parts = $line -split '\s+', 2
         if ($parts.Count -eq 2) {
             $file = $parts[1]
+            # Exclude utility files and frontend folder (we handle frontend separately)
+            $patterns = @("\.ps1$", "\.bat$", "\.tar\.gz$", "\.zip$", "^node_modules/", "^scratch/", "^temp/", "^\.git/", "^frontend/")
             $exclude = $false
-            # Exclude unwanted patterns (But ALLOW frontend/dist)
-            $patterns = @("\.ps1$", "\.bat$", "\.tar\.gz$", "\.zip$", "^node_modules/", "^scratch/", "^temp/", "^\.git/")
             foreach ($p in $patterns) { if ($file -match $p) { $exclude = $true; break } }
-            
-            # Special case for frontend: only allow 'dist' files
-            if ($file.StartsWith("frontend/")) {
-                if ($file -notmatch "^frontend/dist/") { $exclude = $true }
-            }
-            
             if (-not $exclude) { $file }
         }
     }
@@ -33,53 +28,58 @@ $gitFiles = git status --porcelain | ForEach-Object {
 
 # Always include the licensing fix
 $licensingFix = "vendor/mehedi-iitdu/core-component-repository/src/CoreComponentRepository.php"
-if ($gitFiles -notcontains $licensingFix) {
-    if ($null -eq $gitFiles) { $gitFiles = @($licensingFix) }
-    else { $gitFiles += $licensingFix }
+if ($backendFiles -notcontains $licensingFix) {
+    if ($null -eq $backendFiles) { $backendFiles = @($licensingFix) }
+    else { $backendFiles += $licensingFix }
 }
 
-if ($null -eq $gitFiles -or $gitFiles.Count -eq 0) {
-    Write-Host "No changes detected." -ForegroundColor Yellow
-    exit
-}
-
-Write-Host "Detected $($gitFiles.Count) files to sync."
-
-foreach ($relativePath in $gitFiles) {
-    $localPath = Join-Path (Get-Location) ($relativePath.Replace('/', '\'))
-    
-    if (Test-Path $localPath -PathType Leaf) {
-        # --- MAPPING LOGIC ---
-        if ($relativePath.StartsWith("public/")) {
-            # public/favicon.png -> public_html/favicon.png
-            $cleanRelative = $relativePath -replace '^public/', ''
-            $remoteFile = "$remoteRoot/$cleanRelative"
-        } elseif ($relativePath.StartsWith("frontend/dist/")) {
-            # frontend/dist/index.html -> public_html/app/index.html
-            $cleanRelative = $relativePath -replace '^frontend/dist/', ''
-            $remoteFile = "$remoteRoot/app/$cleanRelative"
-        } else {
-            # app/Controllers/... -> public_html/core/app/Controllers/...
-            $remoteFile = "$remoteRoot/core/$relativePath"
-        }
-        
-        $remoteDir = Split-Path $remoteFile -Parent
-        $remoteFile = $remoteFile.Replace('\', '/')
-        $remoteDir = $remoteDir.Replace('\', '/')
-        
-        Write-Host "Syncing: $relativePath -> $remoteFile" -ForegroundColor Gray
-        
-        try {
+if ($backendFiles.Count -gt 0) {
+    Write-Host "Syncing $($backendFiles.Count) Backend files individually..." -ForegroundColor Yellow
+    foreach ($relativePath in $backendFiles) {
+        $localPath = Join-Path (Get-Location) ($relativePath.Replace('/', '\'))
+        if (Test-Path $localPath -PathType Leaf) {
+            if ($relativePath.StartsWith("public/")) {
+                $cleanRelative = $relativePath -replace '^public/', ''
+                $remoteFile = "$remoteRoot/$cleanRelative"
+            } else {
+                $remoteFile = "$remoteRoot/core/$relativePath"
+            }
+            $remoteDir = (Split-Path $remoteFile -Parent).Replace('\', '/')
+            $remoteFile = $remoteFile.Replace('\', '/')
+            
+            Write-Host "  $relativePath -> Done." -ForegroundColor Gray
             ssh -p $sshPort @sshArgs "${sshUser}@${sshHost}" "mkdir -p '$remoteDir'"
             scp -P $sshPort @sshArgs "$localPath" "${sshUser}@${sshHost}:${remoteFile}"
-            Start-Sleep -Milliseconds 800
-        } catch {
-            Write-Host "  Error syncing $relativePath: $($_.Exception.Message)" -ForegroundColor Red
+            Start-Sleep -Milliseconds 500
         }
     }
 }
 
+# --- 2. FRONTEND SYNC (Zipped for Speed) ---
+if (Test-Path "frontend/dist") {
+    Write-Host "Syncing Frontend (Zipped Mode)..." -ForegroundColor Yellow
+    
+    # Bundle frontend/dist into a tar.gz (Tar is better for Linux)
+    if (Test-Path "frontend.tar.gz") { Remove-Item "frontend.tar.gz" }
+    
+    # We use tar.exe to ensure forward slashes and Linux compatibility
+    Set-Location "frontend/dist"
+    tar.exe -czf ../../frontend.tar.gz .
+    Set-Location ../..
+    
+    Write-Host "  Uploading frontend.tar.gz ..." -ForegroundColor Gray
+    scp -P $sshPort @sshArgs "frontend.tar.gz" "${sshUser}@${sshHost}:${remoteRoot}/app/frontend.tar.gz"
+    
+    Write-Host "  Extracting on server ..." -ForegroundColor Gray
+    $extractCmd = "cd ${remoteRoot}/app && tar -xzf frontend.tar.gz --overwrite && rm frontend.tar.gz"
+    ssh -p $sshPort @sshArgs "${sshUser}@${sshHost}" $extractCmd
+    
+    Remove-Item "frontend.tar.gz"
+    Write-Host "  Frontend sync complete!" -ForegroundColor Green
+}
+
+# --- 3. CACHE CLEAR ---
 Write-Host "Clearing server cache..."
 ssh -p $sshPort @sshArgs "${sshUser}@${sshHost}" "cd $remoteRoot/core && php artisan optimize:clear"
 
-Write-Host "--- Sync Complete! ---" -ForegroundColor Green
+Write-Host "--- Hybrid Sync Complete! ---" -ForegroundColor Green

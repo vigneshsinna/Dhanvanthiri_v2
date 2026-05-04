@@ -207,8 +207,9 @@ export const accountAdapter: any = {
 
   // ── Invoice ──
 
-  async downloadInvoice(orderId: number) {
+  async downloadInvoice(orderId: number, guestToken?: string) {
     const res = await headlessApi.get(`/invoice/download/${orderId}`, {
+      params: { guest_token: guestToken },
       responseType: 'blob',
     });
     return res;

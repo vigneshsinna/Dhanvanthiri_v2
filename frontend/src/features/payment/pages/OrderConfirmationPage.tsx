@@ -10,12 +10,27 @@ import { getLocalizedText, getStorefrontLocale } from '@/lib/storefrontLocale';
 export function OrderConfirmationPage() {
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
   const location = useLocation();
-  const { orderNumber, guestCheckoutToken } = (location.state as {
+  const { orderNumber, orderId, guestCheckoutToken } = (location.state as {
     orderNumber?: string;
+    orderId?: number;
     guestCheckoutToken?: string;
   } | null) ?? {};
   const currentLocale = getStorefrontLocale();
   const t = (en: string, ta: string) => getLocalizedText(currentLocale, { en, ta });
+
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const downloadMutation = useMutation({
+    mutationFn: async () => {
+      if (!orderId) throw new Error("Order ID missing");
+      setIsDownloading(true);
+      try {
+        await accountAdapter.downloadInvoice(orderId, guestCheckoutToken);
+      } finally {
+        setIsDownloading(false);
+      }
+    }
+  });
 
   // Guest claim flow state
   const [showClaimForm, setShowClaimForm] = useState(false);
@@ -163,6 +178,16 @@ export function OrderConfirmationPage() {
       )}
 
       <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
+        {orderId && (
+          <Button 
+            variant="outline" 
+            className="border-brand-500 text-brand-700 hover:bg-brand-50"
+            loading={isDownloading}
+            onClick={() => downloadMutation.mutate()}
+          >
+            {t('Download Invoice', 'à®‡à®©à¯ à®µà®¾à®¯à¯ à®šà¯  à®ªà®¤à®¿à®µà®¿à®±à®•à¯ à®•à®®à¯  à®šà¯†à®¯à¯ à®•')}
+          </Button>
+        )}
         {isAuthenticated ? (
           <Link to="/account/orders">
             <Button variant="primary">{t('View My Orders', 'à®Žà®©à¯  à®†à®°à¯ à®Ÿà®°à¯ à®•à®³à¯ˆ à®ªà®¾à®°à¯ ')}</Button>

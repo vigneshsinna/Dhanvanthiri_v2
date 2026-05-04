@@ -54,21 +54,14 @@ export function useAddCartItemMutation() {
       const res = await cartAdapter.addItem(payload);
       return res;
     },
-    onMutate: async (payload) => {
+    onSuccess: (res) => {
+      syncCartStateFromResponse(res);
+    },
+    onMutate: async () => {
       await qc.cancelQueries({ queryKey: queryKeys.cart.current });
-      const previousCart = store.getState().cart;
-      store.dispatch(setCart({
-        itemCount: previousCart.itemCount + payload.quantity,
-      }));
-      return { previousCart };
     },
-    onError: (_error, _payload, context) => {
-      if (context?.previousCart) {
-        store.dispatch(setCart(context.previousCart));
-      }
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.cart.current });
+    onSettled: async () => {
+      await qc.invalidateQueries({ queryKey: queryKeys.cart.current });
     },
   });
 }
@@ -129,9 +122,11 @@ export function useRemoveCouponMutation() {
 }
 
 export function useShippingRatesQuery(addressId: number, state?: string) {
+  const cartToken = store.getState().cart.cartToken ?? localStorage.getItem('cart_token') ?? '';
+
   return useQuery({
-    queryKey: [...queryKeys.cart.shippingRates(addressId), state ?? ''],
-    enabled: !!addressId || !!state,
+    queryKey: [...queryKeys.cart.shippingRates(addressId), state ?? '', cartToken],
+    enabled: !!addressId || !!state || !!cartToken,
     queryFn: async () => {
       const res = await cartAdapter.shippingRates(addressId, state);
       return res;

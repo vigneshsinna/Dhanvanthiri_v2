@@ -100,7 +100,9 @@ class PaymentGatewayConfig
             if ($enabled) {
                 $current = $this->razorpay();
                 $keyId = trim((string) ($settings['key_id'] ?? $settings['razorpay_key_id'] ?? $current['key_id']));
-                $keySecret = trim((string) ($settings['key_secret'] ?? $settings['razorpay_key_secret'] ?? $current['key_secret']));
+                $rawSecret = trim((string) ($settings['key_secret'] ?? $settings['razorpay_key_secret'] ?? ''));
+                // Treat masked placeholder as empty — fall back to stored value
+                $keySecret = ($rawSecret === '' || $rawSecret === '********') ? $current['key_secret'] : $rawSecret;
 
                 if ($keyId === '') {
                     throw new \InvalidArgumentException('Razorpay cannot be enabled without key_id.');
@@ -122,7 +124,10 @@ class PaymentGatewayConfig
             if ($enabled) {
                 foreach ($required as $key) {
                     $current = $key === 'client_secret' ? $this->phonepe()['client_secret'] : $this->phonepe()[$key];
-                    if (trim((string) ($settings[$key] ?? $current)) === '') {
+                    $submitted = trim((string) ($settings[$key] ?? ''));
+                    // Treat masked placeholder as empty — use the stored value for validation
+                    $effective = ($submitted === '' || $submitted === '********') ? $current : $submitted;
+                    if ($effective === '') {
                         throw new \InvalidArgumentException('PhonePe cannot be enabled without ' . $key . '.');
                     }
                 }
@@ -213,6 +218,11 @@ class PaymentGatewayConfig
         }
 
         return PaymentMethod::query()->where('name', $code)->first();
+    }
+
+    public function syncPaymentMethodPublic(string $code, bool $enabled): void
+    {
+        $this->syncPaymentMethod($code, $enabled);
     }
 
     private function syncPaymentMethod(string $code, bool $enabled): void

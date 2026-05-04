@@ -7,7 +7,7 @@
 
 <head>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="app-url" content="{{ rtrim(getBaseURL(), '/') }}">
+    <meta name="app-url" content="{{ getBaseURL() }}">
     <meta name="file-base-url" content="{{ getFileBaseURL() }}">
 
     <!-- Required meta tags -->
@@ -20,18 +20,17 @@
     <title>{{ get_setting('website_name') . ' | ' . get_setting('site_motto') }}</title>
 
     <!-- google font -->
-    {{-- <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700"> --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap">
 
     <!-- aiz core css -->
     <link rel="stylesheet" href="{{ static_asset('assets/css/vendors.css') }}">
     @if (\App\Models\Language::where('code', Session::get('locale', Config::get('app.locale')))->first()->rtl == 1)
         <link rel="stylesheet" href="{{ static_asset('assets/css/bootstrap-rtl.min.css') }}">
     @endif
-    <link rel="stylesheet" href="{{ static_asset('assets/css/aiz-core.css?v=') }}{{ rand(1000,9999) }}">
-    <link rel="stylesheet" href="{{ static_asset('assets/css/custom-style.css?v=') }}{{ rand(1000,9999) }}">
+    <link rel="stylesheet" href="{{ static_asset('assets/css/aiz-core.css?v=') }}{{ rand(1000, 9999) }}">
+    <link rel="stylesheet" href="{{ static_asset('assets/css/custom-style.css?v=') }}{{ rand(1000, 9999) }}">
 
     <style>
         :root {
@@ -63,15 +62,8 @@
         }
         body {
             font-size: 12px;
-            font-family: {!! !empty(get_setting('system_font_family')) ? get_setting('system_font_family') : "'Inter', sans-serif" !!}, sans-serif;
+            font-family: {!! !empty(get_setting('system_font_family')) ? get_setting('system_font_family') : "'Public Sans', sans-serif" !!}, sans-serif;
         }
-        /* .bootstrap-select .btn,
-        .btn:not(.btn-circle),
-        .form-control,
-        .input-group-text,
-        .custom-file-label, .custom-file-label::after {
-            border-radius: 0;
-        } */
         .border-gray {
             border-color: #e4e5eb !important;
         }
@@ -93,12 +85,9 @@
             border-bottom-right-radius: 4px !important;
         }
     </style>
-    
-    <!-- Admin Utilities CSS -->
-    <link rel="stylesheet" href="{{ static_asset('assets/css/admin-utilities.css?v=') }}{{ rand(1000,9999) }}">
 
     <!-- Ultra Modern Admin Redesign CSS -->
-    <link rel="stylesheet" href="{{ static_asset('assets/css/admin-redesign.css?v=') }}{{ rand(1000,9999) }}">
+    <link rel="stylesheet" href="{{ static_asset('assets/css/admin-redesign.css?v=') }}{{ rand(1000, 9999) }}">
 
     <script>
         var AIZ = AIZ || {};
@@ -140,11 +129,6 @@
             @include('backend.inc.admin_nav')
             <div class="aiz-main-content">
                 <div class="px-15px px-lg-25px">
-                    @hasSection('breadcrumb')
-                        <div class="py-2">
-                            @yield('breadcrumb')
-                        </div>
-                    @endif
                     @yield('content')
                 </div>
                 <div class="bg-white text-center py-3 px-15px px-lg-25px mt-auto border-top">
@@ -154,49 +138,45 @@
         </div><!-- .aiz-content-wrapper -->
     </div><!-- .aiz-main-wrapper -->
 
-    
+
     <!-- Bulk Action modal -->
     @include('modals.bulk_action_modal')
     @yield('modal')
 
 
     <script src="{{ static_asset('assets/js/vendors.js') }}"></script>
-    <script src="{{ static_asset('assets/js/aiz-core.js?v=') }}{{ rand(1000,9999) }}"></script>
-    <script src="{{ static_asset('assets/js/aiz-form-submission.js?v=') }}{{ rand(1000,9999) }}"></script>
+    <script src="{{ static_asset('assets/js/aiz-core.js?v=') }}{{ rand(1000, 9999) }}"></script>
+    <script src="{{ static_asset('assets/js/aiz-form-submission.js?v=') }}{{ rand(1000, 9999) }}"></script>
 
     @yield('script')
 
     <script type="text/javascript">
         @foreach (session('flash_notification', collect())->toArray() as $message)
             AIZ.plugins.notify('{{ $message['level'] }}', '{{ $message['message'] }}');
+            @if ($message['message'] == translate('Product has been inserted successfully'))
+                var data_type = ['digital', 'physical', 'auction', 'wholesale'];
+                data_type.forEach(element => {
+                    localStorage.setItem('tempdataproduct_' + element, '{}');
+                    localStorage.setItem('tempload_' + element, 'no');
+                });
+            @endif
         @endforeach
 
-        {{-- FEEDBACK-01: Use flash_type key instead of matching translated strings --}}
-        @if (session('flash_type') === 'product_created')
-            (function() {
-                var data_type = ['digital', 'physical', 'auction', 'wholesale'];
-                data_type.forEach(function(element) {
-                    localStorage.setItem('tempdataproduct_'+element, '{}');
-                    localStorage.setItem('tempload_'+element, 'no');
-                });
-            })();
-        @endif
-
-        $('.dropdown-menu a[data-toggle="tab"]').click(function(e) {
+        $('.dropdown-menu a[data-toggle="tab"]').click(function (e) {
             e.stopPropagation()
             $(this).tab('show')
         })
 
         if ($('#lang-change').length > 0) {
-            $('#lang-change .dropdown-menu a').each(function() {
-                $(this).on('click', function(e) {
+            $('#lang-change .dropdown-menu a').each(function () {
+                $(this).on('click', function (e) {
                     e.preventDefault();
                     var $this = $(this);
                     var locale = $this.data('flag');
                     $.post('{{ route('language.change') }}', {
                         _token: '{{ csrf_token() }}',
                         locale: locale
-                    }, function(data) {
+                    }, function (data) {
                         location.reload();
                     });
 
@@ -208,11 +188,8 @@
             var filter, item;
             filter = $("#menu-search").val().toUpperCase();
             items = $("#main-menu").find("a");
-            items = items.filter(function(i, item) {
-                var label = $(item).find(".aiz-side-nav-text")[0].innerText;
-                var aliases = $(item).data('search-alias') || '';
-                var searchableText = (label + ' ' + aliases).toUpperCase();
-                if (searchableText.indexOf(filter) > -1 && $(item)
+            items = items.filter(function (i, item) {
+                if ($(item).find(".aiz-side-nav-text")[0].innerText.toUpperCase().indexOf(filter) > -1 && $(item)
                     .attr('href') !== '#') {
                     return item;
                 }
@@ -223,107 +200,22 @@
                 $("#search-menu").html('')
                 if (items.length > 0) {
                     for (i = 0; i < items.length; i++) {
-                        const text = $(items[i]).data('search-result') || $(items[i]).find(".aiz-side-nav-text")[0].innerText;
+                        const text = $(items[i]).find(".aiz-side-nav-text")[0].innerText;
                         const link = $(items[i]).attr('href');
                         $("#search-menu").append(
                             `<li class="aiz-side-nav-item"><a href="${link}" class="aiz-side-nav-link"><i class="las la-ellipsis-h aiz-side-nav-icon"></i><span>${text}</span></a></li`
-                            );
+                        );
                     }
                 } else {
                     $("#search-menu").html(
                         `<li class="aiz-side-nav-item"><span	class="text-center text-muted d-block">{{ translate('Nothing Found') }}</span></li>`
-                        );
+                    );
                 }
             } else {
                 $("#main-menu").removeClass('d-none');
                 $("#search-menu").html('')
             }
         }
-
-        /* ─── FEEDBACK-02: Double-submit protection ─── */
-        $(document).on('submit', 'form', function(e) {
-            var $form = $(this);
-            var $btn = $form.find('[type="submit"]:not(.no-disable)');
-            if ($btn.length && !$btn.hasClass('btn-saving')) {
-                $btn.addClass('btn-saving');
-                $btn.data('original-text', $btn.html());
-                $btn.html('<i class="las la-spinner la-spin mr-1"></i> ' + AIZ.local.saving);
-                // Re-enable after 10s in case of redirect failure
-                setTimeout(function() {
-                    $btn.removeClass('btn-saving').html($btn.data('original-text'));
-                }, 10000);
-            }
-        });
-
-        /* ─── WORKFLOW-01 / ACCESS-02: Delivery status change confirmation ─── */
-        window.confirmDeliveryStatusChange = function(selectEl, orderId) {
-            var newStatus = $(selectEl).val();
-            var destructiveStatuses = ['cancelled'];
-            if (destructiveStatuses.indexOf(newStatus) !== -1) {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        title: '{{ translate("Confirm Status Change") }}',
-                        html: '{{ translate("Are you sure you want to change the status to") }} <strong>' + newStatus.replace('_', ' ') + '</strong>?' +
-                              '<br><br><textarea id="status-change-reason" class="form-control mt-2" placeholder="{{ translate("Reason (required)") }}" rows="2"></textarea>',
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#F0416C',
-                        confirmButtonText: '{{ translate("Yes, change it") }}',
-                        cancelButtonText: '{{ translate("Cancel") }}',
-                        preConfirm: function() {
-                            var reason = document.getElementById('status-change-reason').value;
-                            if (!reason.trim()) {
-                                Swal.showValidationMessage('{{ translate("Please provide a reason") }}');
-                                return false;
-                            }
-                            return reason;
-                        }
-                    }).then(function(result) {
-                        if (result.isConfirmed) {
-                            updateDeliveryStatus(orderId, newStatus, result.value);
-                        } else {
-                            // Revert select to previous value
-                            $(selectEl).val($(selectEl).data('prev-value'));
-                            $(selectEl).selectpicker && $(selectEl).selectpicker('refresh');
-                        }
-                    });
-                } else {
-                    if (!confirm('{{ translate("Are you sure you want to cancel this order? This action cannot be undone.") }}')) {
-                        $(selectEl).val($(selectEl).data('prev-value'));
-                        return;
-                    }
-                    updateDeliveryStatus(orderId, newStatus, '');
-                }
-            } else {
-                // Non-destructive: show inline confirm
-                if (confirm('{{ translate("Change delivery status to") }} ' + newStatus.replace('_', ' ') + '?')) {
-                    updateDeliveryStatus(orderId, newStatus, '');
-                } else {
-                    $(selectEl).val($(selectEl).data('prev-value'));
-                    $(selectEl).selectpicker && $(selectEl).selectpicker('refresh');
-                }
-            }
-        };
-
-        /* ─── TABLE-01: Sort by dropdown handler ─── */
-        window.applySortBy = function(selectEl) {
-            var val = $(selectEl).val();
-            if (val) {
-                var parts = val.split('_');
-                var dir = parts.pop();
-                var col = parts.join('_');
-                var $form = $(selectEl).closest('form');
-                // Add or update hidden inputs
-                if (!$form.find('input[name="sort_col"]').length) {
-                    $form.append('<input type="hidden" name="sort_col" value="">');
-                    $form.append('<input type="hidden" name="sort_dir" value="">');
-                }
-                $form.find('input[name="sort_col"]').val(col);
-                $form.find('input[name="sort_dir"]').val(dir);
-                $form.submit();
-            }
-        };
-
     </script>
 </body>
 

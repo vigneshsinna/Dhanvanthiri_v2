@@ -28,6 +28,7 @@ class GuestCheckoutController extends Controller
             'city_name' => $request->input('city_name', $request->input('city')),
             'postal_code' => $request->input('postal_code', $shippingAddress['postal_code'] ?? null),
             'phone' => $request->input('phone', $request->input('guest_phone', $shippingAddress['phone'] ?? null)),
+            'shipping_method_id' => $request->input('shipping_method_id'),
         ]);
 
         $payload = $request->validate([
@@ -43,6 +44,7 @@ class GuestCheckoutController extends Controller
             'city_name' => ['nullable', 'string'],
             'postal_code' => ['required', 'string'],
             'phone' => ['required', 'string'],
+            'shipping_method_id' => ['nullable', 'integer'],
         ]);
 
         $validatedCheckout = $guestCheckoutService->validate($payload);
@@ -60,11 +62,12 @@ class GuestCheckoutController extends Controller
     {
         $payload = $request->validate([
             'guest_checkout_token' => ['required', 'string'],
+            'shipping_method_id' => ['nullable', 'integer'],
         ]);
 
         return response()->json([
             'success' => true,
-            'data' => $guestCheckoutService->summary((string) $payload['guest_checkout_token']),
+            'data' => $guestCheckoutService->summary((string) $payload['guest_checkout_token'], (int) ($payload['shipping_method_id'] ?? 0)),
         ]);
     }
 
@@ -73,11 +76,30 @@ class GuestCheckoutController extends Controller
         $payload = $request->validate([
             'guest_checkout_token' => ['required', 'string'],
             'gateway' => ['required', 'string'],
+            'shipping_method_id' => ['nullable', 'integer'],
         ]);
+
+        try {
+            $data = $guestCheckoutService->createPaymentIntent($payload);
+        } catch (Throwable $throwable) {
+            if ($throwable instanceof \Illuminate\Validation\ValidationException) {
+                throw $throwable;
+            }
+
+            report($throwable);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to initiate payment. Please try again.',
+                'error' => [
+                    'code' => 'PAYMENT_INTENT_FAILED',
+                ],
+            ], 500);
+        }
 
         return response()->json([
             'success' => true,
-            'data' => $guestCheckoutService->createPaymentIntent($payload),
+            'data' => $data,
         ]);
     }
 

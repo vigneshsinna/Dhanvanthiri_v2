@@ -4,9 +4,12 @@ namespace App\Support\GuestCheckout;
 
 use App\Models\Address;
 use App\Models\Cart;
+use App\Models\City;
 use App\Models\CombinedOrder;
+use App\Models\Country;
 use App\Models\GuestCheckoutSession;
 use App\Models\Order;
+use App\Models\State;
 use App\Models\User;
 use App\Support\Checkout\AllowedPaymentMethods;
 use Illuminate\Http\Request;
@@ -43,7 +46,7 @@ class GuestCheckoutService
                 ->first() ?? new GuestCheckoutSession();
 
             $address = $this->upsertGuestAddress($guestUser, $payload);
-            $this->bindCartToGuestUser($guestUser, $address, $tempUserId);
+            $this->bindCartToGuestUser($guestUser, $address, $tempUserId, (int) ($payload['shipping_method_id'] ?? 0));
 
             $session->fill([
                 'guest_user_id' => $guestUser->id,
@@ -65,7 +68,7 @@ class GuestCheckoutService
         ];
     }
 
-    public function summary(string $plainToken): array
+    public function summary(string $plainToken, int $carrierId = 0): array
     {
         $session = $this->resolveCheckoutSession($plainToken);
         $items = $this->activeGuestCart($session->guestUser);
@@ -74,6 +77,14 @@ class GuestCheckoutService
             throw ValidationException::withMessages([
                 'guest_checkout_token' => ['The guest checkout session no longer has an active cart.'],
             ]);
+        }
+
+        if ($carrierId > 0) {
+            $address = Address::find((int) ($items->first()->address_id ?? 0));
+            if ($address) {
+                $this->applyCheckoutShipping($session->guestUser, $address, $carrierId);
+                $items = $this->activeGuestCart($session->guestUser);
+            }
         }
 
         return $this->buildCartTotals($items);
@@ -91,6 +102,13 @@ class GuestCheckoutService
         }
 
         $this->assertGatewayConfigured($gateway);
+        if ((int) ($payload['shipping_method_id'] ?? 0) > 0) {
+            $items = $this->activeGuestCart($session->guestUser);
+            $address = Address::find((int) ($items->first()->address_id ?? 0));
+            if ($address) {
+                $this->applyCheckoutShipping($session->guestUser, $address, (int) $payload['shipping_method_id']);
+            }
+        }
         $combinedOrder = $this->ensureCombinedOrder($session, $gateway);
         $orderNumber = $this->resolveOrderNumber($combinedOrder);
         $orderAccess = $this->issueOrderAccessToken($session, $orderNumber);
@@ -766,12 +784,14 @@ class GuestCheckoutService
             'user_id' => $guestUser->id,
         ]);
 
+        $geoIds = $this->resolveAddressGeoIds($payload);
+
         $addressData = [
             'user_id' => $guestUser->id,
             'address' => $payload['address'],
-            'country_id' => $payload['country_id'],
-            'state_id' => $payload['state_id'] ?? null,
-            'city_id' => $payload['city_id'],
+            'country_id' => $geoIds['country_id'],
+            'state_id' => $geoIds['state_id'],
+            'city_id' => $geoIds['city_id'],
             'postal_code' => $payload['postal_code'],
             'phone' => $payload['phone'],
             'set_default' => 1,
@@ -789,7 +809,43 @@ class GuestCheckoutService
         return $address;
     }
 
-    private function bindCartToGuestUser(User $guestUser, Address $address, string $tempUserId): void
+    private function resolveAddressGeoIds(array $payload): array
+    {
+        $countryId = (int) ($payload['country_id'] ?? 0);
+        if ($countryId <= 0) {
+            $countryName = trim((string) ($payload['country_name'] ?? ''));
+            $countryQuery = Country::query();
+            if ($countryName !== '') {
+                $countryQuery->where('name', $countryName);
+                if (Schema::hasColumn('countries', 'code')) {
+                    $countryQuery->orWhere('code', $countryName);
+                }
+            }
+            $countryId = (int) ($countryQuery->value('id') ?: 1);
+        }
+
+        $stateId = (int) ($payload['state_id'] ?? 0);
+        if ($stateId <= 0 && !empty($payload['state_name'])) {
+            $stateId = (int) (State::where('name', (string) $payload['state_name'])->value('id') ?: 0);
+        }
+
+        $cityId = (int) ($payload['city_id'] ?? 0);
+        if ($cityId <= 0 && !empty($payload['city_name'])) {
+            $cityQuery = City::where('name', (string) $payload['city_name']);
+            if ($stateId > 0) {
+                $cityQuery->where('state_id', $stateId);
+            }
+            $cityId = (int) ($cityQuery->value('id') ?: 0);
+        }
+
+        return [
+            'country_id' => $countryId > 0 ? $countryId : 1,
+            'state_id' => $stateId > 0 ? $stateId : null,
+            'city_id' => $cityId > 0 ? $cityId : null,
+        ];
+    }
+
+    private function bindCartToGuestUser(User $guestUser, Address $address, string $tempUserId, int $carrierId = 0): void
     {
         $tempCartQuery = Cart::where('temp_user_id', $tempUserId)->where('status', 1);
 
@@ -803,7 +859,7 @@ class GuestCheckoutService
                 'address_id' => $address->id,
             ]);
 
-            $this->applyHomeDeliveryShipping($guestUser, $address);
+            $this->applyCheckoutShipping($guestUser, $address, $carrierId);
 
             return;
         }
@@ -815,7 +871,7 @@ class GuestCheckoutService
                 'address_id' => $address->id,
             ]);
 
-            $this->applyHomeDeliveryShipping($guestUser, $address);
+            $this->applyCheckoutShipping($guestUser, $address, $carrierId);
 
             return;
         }
@@ -825,9 +881,11 @@ class GuestCheckoutService
         ]);
     }
 
-    private function applyHomeDeliveryShipping(User $guestUser, Address $address): void
+    private function applyCheckoutShipping(User $guestUser, Address $address, int $carrierId = 0): void
     {
         $carts = Cart::where('user_id', $guestUser->id)->active()->get();
+        $shippingType = get_setting('shipping_type');
+        $useCarrier = $shippingType === 'carrier_wise_shipping' && $carrierId > 0;
 
         $shippingInfo = [
             'country_id' => $address->country_id,
@@ -837,15 +895,15 @@ class GuestCheckoutService
 
         foreach ($carts as $key => $cart) {
             if (Schema::hasColumn('carts', 'shipping_type')) {
-                $cart->shipping_type = 'home_delivery';
+                $cart->shipping_type = $useCarrier ? 'carrier' : 'home_delivery';
             }
             if (Schema::hasColumn('carts', 'pickup_point')) {
                 $cart->pickup_point = 0;
             }
             if (Schema::hasColumn('carts', 'carrier_id')) {
-                $cart->carrier_id = 0;
+                $cart->carrier_id = $useCarrier ? $carrierId : 0;
             }
-            $cart->shipping_cost = getShippingCost($carts, $key, $shippingInfo);
+            $cart->shipping_cost = getShippingCost($carts, $key, $shippingInfo, $useCarrier ? $carrierId : '');
             $cart->save();
         }
     }

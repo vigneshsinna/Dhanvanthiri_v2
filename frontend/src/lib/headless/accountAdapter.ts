@@ -17,22 +17,26 @@ export const accountAdapter: any = {
   // ── Orders ──
 
   async getOrders(params?: Record<string, unknown>) {
-    const res = await headlessApi.get('/purchase-history');
+    const res = await headlessApi.get('/purchase-history', { params });
     const orders = res.data.data || [];
 
     return {
-      data: {
-        items: orders.map((order: any) => ({
-          id: order.id,
-          orderNumber: order.code || order.order_code || `ORD-${order.id}`,
-          status: order.delivery_status || order.status,
-          paymentStatus: order.payment_status,
-          grandTotal: parsePrice(order.grand_total),
-          itemCount: order.num_of_items || order.order_details?.length || 0,
-          createdAt: order.date || order.created_at,
-          _raw: order,
-        })),
-      },
+      data: orders.map((order: any) => ({
+        id: order.id,
+        order_number: order.code || order.order_code || `ORD-${order.id}`,
+        orderNumber: order.code || order.order_code || `ORD-${order.id}`,
+        status: order.delivery_status || order.status,
+        payment_status: order.payment_status,
+        paymentStatus: order.payment_status,
+        grand_total: parsePrice(order.grand_total),
+        grandTotal: parsePrice(order.grand_total),
+        item_count: order.num_of_items || order.order_details?.length || 0,
+        itemCount: order.num_of_items || order.order_details?.length || 0,
+        created_at: order.date || order.created_at,
+        createdAt: order.date || order.created_at,
+        _raw: order,
+      })),
+      meta: res.data.meta || null,
     };
   },
 
@@ -40,7 +44,12 @@ export const accountAdapter: any = {
     // V2 uses numeric ID
     const id = parseInt(orderIdOrNumber, 10) || orderIdOrNumber;
     const res = await headlessApi.get(`/purchase-history-details/${id}`);
-    const order = res.data.data || res.data;
+    
+    // PurchaseHistoryCollection returns an array in 'data'
+    const rawData = res.data.data || res.data;
+    const order = Array.isArray(rawData) ? rawData[0] : rawData;
+
+    if (!order) return { data: null };
 
     // Return both camelCase and snake_case for backward compat with old pages
     const items = (order.order_details || []).map((item: any) => ({
@@ -59,12 +68,14 @@ export const accountAdapter: any = {
       product_thumbnail: item.product_thumbnail || item.product?.thumbnail_image,
     }));
 
+    const status = order.delivery_status || order.status || 'placed';
+
     return {
       data: {
         id: order.id,
         order_number: order.code || order.order_code || `ORD-${order.id}`,
         orderNumber: order.code || order.order_code || `ORD-${order.id}`,
-        status: order.delivery_status || order.status,
+        status: status,
         payment_status: order.payment_status,
         paymentStatus: order.payment_status,
         payment_type: order.payment_type,
@@ -88,10 +99,8 @@ export const accountAdapter: any = {
         _raw: order,
       },
       meta: {
-        can_cancel: ['pending_payment', 'paid', 'placed', 'confirmed', 'processing', 'packed'].includes(
-          order.delivery_status || order.status
-        ),
-        can_return: ['delivered', 'completed'].includes(order.delivery_status || order.status),
+        can_cancel: ['pending_payment', 'paid', 'placed', 'confirmed', 'processing', 'packed'].includes(status),
+        can_return: ['delivered', 'completed'].includes(status),
       },
     };
   },
@@ -182,6 +191,11 @@ export const accountAdapter: any = {
       // Endpoint may not exist — fall through
     }
     return { data: { items: [], order: null } };
+  },
+
+  async guestClaimAccount(payload: { guest_checkout_token: string; password: string; password_confirmation: string }) {
+    const res = await headlessApi.post('/guest/account/claim', payload);
+    return { data: res.data };
   },
 
   // ── Re-order ──

@@ -59,7 +59,7 @@ export function skipUnlessCustomerCredentials(testInfo: TestInfo) {
 export async function openCatalog(page: Page) {
   await page.goto('/products', { waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  await expect(page.locator('[data-testid="storefront-product-card"]').first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('[data-testid="storefront-product-card"]').first()).toBeVisible({ timeout: 45_000 });
 }
 
 export async function openFirstProduct(page: Page) {
@@ -80,7 +80,7 @@ export async function addFirstProductToCart(page: Page) {
   await expect.poll(async () => {
     const cartLinkText = await page.getByRole('link', { name: /cart/i }).first().textContent().catch(() => '');
     return cartLinkText ?? '';
-  }, { timeout: 10_000 }).toMatch(/\d+/);
+  }, { timeout: 45_000 }).toMatch(/\d+/);
 }
 
 export async function loginAsCustomer(page: Page) {

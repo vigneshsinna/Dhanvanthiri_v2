@@ -12,14 +12,74 @@
         </div>
     @endif
     @can('admin_dashboard')
-        <div class="row gutters-16">
+        <div class="admin-hero">
+            <div class="admin-hero-grid">
+                <div>
+                    <div class="admin-page-eyebrow">{{ translate('Overview') }}</div>
+                    <h1>{{ translate('Welcome back') }}, {{ Auth::user()->name }}</h1>
+                    <p>{{ translate('Here\'s what\'s happening with your store today. Monitor sales, orders, and platform health at a glance.') }}</p>
+                    <div class="admin-chip-row mt-4">
+                        <a href="{{ route('all_orders.index') }}" class="admin-chip text-reset">
+                            <span>{{ translate('Orders') }}</span>
+                            <strong>{{ number_format_short($total_sale) }}</strong>
+                        </a>
+                        <a href="{{ route('products.admin') }}" class="admin-chip text-reset">
+                            <span>{{ translate('Catalog') }}</span>
+                            <strong>{{ $total_products }}</strong>
+                        </a>
+                        <a href="{{ route('customers.index') }}" class="admin-chip text-reset">
+                            <span>{{ translate('Customers') }}</span>
+                            <strong>{{ $total_customers }}</strong>
+                        </a>
+                    </div>
+                </div>
+                <div class="admin-hero-aside">
+                    <div class="admin-hero-card">
+                        <span class="admin-hero-label">{{ translate('Gross sales') }}</span>
+                        <strong>{{ number_format_short($total_sale) }}</strong>
+                        <span>{{ translate('Total processed volume') }}</span>
+                    </div>
+                    <div class="admin-hero-card">
+                        <span class="admin-hero-label">{{ translate('This month') }}</span>
+                        <strong>{{ single_price($sale_this_month) }}</strong>
+                        <span>{{ translate('Current month revenue') }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="admin-stats-grid admin-stats-grid-compact mt-4">
+                <div class="admin-page-stat">
+                    <span>{{ translate('Monthly sales') }}</span>
+                    <strong>{{ single_price($sale_this_month) }}</strong>
+                </div>
+                <div class="admin-page-stat">
+                    <span>{{ translate('Categories') }}</span>
+                    <strong>{{ $total_categories }}</strong>
+                </div>
+                <div class="admin-page-stat">
+                    <span>{{ translate('Brands') }}</span>
+                    <strong>{{ $total_brands }}</strong>
+                </div>
+                <div class="admin-page-stat">
+                    <span>{{ translate('Total revenue') }}</span>
+                    <strong>{{ number_format_short($total_sale) }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-section-intro admin-section-intro-inline">
+            <span class="eyebrow">{{ translate('Key metrics') }}</span>
+            <h2>{{ translate('Business health & top performers') }}</h2>
+            <p>{{ translate('Track customers, products, orders, and revenue across your platform.') }}</p>
+        </div>
+
+        <div class="row gutters-16 admin-dashboard-grid">
 
             <!-- Customer, Products, Category, Brands -->
             <div class="col-lg-6">
                 <div class="row gutters-16">
                     <!-- Total Customer -->
                     <div class="col-sm-6">
-                        <div class="dashboard-box bg-white h-220px mb-2rem overflow-hidden">
+                        <a href="{{ route('customers.index') }}" class="text-reset d-block dashboard-box bg-white min-h-220px mb-2rem overflow-hidden hov-translate-y-px">
                             <div class="d-flex flex-column justify-content-between h-100">
                                 <div class="d-flex justify-content-between">
                                     <div>
@@ -28,17 +88,17 @@
                                         </h1>
                                         <h3 class="fs-13 fw-600 text-secondary mb-0">{{ translate('Total Customer') }}</h3>
                                     </div>
-                                    <div class="mt-2">
+                                    <div class="mt-2 opacity-50">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
                                             viewBox="0 0 32 32">
                                             <path id="Path_41567" data-name="Path 41567"
                                                 d="M21,13.75a1.25,1.25,0,0,0,2.5,0,7.508,7.508,0,0,0-4.068-6.667,4.375,4.375,0,1,0-6.865,0A7.508,7.508,0,0,0,8.5,13.75a1.25,1.25,0,0,0,2.5,0,5,5,0,0,1,10,0ZM14.125,4.375A1.875,1.875,0,1,1,16,6.25,1.877,1.877,0,0,1,14.125,4.375ZM10.932,24.083a4.375,4.375,0,1,0-6.865,0A7.508,7.508,0,0,0,0,30.75a1.25,1.25,0,0,0,2.5,0,5,5,0,0,1,10,0,1.25,1.25,0,0,0,2.5,0A7.508,7.508,0,0,0,10.932,24.083ZM5.625,21.375A1.875,1.875,0,1,1,7.5,23.25,1.877,1.877,0,0,1,5.625,21.375Zm22.307,2.708a4.375,4.375,0,1,0-6.865,0A7.508,7.508,0,0,0,17,30.75a1.25,1.25,0,0,0,2.5,0,5,5,0,0,1,10,0,1.25,1.25,0,0,0,2.5,0A7.508,7.508,0,0,0,27.932,24.083Zm-5.307-2.708A1.875,1.875,0,1,1,24.5,23.25,1.877,1.877,0,0,1,22.625,21.375Zm0,0"
-                                                fill="#d5d6db" />
+                                                fill="currentColor" />
                                         </svg>
                                     </div>
                                 </div>
                                 <div>
-                                    <h3 class="fs-13 fw-600 mb-1">
+                                    <h3 class="fs-13 fw-600 mb-1 text-muted">
                                         <span class="badge badge-md badge-dot badge-circle badge-danger mr-2"></span>
                                         {{ translate('Top Customers') }}
                                     </h3>
@@ -54,27 +114,27 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </a>
                     </div>
                     <!-- Total Products -->
                     <div class="col-sm-6">
-                        <div class="dashboard-box bg-white h-220px mb-2rem overflow-hidden">
+                        <a href="{{ route('products.admin') }}" class="text-reset d-block dashboard-box bg-white min-h-220px mb-2rem overflow-hidden hov-translate-y-px">
                             <div class="d-flex flex-column justify-content-between h-100">
                                 <div class="d-flex justify-content-between">
                                     <div>
                                         <h1 class="fs-30 fw-600 text-dark mb-1">{{ $total_products }}</h1>
                                         <h3 class="fs-13 fw-600 text-secondary mb-0">{{ translate('Total Products') }}</h3>
                                     </div>
-                                    <div class="mt-2">
+                                    <div class="mt-2 opacity-50">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="27.429"
                                             viewBox="0 0 32 27.429">
                                             <g id="Layer_2" data-name="Layer 2" transform="translate(-2 -4)">
                                                 <path id="Path_40719" data-name="Path 40719"
                                                     d="M32.857,4H3.143A1.143,1.143,0,0,0,2,5.143V12a1.143,1.143,0,0,0,1.143,1.143H4.286V30.286a1.143,1.143,0,0,0,1.143,1.143H30.571a1.143,1.143,0,0,0,1.143-1.143V13.143h1.143A1.143,1.143,0,0,0,34,12V5.143A1.143,1.143,0,0,0,32.857,4ZM29.429,29.143H6.571v-16H29.429Zm2.286-18.286H4.286V6.286H31.714Z"
-                                                    fill="#d5d6dc" />
+                                                    fill="currentColor" />
                                                 <path id="Path_40720" data-name="Path 40720"
                                                     d="M13.143,16.286H20A1.143,1.143,0,0,0,20,14H13.143a1.143,1.143,0,0,0,0,2.286Z"
-                                                    transform="translate(1.429 1.429)" fill="#d5d6dc" />
+                                                    transform="translate(1.429 1.429)" fill="currentColor" />
                                             </g>
                                         </svg>
                                     </div>
@@ -102,24 +162,24 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </a>
                     </div>
                     <!-- Total Category -->
                     <div class="col-sm-6">
-                        <div class="dashboard-box bg-white h-220px mb-2rem overflow-hidden">
+                        <a href="{{ route('categories.index') }}" class="text-reset d-block dashboard-box bg-white min-h-220px mb-2rem overflow-hidden hov-translate-y-px">
                             <div class="d-flex flex-column justify-content-between h-100">
                                 <div class="d-flex justify-content-between">
                                     <div>
                                         <h1 class="fs-30 fw-600 text-dark mb-1">{{ $total_categories }}</h1>
                                         <h3 class="fs-13 fw-600 text-secondary mb-0">{{ translate('Total Category') }}</h3>
                                     </div>
-                                    <div class="mt-2">
+                                    <div class="mt-2 opacity-50">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
                                             viewBox="0 0 32 32">
                                             <path id="_137b5e1009c61a91dc419a2998502736"
                                                 data-name="137b5e1009c61a91dc419a2998502736"
                                                 d="M27.144,17.266A4.922,4.922,0,0,1,32,22.207h0v4.836A4.937,4.937,0,0,1,27.144,32H22.407a4.922,4.922,0,0,1-4.841-4.957h0V22.207a4.892,4.892,0,0,1,4.841-4.942h4.737Zm-20.343,0a1.3,1.3,0,0,1,1.247.619,1.358,1.358,0,0,1,0,1.415,1.3,1.3,0,0,1-1.247.619H4.856A2.281,2.281,0,0,0,2.6,22.208h0v4.775a2.326,2.326,0,0,0,2.257,2.289H9.622a2.219,2.219,0,0,0,1.6-.665,2.313,2.313,0,0,0,.662-1.624h0v-7.17l-.02-.178a1.342,1.342,0,0,1,.606-1.19,1.285,1.285,0,0,1,1.462.043,1.348,1.348,0,0,1,.506,1.4h0v7.14a4.907,4.907,0,0,1-4.856,4.957H4.856A5.012,5.012,0,0,1,0,27.028H0v-4.82a4.994,4.994,0,0,1,1.423-3.5,4.791,4.791,0,0,1,3.433-1.442H6.8Zm20.343,2.653H22.407a2.266,2.266,0,0,0-2.242,2.289h0v4.836a2.3,2.3,0,0,0,.652,1.623,2.2,2.2,0,0,0,1.59.666h4.737a2.2,2.2,0,0,0,1.59-.666,2.3,2.3,0,0,0,.652-1.623h0V22.207a2.313,2.313,0,0,0-.657-1.619,2.219,2.219,0,0,0-1.585-.67ZM27.144,0a5.013,5.013,0,0,1,4.841,4.957h0v4.82a5,5,0,0,1-1.376,3.512A4.794,4.794,0,0,1,27.2,14.78h-1.96a1.337,1.337,0,0,1,0-2.653h1.9a2.235,2.235,0,0,0,1.6-.691,2.33,2.33,0,0,0,.645-1.644h0V4.957a2.3,2.3,0,0,0-2.242-2.289H22.407a2.266,2.266,0,0,0-2.242,2.289h0v7.231l-.015.166a1.33,1.33,0,0,1-1.321,1.137,1.28,1.28,0,0,1-.91-.413,1.335,1.335,0,0,1-.352-.951h0V4.957a5,5,0,0,1,1.413-3.5A4.791,4.791,0,0,1,22.407,0h4.737ZM9.593,0a4.922,4.922,0,0,1,4.856,4.957h0V9.793a4.994,4.994,0,0,1-1.423,3.5,4.791,4.791,0,0,1-3.433,1.442H4.856A4.922,4.922,0,0,1,0,9.793H0V4.957A4.937,4.937,0,0,1,4.856,0H9.593Zm0,2.668H4.856a2.218,2.218,0,0,0-1.614.654,2.313,2.313,0,0,0-.672,1.635h0V9.793a2.314,2.314,0,0,0,.656,1.664,2.218,2.218,0,0,0,1.63.67H9.593a2.235,2.235,0,0,0,1.6-.691,2.33,2.33,0,0,0,.645-1.644h0V4.957A2.281,2.281,0,0,0,9.593,2.668Z"
-                                                fill="#d5d6dc" />
+                                                fill="currentColor" />
                                         </svg>
                                     </div>
                                 </div>
@@ -152,26 +212,26 @@
                                     @endforeach
                                 </div>
                             </div>
-                        </div>
+                        </a>
                     </div>
                     <!-- Total Brands -->
                     <div class="col-sm-6">
-                        <div class="dashboard-box bg-white h-220px mb-2rem overflow-hidden">
+                        <a href="{{ route('brands.index') }}" class="text-reset d-block dashboard-box bg-white min-h-220px mb-2rem overflow-hidden hov-translate-y-px">
                             <div class="d-flex flex-column justify-content-between h-100">
                                 <div class="d-flex justify-content-between">
                                     <div>
                                         <h1 class="fs-30 fw-600 text-dark mb-1">{{ $total_brands }}</h1>
                                         <h3 class="fs-13 fw-600 text-secondary mb-0">{{ translate('Total Brands') }}</h3>
                                     </div>
-                                    <div class="mt-2">
+                                    <div class="mt-2 opacity-50">
                                         <svg id="Layer_51" data-name="Layer 51" xmlns="http://www.w3.org/2000/svg"
                                             width="31.994" height="32" viewBox="0 0 31.994 32">
                                             <path id="Path_41568" data-name="Path 41568"
                                                 d="M22.534,33.9a3.963,3.963,0,0,1-2.813-1.139L3.175,16.112A4.02,4.02,0,0,1,2.037,12.49L3.175,6.854A3.952,3.952,0,0,1,6.056,3.768l6.377-1.754a4.1,4.1,0,0,1,3.906,1.139L32.783,19.6a4.031,4.031,0,0,1,0,5.694l-7.368,7.47A3.986,3.986,0,0,1,22.534,33.9Zm8.677-12.686L14.722,4.724a1.788,1.788,0,0,0-1.3-.524,1.492,1.492,0,0,0-.444.057L6.592,5.965A1.72,1.72,0,0,0,5.339,7.286L4.257,12.912a1.788,1.788,0,0,0,.49,1.628L21.327,31.1a1.765,1.765,0,0,0,1.207.524,1.663,1.663,0,0,0,1.207-.5l7.5-7.47A1.742,1.742,0,0,0,31.212,21.213Z"
-                                                transform="translate(-1.966 -1.901)" fill="#d5d6dc" />
+                                                transform="translate(-1.966 -1.901)" fill="currentColor" />
                                             <path id="Path_41569" data-name="Path 41569"
                                                 d="M20.246,26A1.139,1.139,0,0,1,18.629,24.4L24.824,18.2a1.139,1.139,0,1,1,1.606,1.617Zm-7.983-9.953a4.316,4.316,0,1,1,4.293-4.339A4.339,4.339,0,0,1,12.263,16.052Zm1.355-6.229a2,2,0,0,0-1.435-.6,1.947,1.947,0,0,0-1.446.569,1.981,1.981,0,0,0-.581,1.412,2.129,2.129,0,0,0,.649,1.435,2.016,2.016,0,0,0,2.847,0,1.925,1.925,0,0,0,.569-1.412,2.027,2.027,0,0,0-.6-1.4Z"
-                                                transform="translate(-1.557 -1.135)" fill="#d5d6dc" />
+                                                transform="translate(-1.557 -1.135)" fill="currentColor" />
                                         </svg>
                                     </div>
                                 </div>
@@ -215,7 +275,7 @@
                 <div class="row gutters-16">
                     <!-- Total Sales -->
                     <div class="col-sm-6">
-                        <div class="dashboard-box bg-soft-primary mb-2rem overflow-hidden" style="height: 470px;">
+                        <div class="dashboard-box bg-soft-primary mb-2rem overflow-hidden min-h-470px h-100">
                             <div class="d-flex flex-column justify-content-between h-100">
                                 <!-- Total Sales -->
                                 <div>
@@ -226,7 +286,7 @@
                                 </div>
                                 <!-- Sales this month -->
                                 <div
-                                    class="d-flex align-items-center justify-content-between p-3 rounded-2 bg-primary text-white mr-2">
+                                    class="d-flex align-items-center justify-content-between p-3 rounded-2 bg-primary text-white mr-2 mt-4">
                                     <h3 class="fs-13 fw-600 mb-0">
                                         {{ translate('Sales this month') }}
                                     </h3>
@@ -235,12 +295,12 @@
                                     </h3>
                                 </div>
                                 <!-- Sales Stat -->
-                                <div>
+                                <div class="mt-4">
                                     <h3 class="fs-13 fw-600 text-primary mb-0">{{ translate('Sales Stat') }}</h3>
                                 </div>
                                 <canvas id="graph-3" class="w-100" height="140"></canvas>
                                 <!-- Sales -->
-                                <div>
+                                <div class="mt-4">
                                     <!-- In-house Sales -->
                                     <div class="d-flex justify-content-between mb-1">
                                         <h3 class="fs-13 fw-600 mb-0">
@@ -270,7 +330,7 @@
 
                     <!-- Total Sellers -->
                     <div class="col-sm-6">
-                        <div class="dashboard-box bg-white mb-2rem overflow-hidden" style="height: 470px;">
+                        <div class="dashboard-box bg-white mb-2rem overflow-hidden min-h-470px h-100">
                             @if (get_setting('vendor_system_activation') == 1)
                                 <div class="d-flex flex-column justify-content-between h-100">
                                     <!-- Total Sellers -->
@@ -281,7 +341,7 @@
                                         <h3 class="fs-13 fw-600 text-secondary mb-0">{{ translate('Total Sellers') }}</h3>
                                     </div>
                                     <!-- Sales -->
-                                    <div>
+                                    <div class="mt-4">
                                         @foreach ($status_wise_sellers as $key => $status_wise_seller)
                                             <div
                                                 class="d-flex justify-content-between @if ($key == 0) mb-1 @endif">
@@ -303,7 +363,7 @@
                                         @endforeach
                                     </div>
                                     <!-- Top Sellers -->
-                                    <div>
+                                    <div class="mt-4">
                                         <h3 class="fs-13 fw-600 mb-1">
                                             <span class="badge badge-md badge-dot badge-circle badge-warning mr-2"></span>
                                             {{ translate('Top Sellers') }}
@@ -321,7 +381,7 @@
                                         <hr style="border: 1px dashed #dbdfe9;">
                                     </div>
                                     <!-- Sales this month -->
-                                    <div class="">
+                                    <div class="mt-4">
                                         <a href="{{ route('sellers.index') }}"
                                             class="btn btn-md btn-soft-success btn-block rounded-2 mb-3">{{ translate('All Sellers') }}</a>
                                         <a href="{{ route('sellers.index') }}?approved_status=0"
@@ -330,7 +390,7 @@
                                 </div>
                             @else
                                 <div class="d-flex flex-column align-items-center justify-content-center h-100">
-                                    <div class="h-200px">
+                                    <div class="min-h-200px">
                                         <img src="{{ static_asset('assets/img/multivendor.jpg') }}"
                                             alt="{{ translate('multivendor') }}" class="h-100 img-fit">
                                     </div>
@@ -347,11 +407,11 @@
 
             <!-- Orders -->
             <div class="col-lg-6">
-                <div class="dashboard-box bg-white mb-2rem overflow-hidden">
+                <div class="dashboard-box bg-white mb-2rem overflow-hidden min-h-400px">
                     <div class="row gutters-16">
                         <!-- Total Orders -->
                         <div class="col-sm-6">
-                            <div class="dashboard-box bg-soft-info h-lg-300px mb-3 overflow-hidden">
+                            <div class="dashboard-box bg-soft-info min-h-300px mb-3 overflow-hidden">
                                 <div class="d-flex flex-column justify-content-between h-100">
                                     <div>
                                         <h1 class="fs-30 fw-600 text-info mb-1">
@@ -477,14 +537,14 @@
                 <div class="row gutters-16">
                     <!-- Top Category -->
                     <div class="col-sm-6">
-                        <div class="dashboard-box px-0 mb-2rem overflow-hidden" style="height: 474px;">
+                        <div class="dashboard-box px-0 mb-2rem overflow-hidden min-h-474px">
                             <div class="mb-2 px-2rem">
                                 <h2 class="fs-16 fw-600 text-primary mb-1 h-40px">{{ translate('In-house Top Category') }}
                                 </h2>
                                 <h4 class="fs-13 fw-600 text-secondary mb-0">{{ translate('By Sales') }}</h4>
                             </div>
                             <!-- nav -->
-                            <ul class="nav nav-tabs dashboard-tab dashboard-tab-primary border-0 px-2rem mb-3" role="tablist"
+                            <ul class="nav nav-tabs dashboard-tab dashboard-tab-primary border-0 px-2rem mb-3 mt-4" role="tablist"
                                 aria-orientation="vertical">
                                 <li class="nav-item">
                                     <a class="nav-link active inhouse_top_categories" id="all-tab" href="#all"
@@ -525,13 +585,13 @@
 
                     <!-- Top Brands -->
                     <div class="col-sm-6">
-                        <div class="dashboard-box px-0 mb-2rem overflow-hidden" style="height: 474px;">
+                        <div class="dashboard-box px-0 mb-2rem overflow-hidden min-h-474px">
                             <div class="mb-2 px-2rem">
                                 <h2 class="fs-16 fw-600 text-danger mb-1 h-40px">{{ translate('In-house Top Brands') }}</h2>
                                 <h4 class="fs-13 fw-600 text-secondary mb-0">{{ translate('By Sales') }}</h4>
                             </div>
                             <!-- nav -->
-                            <ul class="nav nav-tabs dashboard-tab dashboard-tab-danger border-0 px-2rem mb-3" role="tablist"
+                            <ul class="nav nav-tabs dashboard-tab dashboard-tab-danger border-0 px-2rem mb-3 mt-4" role="tablist"
                                 aria-orientation="vertical">
                                 <li class="nav-item">
                                     <a class="nav-link active inhouse_top_brands" id="all-tab" href="#all"
@@ -574,8 +634,8 @@
 
             <!-- In-house Store -->
             <div class="col-lg-6">
-                <div class="dashboard-box bg-white mb-2rem overflow-hidden">
-                    <div class="row gutters-16">
+                <div class="dashboard-box bg-white mb-2rem overflow-hidden min-h-400px">
+                    <div class="row gutters-16 h-100">
                         <!-- In-house Store -->
                         <div class="col-sm-6 d-flex flex-column justify-content-between">
                             <!-- Total In-house Sales -->
@@ -587,7 +647,9 @@
                                 <h4 class="fs-13 fw-600 text-dark text-secondary mb-0">{{ translate('Total Sales') }}</h4>
                             </div>
                             <!-- Order graph -->
-                            <canvas id="graph-2" class="w-100 h-auto" height="200"></canvas>
+                            <div class="flex-grow-1 d-flex align-items-center">
+                                <canvas id="graph-2" class="w-100 h-auto" height="200"></canvas>
+                            </div>
                             <!-- All In-house Orders -->
                             <a href="{{ route('inhouse_orders.index') }}"
                                 class="btn btn-md btn-soft-info btn-block rounded-2 mt-4 mb-4 mt-sm-0 mb-sm-0">{{ translate('All In-house Orders') }}</a>
@@ -596,7 +658,7 @@
                         <div class="col-sm-6">
                             <!-- In-house product -->
                             <div
-                                class="bg-soft-secondary rounded-2 h-120px d-flex flex-column justify-content-center text-primary px-2rem mb-4">
+                                class="bg-soft-secondary rounded-2 min-h-120px d-flex flex-column justify-content-center text-primary px-2rem mb-4">
                                 <h1 class="fs-30 fw-600 text-dark mb-0">
                                     {{ $total_inhouse_products }}
                                 </h1>
@@ -604,7 +666,7 @@
                             </div>
                             <!-- Ratings -->
                             <div
-                                class="bg-soft-secondary rounded-2 h-120px d-flex flex-column justify-content-center text-success px-2rem mb-4">
+                                class="bg-soft-secondary rounded-2 min-h-120px d-flex flex-column justify-content-center text-success px-2rem mb-4">
                                 <h1 class="fs-30 fw-600 text-dark mb-0">
                                     {{ number_format($inhouse_product_rating, 2) }}
                                 </h1>
@@ -612,7 +674,7 @@
                             </div>
                             <!-- Total Orders -->
                             <div
-                                class="bg-soft-secondary rounded-2 h-120px d-flex flex-column justify-content-center text-danger px-2rem">
+                                class="bg-soft-secondary rounded-2 min-h-120px d-flex flex-column justify-content-center text-danger px-2rem">
                                 <h1 class="fs-30 fw-600 text-dark mb-0">
                                     {{ $total_inhouse_order }}
                                 </h1>
@@ -626,7 +688,7 @@
             @if (get_setting('vendor_system_activation') == 1)
                 <!-- Top Seller & Products -->
                 <div class="col-lg-6">
-                    <div class="dashboard-box bg-white mb-2rem overflow-hidden p-2rem" style="height: 474px;">
+                    <div class="dashboard-box bg-white mb-2rem overflow-hidden p-2rem min-h-474px">
                         <!-- Header -->
                         <div class="d-flex align-items-center justify-content-between mb-3">
                             <div>

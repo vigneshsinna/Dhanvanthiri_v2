@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
@@ -165,15 +165,13 @@ export function OrderConfirmationPage() {
       <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
         {isAuthenticated ? (
           <Link to="/account/orders">
-            <Button variant="primary">{t('View My Orders', 'à®Žà®©à¯ à®†à®°à¯à®Ÿà®°à¯à®•à®³à¯ˆ à®ªà®¾à®°à¯')}</Button>
+            <Button variant="primary">{t('View My Orders', 'à®Žà®©à¯  à®†à®°à¯ à®Ÿà®°à¯ à®•à®³à¯ˆ à®ªà®¾à®°à¯ ')}</Button>
           </Link>
         ) : (
-          <Link to="/track-order">
-            <Button variant="primary">{t('Track Order', 'à®†à®°à¯à®Ÿà®°à¯ˆ à®•à®£à¯à®•à®¾à®£à®¿')}</Button>
-          </Link>
+          <></>
         )}
         <Link to="/products">
-          <Button variant="outline">{t('Continue Shopping', 'à®¤à¯Šà®Ÿà®°à¯à®¨à¯à®¤à¯ à®µà®¾à®™à¯à®•')}</Button>
+          <Button variant="outline">{t('Continue Shopping', 'à®¤à¯Šà®Ÿà®°à¯ à®¨à¯ à®¤à¯  à®µà®¾à®™à¯ à®•')}</Button>
         </Link>
       </div>
     </div>

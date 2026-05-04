@@ -185,6 +185,7 @@ Route::group(['prefix' => 'v2', 'middleware' => ['app_language']], function () {
     });
 
     Route::post('checkout/shipping-rates', [StorefrontCheckoutBridgeController::class, 'shippingRates']);
+    Route::get('states', [StorefrontCheckoutBridgeController::class, 'statesList']);
     Route::match(['get', 'post'], 'orders/track', [GuestOrderAccessController::class, 'track'])->middleware('throttle:10,1');
     Route::get('orders/{orderNumber}', [GuestOrderAccessController::class, 'show']);
 

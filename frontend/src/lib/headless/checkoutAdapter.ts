@@ -14,15 +14,52 @@
  */
 import { headlessApi, parsePrice } from './client';
 import { store } from '@/app/store';
+import { setCartToken } from '@/features/cart/store/cartSlice';
 
 const ALLOWED_PAYMENT_METHODS = new Set(['razorpay', 'phonepe']);
+
+function normalizeGatewayCode(value: unknown): string {
+  const code = String(value ?? '').trim().toLowerCase();
+  if (code.includes('razorpay')) return 'razorpay';
+  if (code.includes('phonepe')) return 'phonepe';
+  return code;
+}
 
 function checkoutState() {
   return store.getState().checkout;
 }
 
 function cartToken() {
-  return store.getState().cart.cartToken;
+  return store.getState().cart.cartToken || localStorage.getItem('cart_token');
+}
+
+async function recoverGuestCartToken() {
+  const existingToken = cartToken();
+  if (existingToken) {
+    return existingToken;
+  }
+
+  const items = store.getState().cart.items;
+  if (items.length === 0) {
+    return null;
+  }
+
+  let recoveredToken: string | null = null;
+  for (const item of items) {
+    const res: any = await headlessApi.post('/carts/add', {
+      id: item.product.id,
+      variant: item.variant?.sku ?? '',
+      quantity: item.quantity,
+      cost_matrix: 'headless-storefront',
+      ...(recoveredToken ? { temp_user_id: recoveredToken } : {}),
+    });
+    recoveredToken = res.data?.data?.temp_user_id ?? res.data?.temp_user_id ?? recoveredToken;
+    if (recoveredToken) {
+      store.dispatch(setCartToken(recoveredToken));
+    }
+  }
+
+  return recoveredToken;
 }
 
 export const checkoutAdapter: any = {
@@ -176,7 +213,7 @@ export const checkoutAdapter: any = {
     // Normalize to old frontend PaymentMethod shape
     const normalized = Array.isArray(methods)
       ? methods.map((m: any) => ({
-          code: m.payment_type_key || m.payment_type || m.code || m.name?.toLowerCase(),
+          code: normalizeGatewayCode(m.payment_type_key || m.payment_type || m.code || m.name),
           name: m.name || m.payment_type_key || m.title || '',
           description: m.name || '',
           is_enabled: true,
@@ -185,7 +222,18 @@ export const checkoutAdapter: any = {
           _raw: m,
         })).filter((m: any) => ALLOWED_PAYMENT_METHODS.has(String(m.code).toLowerCase()))
       : [];
-    return { data: { data: normalized } };
+    return {
+      data: {
+        data: normalized.length > 0 ? normalized : [{
+          code: 'razorpay',
+          name: 'Razorpay',
+          description: 'Pay securely using Razorpay.',
+          is_enabled: true,
+          is_default: true,
+          type: 'online' as const,
+        }],
+      },
+    };
   },
 
   async createPaymentIntent(payload: {
@@ -226,7 +274,8 @@ export const checkoutAdapter: any = {
     if (!payload.guest_phone || payload.guest_phone.replace(/\D/g, '').length < 10) {
       errors.push('A valid phone number is required');
     }
-    if (!cartToken()) {
+    const token = errors.length === 0 ? await recoverGuestCartToken() : cartToken();
+    if (!token) {
       errors.push('Cart is empty');
     }
 
@@ -235,7 +284,7 @@ export const checkoutAdapter: any = {
     }
 
     const res = await headlessApi.post('/guest/checkout/validate', {
-      temp_user_id: cartToken(),
+      temp_user_id: token,
       guest_email: payload.guest_email,
       guest_phone: payload.guest_phone,
       recipient_name: payload.recipient_name,
@@ -246,6 +295,7 @@ export const checkoutAdapter: any = {
       postal_code: payload.postal_code,
       country_code: payload.country_code || 'IN',
       phone: payload.phone || payload.guest_phone,
+      shipping_method_id: payload.shipping_method_id,
     });
 
     return {
@@ -264,7 +314,10 @@ export const checkoutAdapter: any = {
       return { data: { subtotal: 0, discount_amount: 0, shipping_cost: 0, tax_amount: 0, grand_total: 0 } };
     }
 
-    const summaryRes = await headlessApi.post('/guest/checkout/summary', { guest_checkout_token });
+    const summaryRes = await headlessApi.post('/guest/checkout/summary', {
+      guest_checkout_token,
+      shipping_method_id: payload.shipping_method_id,
+    });
     const summary = summaryRes.data?.data ?? summaryRes.data;
     return {
       data: {
@@ -287,6 +340,7 @@ export const checkoutAdapter: any = {
     const res = await headlessApi.post('/guest/payments/intent', {
       guest_checkout_token,
       gateway: payload.gateway,
+      shipping_method_id: payload.shipping_method_id,
     });
 
     return { data: res.data?.data ?? res.data };

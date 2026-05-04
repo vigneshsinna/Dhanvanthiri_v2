@@ -28,7 +28,7 @@
                             @can('export_order')
                                 <a class="dropdown-item" href="javascript:void(0)" onclick="order_bulk_export()">{{ translate('Export') }}</a>
                             @endcan
-                            @if(auth()->user()->can('unpaid_order_payment_notification_send') && $unpaid_order_payment_notification->status == 1 && Route::currentRouteName() == 'unpaid_orders.index')
+                            @if(auth()->user()->can('unpaid_order_payment_notification_send') && $unpaid_order_payment_notification && $unpaid_order_payment_notification->status == 1 && Route::currentRouteName() == 'unpaid_orders.index')
                                 <a class="dropdown-item" href="javascript:void(0)" onclick="bulk_unpaid_order_payment_notification()">{{ translate('Unpaid Order Payment Notification') }}</a>
                             @endif
                         </div>
@@ -241,7 +241,7 @@
                                         title="{{ translate('Download Invoice') }}">
                                         <i class="las la-download"></i>
                                     </a>
-                                    @if(auth()->user()->can('unpaid_order_payment_notification_send') && $order->payment_status == 'unpaid' && $unpaid_order_payment_notification->status == 1)
+                                    @if(auth()->user()->can('unpaid_order_payment_notification_send') && $order->payment_status == 'unpaid' && $unpaid_order_payment_notification && $unpaid_order_payment_notification->status == 1)
                                         <a class="btn btn-soft-warning btn-icon btn-circle btn-sm"
                                             href="javascript:void();" onclick="unpaid_order_payment_notification('{{ $order->id }}');"
                                             title="{{ translate('Unpaid Order Payment Notification') }}">

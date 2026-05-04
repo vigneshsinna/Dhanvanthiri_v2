@@ -16,6 +16,7 @@ use App\Support\Checkout\AllowedPaymentMethods;
 use DB;
 use App\Models\CombinedOrder;
 use App\Http\Controllers\AffiliateController;
+use Illuminate\Support\Facades\Schema;
 
 class OrderController extends Controller
 {
@@ -74,10 +75,22 @@ class OrderController extends Controller
                 $shippingAddress['lat_lang'] = $address->latitude . ',' . $address->longitude;
             }
         }
+        $encodedShippingAddress = json_encode($shippingAddress);
         $combined_order = new CombinedOrder;
         $combined_order->user_id = $user->id;
-        $combined_order->shipping_address = json_encode($shippingAddress);
+        if (Schema::hasColumn('combined_orders', 'shipping_address')) {
+            $combined_order->shipping_address = $encodedShippingAddress;
+        }
         $combined_order->save();
+
+        $orderColumns = Schema::getColumnListing('orders');
+        $orderDetailsColumns = Schema::getColumnListing('order_details');
+        $ordersHas = function ($column) use ($orderColumns) {
+            return in_array($column, $orderColumns, true);
+        };
+        $orderDetailsHas = function ($column) use ($orderDetailsColumns) {
+            return in_array($column, $orderDetailsColumns, true);
+        };
 
         $seller_products = array();
         foreach ($cartItems as $cartItem) {
@@ -94,14 +107,22 @@ class OrderController extends Controller
             $order = new Order;
             $order->combined_order_id = $combined_order->id;
             $order->user_id = $user->id;
-            $order->shipping_address = $combined_order->shipping_address;
+            $order->shipping_address = $encodedShippingAddress;
 
-            $order->order_from = 'app';
+            if ($ordersHas('order_from')) {
+                $order->order_from = 'app';
+            }
             $order->payment_type = $request->payment_type;
-            $order->delivery_viewed = '0';
-            $order->payment_status_viewed = '0';
+            if ($ordersHas('delivery_viewed')) {
+                $order->delivery_viewed = '0';
+            }
+            if ($ordersHas('payment_status_viewed')) {
+                $order->payment_status_viewed = '0';
+            }
             $order->code = date('Ymd-His') . rand(10, 99);
-            $order->date = strtotime('now');
+            if ($ordersHas('date')) {
+                $order->date = strtotime('now');
+            }
             if ($set_paid) {
                 $order->payment_status = 'paid';
             } else {
@@ -119,6 +140,16 @@ class OrderController extends Controller
             foreach ($seller_product as $cartItem) {
                 $product = Product::find($cartItem['product_id']);
 
+                if (! $product) {
+                    $order->delete();
+                    $combined_order->delete();
+                    return response()->json([
+                        'combined_order_id' => 0,
+                        'result' => false,
+                        'message' => translate('One or more products in your cart are no longer available.')
+                    ]);
+                }
+
                 $subtotal += cart_product_price($cartItem, $product, false, false) * $cartItem['quantity'];
                 $tax += cart_product_tax($cartItem, $product, false) * $cartItem['quantity'];
                 $coupon_discount += $cartItem['discount'];
@@ -126,7 +157,7 @@ class OrderController extends Controller
                 $product_variation = $cartItem['variation'];
 
                 $product_stock = $product->stocks->where('variant', $product_variation)->first();
-                if ($product->digital != 1 && $cartItem['quantity'] > $product_stock->qty) {
+                if ($product->digital != 1 && $product_stock && $cartItem['quantity'] > $product_stock->qty) {
                     $order->delete();
                     $combined_order->delete();
                     return response()->json([
@@ -134,7 +165,7 @@ class OrderController extends Controller
                         'result' => false,
                         'message' => translate('The requested quantity is not available for ') . $product->name
                     ]);
-                } elseif ($product->digital != 1) {
+                } elseif ($product->digital != 1 && $product_stock) {
                     $product_stock->qty -= $cartItem['quantity'];
                     $product_stock->save();
                 }
@@ -147,13 +178,15 @@ class OrderController extends Controller
                 $order_detail->price = cart_product_price($cartItem, $product, false, false) * $cartItem['quantity'];
                 $order_detail->tax = cart_product_tax($cartItem, $product, false) * $cartItem['quantity'];
                 $order_detail->shipping_type = $cartItem['shipping_type'];
-                $order_detail->product_referral_code = $cartItem['product_referral_code'];
+                if ($orderDetailsHas('product_referral_code')) {
+                    $order_detail->product_referral_code = $cartItem['product_referral_code'];
+                }
                 $order_detail->shipping_cost = $cartItem['shipping_cost'];
 
                 $shipping += $order_detail->shipping_cost;
 
                 //End of storing shipping cost
-                if (addon_is_activated('club_point')) {
+                if (addon_is_activated('club_point') && $orderDetailsHas('earn_point')) {
                     $order_detail->earn_point = $product->earn_point;
                 }
 

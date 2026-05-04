@@ -58,7 +58,17 @@
 		@php
 			$logo = get_setting('header_logo');
 			$shipping = json_decode($order->shipping_address);
-			$billing = json_decode($order->billing_address) ?? $shipping;
+			if (!is_object($shipping)) {
+				$shipping = (object) [
+					'name' => 'N/A', 'email' => 'N/A', 'phone' => 'N/A',
+					'address' => 'N/A', 'city' => 'N/A', 'state' => 'N/A',
+					'postal_code' => 'N/A', 'country' => 'N/A'
+				];
+			}
+			$billing = json_decode($order->billing_address);
+			if (!is_object($billing)) {
+				$billing = $shipping;
+			}
 			$first_order = $order->orderDetails->first();
 		@endphp
 
@@ -334,7 +344,7 @@
 							<tr>
 								<td class="text-left">
 									@php
-										$removedXML = '<?xml version="1.0" encoding="UTF-8"?>';
+										$removedXML = '<' . '?xml version="1.0" encoding="UTF-8"?' . '>';
 									@endphp
 									{!! str_replace($removedXML,"", QrCode::size(100)->generate($order->code)) !!}
 								</td>

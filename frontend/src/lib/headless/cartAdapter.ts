@@ -59,7 +59,7 @@ interface V2CartSummary {
 function cartContext() {
   const state = store.getState();
   const userId = state.auth.user?.id ?? null;
-  const tempUserId = state.cart.cartToken ?? null;
+  const tempUserId = state.cart.cartToken ?? localStorage.getItem('cart_token') ?? null;
 
   if (userId) {
     return { user_id: userId };
@@ -91,9 +91,7 @@ function unwrapCartSummary(payload: any): V2CartSummary | undefined {
 }
 
 // Normalize V2 cart group structure to flat cart expected by old frontend
-function normalizeCart(groups: V2CartGroup[], summary?: V2CartSummary) {
-  const state = store.getState();
-  const cartToken = state.cart.cartToken ?? null;
+function normalizeCart(groups: V2CartGroup[], summary?: V2CartSummary, cartToken?: string | null) {
   const items = groups.flatMap(group =>
     group.cart_items.map(item => ({
       id: item.id,
@@ -118,8 +116,8 @@ function normalizeCart(groups: V2CartGroup[], summary?: V2CartSummary) {
         ownerId: item.owner_id,
         lowerLimit: item.lower_limit,
         upperLimit: item.upper_limit,
-        tax: item.tax,
-        shippingCost: item.shipping_cost,
+        tax: 'Rs 0.00',
+        shippingCost: 0,
         digital: item.digital,
       },
     }))
@@ -129,7 +127,7 @@ function normalizeCart(groups: V2CartGroup[], summary?: V2CartSummary) {
     ? parsePrice(summary.sub_total)
     : items.reduce((sum, i) => sum + i.lineTotal, 0);
 
-  return {
+  const normalized = {
     data: {
       data: {
         items,
@@ -138,22 +136,28 @@ function normalizeCart(groups: V2CartGroup[], summary?: V2CartSummary) {
           : null,
         subtotal,
         discount_amount: summary ? parsePrice(summary.discount) : 0,
-        shipping_cost: summary ? parsePrice(summary.shipping_cost) : null,
-        tax_amount: summary ? parsePrice(summary.tax) : null,
+        shipping_cost: null,
+        tax_amount: null,
         grand_total: summary ? parsePrice(summary.grand_total) : subtotal,
         item_count: items.reduce((sum, i) => sum + i.quantity, 0),
-        cart_token: cartToken,
         // Preserve groups for checkout (new backend uses seller-grouped carts)
         _v2Groups: groups,
       },
     },
   };
+
+  if (cartToken !== undefined) {
+    (normalized.data.data as any).cart_token = cartToken;
+  }
+
+  return normalized;
 }
 
 export const cartAdapter: any = {
   async getCart() {
     // V2 uses POST /carts to list cart
     const context = cartContext();
+    const responseCartToken = 'temp_user_id' in context ? context.temp_user_id : undefined;
     const [cartRes, summaryRes] = await Promise.all([
       headlessApi.post('/carts', context),
       headlessApi.post('/cart-summary', context).catch(() => null),
@@ -162,7 +166,7 @@ export const cartAdapter: any = {
     const groups = unwrapCartGroups(cartRes.data);
     const summary = summaryRes ? unwrapCartSummary(summaryRes.data) : undefined;
 
-    return normalizeCart(groups, summary);
+    return normalizeCart(groups, summary, responseCartToken);
   },
 
   async addItem(payload: { product_id: number; variant_id?: number; variant?: string; quantity: number }) {
@@ -179,7 +183,18 @@ export const cartAdapter: any = {
     if (tempUserId) {
       store.dispatch(setCartToken(tempUserId));
     }
-    return { data: res.data };
+
+    const updatedContext = cartContext();
+    const responseCartToken = 'temp_user_id' in updatedContext ? updatedContext.temp_user_id : undefined;
+    const [cartRes, summaryRes] = await Promise.all([
+      headlessApi.post('/carts', updatedContext),
+      headlessApi.post('/cart-summary', updatedContext).catch(() => null),
+    ]);
+
+    const groups = unwrapCartGroups(cartRes.data);
+    const summary = summaryRes ? unwrapCartSummary(summaryRes.data) : undefined;
+
+    return normalizeCart(groups, summary, responseCartToken);
   },
 
   async updateItem({ itemId, quantity }: { itemId: number; quantity: number }) {
@@ -227,6 +242,7 @@ export const cartAdapter: any = {
       const res = await headlessApi.post('/checkout/shipping-rates', {
         address_id: addressId,
         state,
+        cart_token: store.getState().cart.cartToken ?? localStorage.getItem('cart_token') ?? undefined,
       });
       const items = res.data?.data?.items || res.data?.data || [];
       return { data: { data: items } };

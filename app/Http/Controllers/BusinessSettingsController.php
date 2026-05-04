@@ -174,6 +174,30 @@ class BusinessSettingsController extends Controller
             }
         }
 
+        // Auto-enable the gateway when credentials are saved via the admin blade form.
+        // The blade forms store RAZOR_KEY/RAZOR_SECRET or phonepe_client_id etc.
+        // but historically never toggled the enabled flag. Fix that here.
+        if ($request->payment_method === 'razorpay') {
+            $keyId = trim((string) $request->input('RAZOR_KEY', $request->input('razorpay_key_id', '')));
+            $keySecret = trim((string) $request->input('RAZOR_SECRET', $request->input('razorpay_key_secret', '')));
+            if ($keyId !== '' && $keySecret !== '') {
+                // Mirror to the canonical key names that PaymentGatewayConfig reads first
+                BusinessSetting::updateOrCreate(['type' => 'razorpay_key_id'], ['value' => $keyId]);
+                BusinessSetting::updateOrCreate(['type' => 'razorpay'], ['value' => '1']);
+                app(\App\Support\Checkout\PaymentGatewayConfig::class)->syncPaymentMethodPublic('razorpay', true);
+            }
+        }
+
+        if ($request->payment_method === 'phonepe') {
+            $clientId = trim((string) $request->input('phonepe_client_id', ''));
+            $clientSecret = trim((string) $request->input('phonepe_client_secret', ''));
+            if ($clientId !== '' && $clientSecret !== '') {
+                BusinessSetting::updateOrCreate(['type' => 'phonepe_payment'], ['value' => '1']);
+                BusinessSetting::updateOrCreate(['type' => 'PHONEPE_ENABLED'], ['value' => '1']);
+                app(\App\Support\Checkout\PaymentGatewayConfig::class)->syncPaymentMethodPublic('phonepe', true);
+            }
+        }
+
         \Cache::forget('business_settings');
 
         flash(translate("Settings updated successfully"))->success();

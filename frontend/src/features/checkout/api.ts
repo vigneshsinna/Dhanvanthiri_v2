@@ -152,6 +152,7 @@ export function useGuestValidateCheckoutMutation() {
       state?: string;
       postal_code?: string;
       country_code?: string;
+      shipping_method_id?: number;
     }) => {
       const res = await checkoutAdapter.guestValidateCheckout(payload);
       return res;

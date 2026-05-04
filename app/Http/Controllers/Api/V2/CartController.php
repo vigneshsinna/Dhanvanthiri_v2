@@ -78,23 +78,20 @@ class CartController extends Controller
         }
 
         $subtotal = 0.00;
-        $tax = 0.00;
         foreach ($items as $cartItem) {
             $product = Product::find($cartItem['product_id']);
             if ($product) {
                 $subtotal += cart_product_price($cartItem, $product, false, false) * $cartItem['quantity'];
-                $tax += cart_product_tax($cartItem, $product, false) * $cartItem['quantity'];
             }
         }
 
-        $shipping_cost = $items->sum('shipping_cost');
         $discount = $items->sum('discount');
-        $sum = ($subtotal + $tax + $shipping_cost) - $discount;
+        $sum = $subtotal - $discount;
 
         return $this->successResponse([
             'sub_total' => single_price($subtotal),
-            'tax' => single_price($tax),
-            'shipping_cost' => single_price($shipping_cost),
+            'tax' => single_price(0),
+            'shipping_cost' => single_price(0),
             'discount' => single_price($discount),
             'grand_total' => single_price($sum),
             'grand_total_value' => convert_price($sum),
@@ -147,7 +144,6 @@ class CartController extends Controller
                 if (!$product) continue;
 
                 $price = cart_product_price($cartItem, $product, false, false) * intval($cartItem->quantity);
-                $tax = cart_product_tax($cartItem, $product, false);
 
                 $shop_items_data[] = [
                     "id" => (int)$cartItem->id,
@@ -162,15 +158,15 @@ class CartController extends Controller
                     "variation" => $cartItem->variation,
                     "price" => single_price($price),
                     "currency_symbol" => $currency_symbol,
-                    "tax" => single_price($tax),
-                    "shipping_cost" => (float) $cartItem->shipping_cost,
+                    "tax" => single_price(0),
+                    "shipping_cost" => 0,
                     "quantity" => (int)$cartItem->quantity,
                     "lower_limit" => (int)$product->min_qty,
                     "upper_limit" => (int)($product->stocks->where('variant', $cartItem->variation)->first()->qty ?? 0),
                     "digital" => $product->digital,   
                     "stock" => (int)($product->stocks->where('variant', $cartItem->variation)->first()->qty ?? 0), 
                 ];
-                $sub_total += $price + $tax;
+                $sub_total += $price;
             }
 
             $grand_total += $sub_total;

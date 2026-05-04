@@ -19,6 +19,19 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
+vi.mock('@/lib/api/client', () => ({
+  api: {
+    get: vi.fn().mockResolvedValue({
+      data: {
+        data: [
+          { id: 1, name: 'Tamil Nadu', zone_id: 1 },
+          { id: 2, name: 'Chennai', zone_id: 1 },
+        ],
+      },
+    }),
+  },
+}));
+
 vi.mock('@/features/checkout/api', () => ({
   useAddressesQuery: () => ({
     data: {
@@ -179,6 +192,8 @@ describe('CheckoutPage', () => {
         },
       },
     });
+
+    await screen.findByRole('option', { name: 'Tamil Nadu' });
 
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'buyer@example.com' } });
     fireEvent.change(screen.getByLabelText(/^phone$/i), { target: { value: '9876543210' } });

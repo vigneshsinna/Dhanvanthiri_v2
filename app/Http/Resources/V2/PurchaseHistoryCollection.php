@@ -35,7 +35,7 @@ class PurchaseHistoryCollection extends ResourceCollection
                     'shipping_cost' => format_price(convert_price($data->orderDetails->sum('shipping_cost'))),
                     'subtotal' => format_price(convert_price($data->orderDetails->sum('price'))),
                     'tax' => format_price(convert_price($data->orderDetails->sum('tax'))),
-                    'date' => Carbon::createFromTimestamp($data->date)->format('d-m-Y'),
+                    'date' => Carbon::createFromTimestamp($data->date)->toDateTimeString(),
                     'cancel_request' => $data->cancel_request == 1,
                     'manually_payable' => $data->manual_payment && $data->manual_payment_data == null,
                     'links' => [

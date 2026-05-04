@@ -30,8 +30,8 @@ interface Order {
 export function OrderListPage() {
   const [page, setPage] = useState(1);
   const { data, isLoading } = useOrdersQuery({ page, per_page: 10 });
-  const orders: Order[] = data?.data?.data ?? data?.data ?? [];
-  const pagination = data?.data?.meta ?? data?.meta ?? null;
+  const orders: Order[] = data?.data ?? [];
+  const pagination = data?.meta ?? null;
   const currentLocale = getStorefrontLocale();
   const t = (en: string, ta: string) => getLocalizedText(currentLocale, { en, ta });
 
@@ -65,7 +65,7 @@ export function OrderListPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <Badge variant={statusVariant(order.status)}>
-                    {order.status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                    {(order.status || 'placed').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
                   </Badge>
                   <span className="text-lg font-bold text-slate-900">₹{order.grand_total}</span>
                 </div>

@@ -172,7 +172,7 @@ export function OrderDetailPage() {
         </div>
         <div className="flex items-center gap-3">
           <Badge variant={statusVariant(order.status)}>
-            {order.status.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
+            {(order.status || 'placed').replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
           </Badge>
           {canCancel && (
             <Button variant="danger" size="sm" onClick={() => setShowCancel(true)}>{t('Cancel Order', 'ஆர்டரை ரத்து செய்')}</Button>

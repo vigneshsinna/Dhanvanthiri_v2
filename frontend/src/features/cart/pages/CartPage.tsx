@@ -31,6 +31,10 @@ export function CartPage() {
 
   const cart = data?.data?.data ?? data?.data;
   const items: CartItem[] = cart?.items ?? [];
+  const cartSubtotal = Number(cart?.subtotal ?? 0);
+  const cartDiscount = Number(cart?.discount_amount ?? 0);
+  const cartTax = Number(cart?.tax_amount ?? 0);
+  const cartTotalBeforeShipping = Math.max(0, cartSubtotal + cartTax - cartDiscount);
 
   useEffect(() => {
     if (cart) {
@@ -47,9 +51,9 @@ export function CartPage() {
         coupon: cart.coupon ?? null,
         subtotal: cart.subtotal ?? 0,
         discountAmount: cart.discount_amount ?? 0,
-        shippingCost: cart.shipping_cost ?? null,
+        shippingCost: null,
         taxAmount: cart.tax_amount ?? null,
-        grandTotal: cart.grand_total ?? cart.subtotal ?? 0,
+        grandTotal: Math.max(0, Number(cart.subtotal ?? 0) + Number(cart.tax_amount ?? 0) - Number(cart.discount_amount ?? 0)),
         itemCount: cart.item_count ?? items.reduce((sum, item) => sum + item.quantity, 0),
       }));
     }
@@ -172,22 +176,18 @@ export function CartPage() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-slate-600">{t('Subtotal', 'துணைத் தொகை')}</span>
-                <span className="font-medium">₹{cart?.subtotal?.toFixed(2) ?? '0.00'}</span>
+                <span className="font-medium">₹{cartSubtotal.toFixed(2)}</span>
               </div>
-              {(cart?.discount_amount ?? 0) > 0 && (
+              {cartDiscount > 0 && (
                 <div className="flex justify-between text-green-600">
                   <span>{t('Discount', 'தள்ளுபடி')}</span>
-                  <span>-₹{cart.discount_amount.toFixed(2)}</span>
+                  <span>-₹{cartDiscount.toFixed(2)}</span>
                 </div>
               )}
-              <div className="flex justify-between">
-                <span className="text-slate-600">{t('Shipping', 'அனுப்புதல்')}</span>
-                <span className="font-medium">{(cart?.shipping_cost ?? 0) === 0 ? t('FREE', 'உசிதம்') : `₹${cart!.shipping_cost!.toFixed(2)}`}</span>
-              </div>
               <div className="border-t pt-2">
                 <div className="flex justify-between text-base font-bold">
                   <span>{t('Total', 'மொத்தம்')}</span>
-                  <span>₹{cart?.grand_total?.toFixed(2) ?? cart?.subtotal?.toFixed(2) ?? '0.00'}</span>
+                  <span>₹{cartTotalBeforeShipping.toFixed(2)}</span>
                 </div>
               </div>
             </div>

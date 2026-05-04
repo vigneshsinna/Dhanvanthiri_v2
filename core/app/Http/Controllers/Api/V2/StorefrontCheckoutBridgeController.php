@@ -269,6 +269,7 @@ class StorefrontCheckoutBridgeController extends Controller
 
         $shippingInfo = [
             'country_id' => $address->country_id,
+            'state_id' => $address->state_id,
             'city_id' => $address->city_id,
             'area_id' => $address->area_id,
         ];

@@ -376,7 +376,6 @@
                             </div>
 
                             <!-- GST Rate -->
-                            @if (addon_is_activated('gst_system'))
                             <h5 class="mb-3 mt-4 pb-3 fs-17 fw-700" style="border-bottom: 1px dashed #e4e5eb;">{{translate('HSN & GST')}}</h5>
                             <div class="w-100">
                                 <div class="form-group mb-2">
@@ -388,7 +387,8 @@
                                     <input type="number" lang="en" min="0" value="0" step="0.01" placeholder="{{ translate('GST Rate') }}" name="gst_rate" class="form-control">
                                 </div>
                             </div>
-                            @else
+                            
+                            @if (!addon_is_activated('gst_system'))
                             <!-- Vat & TAX -->
                             <h5 class="mb-3 mt-4 pb-3 fs-17 fw-700" style="border-bottom: 1px dashed #e4e5eb;">{{translate('Vat & TAX')}}</h5>
                             <div class="w-100">

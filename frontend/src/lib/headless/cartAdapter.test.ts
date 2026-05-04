@@ -108,11 +108,11 @@ describe('cartAdapter', () => {
             success: true,
             data: {
               sub_total: 'Rs 500.00',
-              tax: 'Rs 25.00',
-              shipping_cost: 'Rs 40.00',
+              tax: 'Rs 0.00',
+              shipping_cost: 'Rs 0.00',
               discount: 'Rs 0.00',
-              grand_total: 'Rs 565.00',
-              grand_total_value: 565,
+              grand_total: 'Rs 500.00',
+              grand_total_value: 500,
               coupon_code: '',
               coupon_applied: false,
             },
@@ -138,7 +138,9 @@ describe('cartAdapter', () => {
         primaryImageUrl: '/uploads/poondu.png',
       }),
     }));
-    expect(response.data.data.grand_total).toBe(565);
+    expect(response.data.data.shipping_cost).toBeNull();
+    expect(response.data.data.tax_amount).toBeNull();
+    expect(response.data.data.grand_total).toBe(500);
   });
 
   it('uses the stored guest cart token for subsequent cart requests', async () => {
@@ -172,5 +174,96 @@ describe('cartAdapter', () => {
     const response = await cartAdapter.getCart();
 
     expect(response.data.data.cart_token).toBe('guest-cart-xyz');
+  });
+
+  it('does not emit a null cart token for no-token guest cart responses', async () => {
+    mockedPost.mockImplementation(async (url: string, body?: unknown) => {
+      expect(body).toEqual({});
+
+      if (url === '/carts') {
+        return {
+          data: {
+            success: true,
+            data: {
+              data: [
+                {
+                  name: 'Inhouse',
+                  owner_id: 1,
+                  sub_total: 'Rs 179.00',
+                  cart_items: [
+                    {
+                      id: 9,
+                      status: 1,
+                      owner_id: 1,
+                      user_id: null,
+                      product_id: 5,
+                      product_name: 'Poondu Thokku',
+                      product_slug: 'poondu-thokku',
+                      auction_product: 0,
+                      product_thumbnail_image: '/uploads/poondu.png',
+                      variation: '',
+                      price: 'Rs 179.00',
+                      currency_symbol: 'Rs',
+                      tax: 'Rs 0.00',
+                      shipping_cost: 0,
+                      quantity: 1,
+                      lower_limit: 1,
+                      upper_limit: 10,
+                      digital: 0,
+                      stock: 10,
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        } as any;
+      }
+
+      if (url === '/cart-summary') {
+        return {
+          data: {
+            sub_total: 'Rs 179.00',
+            tax: 'Rs 0.00',
+            shipping_cost: 'Rs 0.00',
+            discount: 'Rs 0.00',
+            grand_total: 'Rs 179.00',
+            grand_total_value: 179,
+            coupon_code: '',
+            coupon_applied: false,
+          },
+        } as any;
+      }
+
+      throw new Error(`Unexpected POST ${url}`);
+    });
+
+    const response = await cartAdapter.getCart();
+
+    expect(response.data.data.item_count).toBe(1);
+    expect(response.data.data).not.toHaveProperty('cart_token');
+  });
+
+  it('includes the guest cart token when requesting shipping rates', async () => {
+    store.dispatch(setCartToken('guest-cart-shipping'));
+    mockedPost.mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: {
+          items: [
+            { id: 3, name: 'Home Delivery', cost: 50 },
+          ],
+        },
+      },
+    } as any);
+
+    const response = await cartAdapter.shippingRates(0, 'Chennai');
+
+    expect(mockedPost).toHaveBeenCalledWith('/checkout/shipping-rates', {
+      address_id: 0,
+      state: 'Chennai',
+      cart_token: 'guest-cart-shipping',
+    });
+    expect(response.data.data[0]).toEqual(expect.objectContaining({ cost: 50 }));
   });
 });

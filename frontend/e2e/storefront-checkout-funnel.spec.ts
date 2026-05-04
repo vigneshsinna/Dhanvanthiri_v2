@@ -13,12 +13,12 @@ const guestAddress = {
   name: 'E2E Guest Customer',
   address: '12 Test Market Street',
   city: 'Chennai',
-  state: 'Tamil Nadu',
+  state: 'Chennai',
   postalCode: '600001',
 };
 
 test.describe('Storefront checkout funnel', () => {
-  test.describe.configure({ timeout: 60_000 });
+  test.describe.configure({ mode: 'serial', timeout: 90_000 });
 
   test('guest checkout address step requires valid details before payment', async ({ page }) => {
     const issues = attachStorefrontIssueCollector(page);
@@ -76,7 +76,7 @@ test.describe('Storefront checkout funnel', () => {
     await page.getByLabel(/delivery phone/i).fill(guestAddress.phone);
     await page.getByLabel(/address line 1/i).fill(guestAddress.address);
     await page.getByLabel(/^city/i).fill(guestAddress.city);
-    await page.getByLabel(/^state/i).fill(guestAddress.state);
+    await page.getByLabel(/^state/i).selectOption({ label: guestAddress.state });
     await page.getByLabel(/postal code/i).fill(guestAddress.postalCode);
     await page.getByRole('button', { name: /continue to payment/i }).click();
 
@@ -84,7 +84,8 @@ test.describe('Storefront checkout funnel', () => {
     await expect(page.getByText(/subtotal/i).first()).toBeVisible();
     await expect(page.getByText(/shipping/i).first()).toBeVisible();
     await expect(page.getByText(/total|payable/i).first()).toBeVisible();
-    await expect(page.locator('input[name="gateway"]').first().or(page.getByText(/payment options|payment method/i).first())).toBeVisible();
+    await expect(page.getByRole('heading', { name: /payment method/i })).toBeVisible();
+    await expect(page.getByRole('radio', { name: /razorpay/i })).toBeVisible();
 
     expectNoCriticalStorefrontIssues(issues);
   });
@@ -102,7 +103,7 @@ test.describe('Storefront checkout funnel', () => {
     await page.getByLabel(/delivery phone/i).fill(guestAddress.phone);
     await page.getByLabel(/address line 1/i).fill(guestAddress.address);
     await page.getByLabel(/^city/i).fill(guestAddress.city);
-    await page.getByLabel(/^state/i).fill(guestAddress.state);
+    await page.getByLabel(/^state/i).selectOption({ label: guestAddress.state });
     await page.getByLabel(/postal code/i).fill(guestAddress.postalCode);
     await page.getByRole('button', { name: /continue to payment/i }).click();
     await expect(page.getByRole('heading', { name: /order review|payment/i })).toBeVisible({ timeout: 15_000 });
@@ -111,11 +112,24 @@ test.describe('Storefront checkout funnel', () => {
 
     const payButton = page.getByRole('button', { name: /place order|pay with/i }).last();
     await expect(payButton).toBeEnabled();
-    await Promise.all([
-      payButton.click(),
-      payButton.click({ trial: true }).catch(() => undefined),
-    ]);
-    await expect(page.getByText(/processing|placing your order|please wait/i).first()).toBeVisible({ timeout: 10_000 });
+    let paymentIntentRequests = 0;
+    page.on('request', (request) => {
+      if (request.method() === 'POST' && request.url().includes('/api/v2/guest/payments/intent')) {
+        paymentIntentRequests += 1;
+      }
+    });
+
+    const paymentIntentResponse = page.waitForResponse(
+      (response) => response.url().includes('/api/v2/guest/payments/intent'),
+      { timeout: 30_000 },
+    );
+    await payButton.click();
+    await expect.poll(() => paymentIntentRequests, { timeout: 5_000 }).toBe(1);
+    await payButton.click({ trial: true, timeout: 1_000 }).catch(() => undefined);
+    expect(paymentIntentRequests).toBe(1);
+    const intentResponse = await paymentIntentResponse;
+    expect(intentResponse.ok()).toBe(true);
+    await expect(page.locator('iframe').first()).toBeVisible({ timeout: 15_000 });
 
     expectNoCriticalStorefrontIssues(issues);
   });

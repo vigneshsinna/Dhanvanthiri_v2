@@ -103,4 +103,35 @@ describe('CartPage', () => {
     const allText = document.body.textContent ?? '';
     expect(allText).toContain('179');
   });
+
+  it('does not include shipping in the cart summary', () => {
+    mockUseCartQuery.mockReturnValue({
+      data: {
+        data: {
+          items: [{
+            id: 1,
+            quantity: 2,
+            unit_price: 179,
+            line_total: 358,
+            product: { id: 1, name: 'Poondu Thokku', slug: 'poondu-thokku' },
+            variant: null,
+          }],
+          subtotal: 358,
+          discount_amount: 0,
+          shipping_cost: 120,
+          tax_amount: 0,
+          grand_total: 478,
+          coupon: null,
+        },
+      },
+      isLoading: false,
+    } as any);
+
+    renderWithProviders(<CartPage />);
+
+    const allText = document.body.textContent ?? '';
+    expect(allText).not.toContain('Shipping');
+    expect(allText).not.toContain('478');
+    expect(allText).toContain('358.00');
+  });
 });

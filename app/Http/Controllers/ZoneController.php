@@ -24,8 +24,9 @@ class ZoneController extends Controller
 
     public function create()
     {
-        $countries = Country::where('status', 1)->where('zone_id', 0)->get();
-        return view('backend.setup_configurations.zones.create', compact('countries'));
+        $countries = Country::where('status', 1)->get();
+        $states = \App\Models\State::where('status', 1)->get();
+        return view('backend.setup_configurations.zones.create', compact('countries', 'states'));
     }
 
 
@@ -33,8 +34,16 @@ class ZoneController extends Controller
     {
         $zone = Zone::create($request->only(['name', 'status']));
 
-        foreach ($request->country_id as $val) {
-            Country::where('id', $val)->update(['zone_id' => $zone->id]);
+        if ($request->country_id) {
+            foreach ($request->country_id as $val) {
+                Country::where('id', $val)->update(['zone_id' => $zone->id]);
+            }
+        }
+
+        if ($request->state_id) {
+            foreach ($request->state_id as $val) {
+                \App\Models\State::where('id', $val)->update(['zone_id' => $zone->id]);
+            }
         }
 
         flash(translate('Zone has been created successfully'))->success();
@@ -43,13 +52,11 @@ class ZoneController extends Controller
 
     public function edit(Zone $zone)
     {
-        $countries = Country::where('status', 1)
-            ->where(function ($query) use ($zone) {
-                $query->where('zone_id', 0)
-                    ->orWhere('zone_id', $zone->id);
-            })
-            ->get();
-        return view('backend.setup_configurations.zones.edit', compact('countries', 'zone'));
+        $countries = Country::where('status', 1)->get();
+        
+        $states = \App\Models\State::where('status', 1)->get();
+
+        return view('backend.setup_configurations.zones.edit', compact('countries', 'zone', 'states'));
     }
 
 
@@ -58,11 +65,20 @@ class ZoneController extends Controller
         $zone->update($request->only(['name']));
 
         Country::where('zone_id', $zone->id)->update(['zone_id' => 0]);
-        foreach ($request->country_id as $val) {
-            Country::where('id', $val)->update(['zone_id' => $zone->id]);
+        if ($request->country_id) {
+            foreach ($request->country_id as $val) {
+                Country::where('id', $val)->update(['zone_id' => $zone->id]);
+            }
         }
 
-        flash(translate('Zone has been update successfully'))->success();
+        \App\Models\State::where('zone_id', $zone->id)->update(['zone_id' => 0]);
+        if ($request->state_id) {
+            foreach ($request->state_id as $val) {
+                \App\Models\State::where('id', $val)->update(['zone_id' => $zone->id]);
+            }
+        }
+
+        flash(translate('Zone has been updated successfully'))->success();
         return back();
     }
 
@@ -77,6 +93,7 @@ class ZoneController extends Controller
         $zone = Zone::findOrFail($id);
 
         Country::where('zone_id', $zone->id)->update(['zone_id' => 0]);
+        \App\Models\State::where('zone_id', $zone->id)->update(['zone_id' => 0]);
 
         Zone::destroy($id);
 

@@ -26,7 +26,8 @@ class ZoneRequest extends FormRequest
         return [
             'name' => ['required'],
             'status' => ['required'],
-            'country_id' => ['required']
+            'country_id' => ['nullable'],
+            'state_id' => ['nullable']
         ];
     }
 

@@ -17,6 +17,7 @@ use App\Models\Upload;
 use App\Models\Wallet;
 use App\Models\Carrier;
 use App\Models\Country;
+use App\Models\State;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Currency;
@@ -404,6 +405,10 @@ if (!function_exists('cart_product_tax')) {
             } elseif ($product_tax->tax_type == 'amount') {
                 $tax += $product_tax->tax;
             }
+        }
+
+        if ($product->gst_rate > 0) {
+            $tax += ($price * $product->gst_rate) / 100;
         }
 
         if ($formatted) {
@@ -1019,6 +1024,21 @@ if (!function_exists('translation_tables')) {
     }
 }
 
+if (!function_exists('shipping_weight_in_kg_with_packaging')) {
+    function shipping_weight_in_kg_with_packaging($productWeight, $quantity = 1)
+    {
+        $quantity = max(0, (int) $quantity);
+        if ($quantity === 0) {
+            return 0.0;
+        }
+
+        $weight = max(0, (float) $productWeight);
+        $weightInKg = $weight > 20 ? ($weight / 1000) : $weight;
+
+        return ($weightInKg + 0.02) * $quantity;
+    }
+}
+
 function getShippingCost($carts, $index, $shipping_info = '', $carrier = '')
 {
     //Log::alert('area Info', ['shipping_info' => $shipping_info]);
@@ -1044,7 +1064,7 @@ function getShippingCost($carts, $index, $shipping_info = '', $carrier = '')
 
             // For carrier wise shipping
             if ($shipping_type == 'carrier_wise_shipping') {
-                $admin_product_total_weight += ($item_product->weight * $cart_item['quantity']);
+                $admin_product_total_weight += shipping_weight_in_kg_with_packaging($item_product->weight, $cart_item['quantity']);
                 $admin_product_total_price += (cart_product_price($cart_item, $item_product, false, false) * $cart_item['quantity']);
             }
         } else {
@@ -1066,7 +1086,7 @@ function getShippingCost($carts, $index, $shipping_info = '', $carrier = '')
 
             // For carrier wise shipping
             if ($shipping_type == 'carrier_wise_shipping') {
-                $weight += ($item_product->weight * $cart_item['quantity']);
+                $weight += shipping_weight_in_kg_with_packaging($item_product->weight, $cart_item['quantity']);
                 $seller_product_total_weight[$item_product->user_id] = $weight;
 
                 $price += (cart_product_price($cart_item, $item_product, false, false) * $cart_item['quantity']);
@@ -1100,7 +1120,28 @@ function getShippingCost($carts, $index, $shipping_info = '', $carrier = '')
         }
         return 0;
     } elseif ($shipping_type == 'carrier_wise_shipping') { // carrier wise shipping
-        $user_zone = $shipping_info['country_id'] != 0 ? Country::where('id', $shipping_info['country_id'])->first()->zone_id : 0;
+        // Zone lookup: city → state → zone_id (falls back to country → zone_id)
+        $user_zone = 0;
+        if (!empty($shipping_info['city_id'])) {
+            $shippingCity = City::where('id', $shipping_info['city_id'])->first();
+            if ($shippingCity && $shippingCity->state_id) {
+                $shippingState = State::where('id', $shippingCity->state_id)->first();
+                if ($shippingState && $shippingState->zone_id) {
+                    $user_zone = $shippingState->zone_id;
+                }
+            }
+        }
+        if ($user_zone == 0 && !empty($shipping_info['state_id'])) {
+            $shippingState = State::where('id', $shipping_info['state_id'])->first();
+            if ($shippingState && $shippingState->zone_id) {
+                $user_zone = $shippingState->zone_id;
+            }
+        }
+
+        if ($user_zone == 0 && !empty($shipping_info['country_id']) && $shipping_info['country_id'] != 0) {
+            $shippingCountry = Country::where('id', $shipping_info['country_id'])->first();
+            $user_zone = $shippingCountry ? ($shippingCountry->zone_id ?? 0) : 0;
+        }
 
         if ($carrier == null || $user_zone == 0) {
             return 0;
@@ -1118,7 +1159,9 @@ function getShippingCost($carts, $index, $shipping_info = '', $carrier = '')
 
         foreach ($carrier->carrier_ranges as $carrier_range) {
             if ($itemsWeightOrPrice >= $carrier_range->delimiter1 && $itemsWeightOrPrice < $carrier_range->delimiter2) {
-                $carrier_price = $carrier_range->carrier_range_prices->where('zone_id', $user_zone)->first()->price;
+                $rangePrice = $carrier_range->carrier_range_prices->where('zone_id', $user_zone)->first();
+                if (!$rangePrice) return 0;
+                $carrier_price = $rangePrice->price;
                 return $product->added_by == 'admin' ? ($carrier_price / count($admin_products)) : ($carrier_price / count($seller_products[$product->user_id]));
             }
         }
@@ -1153,11 +1196,27 @@ if (!function_exists('seller_base_carrier_list')) {
         $carrier_list = array();
         $carts = ($userId != null) ? Cart::where('user_id', $userId)->active()->get() : Cart::where('temp_user_id', $tempUserId)->active()->get();
         if (count($carts) > 0) {
-            $zone = $shipping_info['country_id'] ? Country::where('id', $shipping_info['country_id'])->first()->zone_id : null;
+            // Zone lookup: city → state → zone_id (falls back to country → zone_id)
+            $zone = null;
+            if (!empty($shipping_info['city_id'])) {
+                $szCity = City::where('id', $shipping_info['city_id'])->first();
+                if ($szCity && $szCity->state_id) {
+                    $szState = State::where('id', $szCity->state_id)->first();
+                    if ($szState && $szState->zone_id) {
+                        $zone = $szState->zone_id;
+                    }
+                }
+            }
+            if (!$zone && !empty($shipping_info['country_id'])) {
+                $szCountry = Country::where('id', $shipping_info['country_id'])->first();
+                $zone = $szCountry ? ($szCountry->zone_id ?: null) : null;
+            }
             $carrier_query = Carrier::query();
             $carrier_query->whereIn('id', function ($query) use ($zone) {
-                $query->select('carrier_id')->from('carrier_range_prices')
-                    ->where('zone_id', $zone);
+                $query->select('carrier_ranges.carrier_id')
+                    ->from('carrier_range_prices')
+                    ->join('carrier_ranges', 'carrier_ranges.id', '=', 'carrier_range_prices.carrier_range_id')
+                    ->where('carrier_range_prices.zone_id', $zone);
             })->orWhere('free_shipping', 1);
             $carrier_list = $carrier_query->active()->get();
         }

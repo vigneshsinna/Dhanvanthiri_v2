@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { checkoutAdapter } from './checkoutAdapter';
 import { headlessApi } from './client';
 import { store } from '@/app/store';
-import { setCartToken } from '@/features/cart/store/cartSlice';
+import { setCart, setCartToken } from '@/features/cart/store/cartSlice';
 import { resetCheckout, setCheckoutData } from '@/features/checkout/store/checkoutSlice';
 
 vi.mock('./client', async () => {
@@ -26,6 +26,7 @@ describe('checkoutAdapter', () => {
     mockedPost.mockReset();
     localStorage.clear();
     store.dispatch(setCartToken(null));
+    store.dispatch(setCart({ items: [], itemCount: 0, subtotal: 0, discountAmount: 0, shippingCost: null, taxAmount: null, grandTotal: 0 }));
     store.dispatch(resetCheckout());
   });
 
@@ -224,6 +225,60 @@ describe('checkoutAdapter', () => {
       gateway: 'phonepe',
     });
     expect(intent.data.order_number).toBe('ORD-88');
+  });
+
+  it('recovers a missing guest cart token from persisted cart items before validation', async () => {
+    store.dispatch(setCart({
+      items: [{
+        id: 9,
+        quantity: 2,
+        unitPrice: 149,
+        lineTotal: 298,
+        product: { id: 5, name: 'Poondu Thokku' },
+        variant: { id: 9, sku: '250g' },
+        isInStock: true,
+      }],
+      itemCount: 2,
+      subtotal: 298,
+      grandTotal: 298,
+    }));
+
+    mockedPost
+      .mockResolvedValueOnce({
+        data: { success: true, data: { temp_user_id: 'recovered-guest-cart' } },
+      } as any)
+      .mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: {
+            guest_checkout_token: 'guest-checkout-token',
+            expires_at: '2026-04-26T18:49:19.000000Z',
+          },
+        },
+      } as any);
+
+    const validation = await checkoutAdapter.guestValidateCheckout({
+      guest_email: 'buyer@example.com',
+      guest_phone: '9876543210',
+      recipient_name: 'Buyer',
+      line1: '42 Temple Street',
+      city: 'Chennai',
+      state: 'Tamil Nadu',
+      postal_code: '600001',
+      country_code: 'IN',
+    });
+
+    expect(mockedPost).toHaveBeenNthCalledWith(1, '/carts/add', {
+      id: 5,
+      variant: '250g',
+      quantity: 2,
+      cost_matrix: 'headless-storefront',
+    });
+    expect(mockedPost).toHaveBeenNthCalledWith(2, '/guest/checkout/validate', expect.objectContaining({
+      temp_user_id: 'recovered-guest-cart',
+    }));
+    expect(validation.data.valid).toBe(true);
+    expect(store.getState().cart.cartToken).toBe('recovered-guest-cart');
   });
 
   it('passes guest address labels through validation and creates Razorpay guest intents with the guest token', async () => {

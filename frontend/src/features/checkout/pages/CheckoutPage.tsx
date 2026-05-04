@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate, Link } from 'react-router-dom';
+import { api } from '@/lib/api/client';
 import { useAppDispatch, useAppSelector } from '@/lib/utils/hooks';
 import { setStep, setCheckoutData, resetCheckout } from '@/features/checkout/store/checkoutSlice';
 import {
@@ -24,6 +26,14 @@ import { unwrapCollection } from '@/lib/collections';
 import { getLocalizedText, getStorefrontLocale } from '@/lib/storefrontLocale';
 
 const ALLOWED_PAYMENT_METHODS = new Set(['razorpay', 'phonepe']);
+const DEFAULT_PAYMENT_METHOD: PaymentMethod = {
+  code: 'razorpay',
+  name: 'Razorpay',
+  description: 'Pay securely using Razorpay.',
+  is_enabled: true,
+  is_default: true,
+  type: 'online',
+};
 
 interface Address {
   id: number;
@@ -149,9 +159,20 @@ export function CheckoutPage() {
 
   const { data: paymentMethodsData } = usePaymentMethodsQuery();
   const paymentMethods: PaymentMethod[] = useMemo(() => {
-    return unwrapCollection<PaymentMethod>(paymentMethodsData)
+    const methods = unwrapCollection<PaymentMethod>(paymentMethodsData)
       .filter((m) => m.is_enabled && ALLOWED_PAYMENT_METHODS.has(String(m.code).toLowerCase()));
+    return methods.length > 0 ? methods : [DEFAULT_PAYMENT_METHOD];
   }, [paymentMethodsData]);
+
+  const { data: statesData } = useQuery({
+    queryKey: ['states'],
+    queryFn: async () => {
+      const res = await api.get('/v2/states');
+      return (res.data?.data ?? []) as Array<{ id: number; name: string; zone_id: number | null }>;
+    },
+    staleTime: 1000 * 60 * 60,
+  });
+  const statesList = statesData ?? [];
 
   const createAddress = useCreateAddressMutation();
   const summaryMut = useCheckoutSummaryMutation();
@@ -202,8 +223,19 @@ export function CheckoutPage() {
   }, [addresses, checkout.shippingAddressId, dispatch, isAuthenticated]);
 
   useEffect(() => {
-    if (shippingRates.length > 0 && !checkout.shippingMethodId) {
-      dispatch(setCheckoutData({ shippingMethodId: shippingRates[0].id }));
+    if (shippingRates.length === 0) {
+      if (checkout.shippingMethodId) {
+        dispatch(setCheckoutData({ shippingMethodId: null }));
+      }
+      return;
+    }
+
+  const sortedShippingRates = [...shippingRates].sort((a, b) => a.cost - b.cost);
+  const selectedShippingRate =
+    sortedShippingRates.find((rate) => rate.id === checkout.shippingMethodId) ?? sortedShippingRates[0] ?? null;
+    const selectedRateStillAvailable = sortedShippingRates.some((rate) => rate.id === checkout.shippingMethodId);
+    if (!selectedRateStillAvailable) {
+      dispatch(setCheckoutData({ shippingMethodId: selectedShippingRate?.id ?? sortedShippingRates[0].id }));
     }
   }, [shippingRates, checkout.shippingMethodId, dispatch]);
 
@@ -343,8 +375,7 @@ export function CheckoutPage() {
       dispatch(setCheckoutData({ isProcessing: false, error: 'Unsupported payment method selected. Please choose Razorpay or PhonePe.' }));
       dispatch(setStep('payment'));
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Payment creation failed';
-      dispatch(setCheckoutData({ isProcessing: false, error: msg }));
+      dispatch(setCheckoutData({ isProcessing: false, error: extractApiErrorMessage(err, 'Payment creation failed') }));
       dispatch(setStep('payment'));
     }
   };
@@ -363,6 +394,7 @@ export function CheckoutPage() {
         state: guestInfo.state.trim(),
         postal_code: guestInfo.postal_code.trim(),
         country_code: guestInfo.country_code,
+        shipping_method_id: checkout.shippingMethodId ?? undefined,
       });
       const validation = unwrapData<{ valid: boolean; issues?: string[]; errors?: string[]; guest_checkout_token?: string }>(res);
       if (!validation.valid) {
@@ -466,8 +498,7 @@ export function CheckoutPage() {
       dispatch(setCheckoutData({ isProcessing: false, error: 'Unsupported payment method selected. Please choose Razorpay or PhonePe.' }));
       dispatch(setStep('payment'));
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Payment creation failed';
-      dispatch(setCheckoutData({ isProcessing: false, error: msg }));
+      dispatch(setCheckoutData({ isProcessing: false, error: extractApiErrorMessage(err, 'Payment creation failed') }));
       dispatch(setStep('payment'));
     }
   };
@@ -493,13 +524,13 @@ export function CheckoutPage() {
 
   // Use the selected shipping rate cost from the fetched rates when summary is not available
   const selectedShippingRate = shippingRates.find((r: ShippingRate) => r.id === checkout.shippingMethodId);
-  const liveShippingCost = summary?.shipping_cost ?? selectedShippingRate?.cost ?? cart.shippingCost ?? 0;
+  const liveShippingCost = summary?.shipping_cost ?? selectedShippingRate?.cost ?? 0;
 
   const amountPreview = {
     subtotal: summary?.subtotal ?? cart.subtotal ?? 0,
     discount: summary?.discount_amount ?? cart.discountAmount ?? 0,
     shipping: liveShippingCost,
-    tax: summary?.tax_amount ?? cart.taxAmount ?? 0,
+    tax: summary?.tax_amount ?? 0,
     total: summary?.grand_total ?? ((cart.subtotal ?? 0) - (cart.discountAmount ?? 0) + liveShippingCost),
   };
 
@@ -585,7 +616,21 @@ export function CheckoutPage() {
                     <Input label={t('Address Line 2 (optional)', 'முகவரி வரி 2 (விருப்பம்)')} value={newAddr.line2} onChange={(e) => setNewAddr({ ...newAddr, line2: e.target.value })} />
                   </div>
                   <Input label={t('City', 'நகரம்')} value={newAddr.city} onChange={(e) => setNewAddr({ ...newAddr, city: e.target.value })} required />
-                  <Input label={t('State', 'மாநிலம்')} value={newAddr.state} onChange={(e) => setNewAddr({ ...newAddr, state: e.target.value })} required />
+                  <div>
+                    <label htmlFor="new-address-state" className="mb-1 block text-sm font-medium text-slate-700">{t('State', 'மாநிலம்')} <span className="text-red-500">*</span></label>
+                    <select
+                      id="new-address-state"
+                      value={newAddr.state}
+                      onChange={(e) => setNewAddr({ ...newAddr, state: e.target.value })}
+                      required
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    >
+                      <option value="">{t('Select state/district', 'மாநிலம்/மாவட்டம் தேர்ந்தெடுக்கவும்')}</option>
+                      {statesList.map((s) => (
+                        <option key={s.id} value={s.name}>{s.name}</option>
+                      ))}
+                    </select>
+                  </div>
                   <Input label={t('Postal Code', 'அஞ்சல் குறியீடு')} value={newAddr.postal_code} onChange={(e) => setNewAddr({ ...newAddr, postal_code: e.target.value })} required />
                   <div className="sm:col-span-2">
                     <Button type="submit" size="sm" loading={createAddress.isPending}>{t('Save Address', 'முகவரியை சேமி')}</Button>
@@ -614,7 +659,21 @@ export function CheckoutPage() {
                   <Input label={t('Address Line 2 (optional)', 'முகவரி வரி 2 (விருப்பம்)')} value={guestInfo.line2} onChange={(e) => setGuestInfo({ ...guestInfo, line2: e.target.value })} />
                 </div>
                 <Input label={t('City', 'நகரம்')} value={guestInfo.city} onChange={(e) => setGuestInfo({ ...guestInfo, city: e.target.value })} required />
-                <Input label={t('State', 'மாநிலம்')} value={guestInfo.state} onChange={(e) => setGuestInfo({ ...guestInfo, state: e.target.value })} required />
+                <div>
+                  <label htmlFor="guest-state" className="mb-1 block text-sm font-medium text-slate-700">{t('State', 'மாநிலம்')} <span className="text-red-500">*</span></label>
+                  <select
+                    id="guest-state"
+                    value={guestInfo.state}
+                    onChange={(e) => setGuestInfo({ ...guestInfo, state: e.target.value })}
+                    required
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  >
+                    <option value="">{t('Select state/district', 'மாநிலம்/மாவட்டம் தேர்ந்தெடுக்கவும்')}</option>
+                    {statesList.map((s) => (
+                      <option key={s.id} value={s.name}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
                 <Input label={t('Postal Code', 'அஞ்சல் குறியீடு')} value={guestInfo.postal_code} onChange={(e) => setGuestInfo({ ...guestInfo, postal_code: e.target.value })} required />
               </div>
 

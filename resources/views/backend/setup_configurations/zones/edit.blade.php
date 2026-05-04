@@ -37,14 +37,29 @@
                         <div class="form-group">
                             <label>{{ translate('Select Country') }}</label>
 
-                            <select name="country_id[]" class="aiz-selectpicker form-control" data-live-search="true" multiple>
+                            <select name="country_id[]" class="aiz-selectpicker form-control" data-live-search="true" data-actions-box="true" multiple>
                                 @foreach ($countries as $country)
                                     <option value="{{ $country->id }}" @if(isset($country->zone) && $country->zone->id == $zone->id) selected @endif>
-                                        {{ $country->name }}
+                                        {{ $country->name }} @if($country->zone && $country->zone->id != $zone->id) ({{ $country->zone->name }}) @endif
                                     </option>
                                 @endforeach
                             </select>
                             @error('country_id')
+                                <span class="text-danger">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label>{{ translate('Select State') }}</label>
+
+                            <select name="state_id[]" class="aiz-selectpicker form-control" data-live-search="true" data-actions-box="true" multiple>
+                                @foreach ($states as $state)
+                                    <option value="{{ $state->id }}" @if(isset($state->zone) && $state->zone->id == $zone->id) selected @endif>
+                                        {{ $state->name }} @if($state->zone && $state->zone->id != $zone->id) ({{ $state->zone->name }}) @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('state_id')
                                 <span class="text-danger">{{ $message }}</span>
                             @enderror
                         </div>

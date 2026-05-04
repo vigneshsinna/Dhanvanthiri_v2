@@ -2,7 +2,7 @@
     <div class="aiz-sidebar left c-scrollbar">
         <div class="aiz-side-nav-logo-wrap">
             <a href="{{ route('admin.dashboard') }}" class="d-block text-left">
-                <h3 class="font-weight-bold mb-0 mt-2" style="color: var(--primary) !important; letter-spacing: 1px;">Animazon</h3>
+                <h3 class="font-weight-bold mb-0 mt-2" style="color: var(--primary) !important; letter-spacing: 1px;">{{ get_setting('site_name') }}</h3>
             </a>
         </div>
         <div class="aiz-side-nav-wrap">
@@ -2090,8 +2090,6 @@
                             @can('view_all_website_pages')
                                 <li class="aiz-side-nav-item">
                                     <a href="{{ route('website.pages') }}"
-                                        data-search-alias="{{ translate('CMS Pages') }} {{ translate('Custom Pages') }} {{ translate('Legal Pages') }}"
-                                        data-search-result="{{ translate('CMS Pages') }}"
                                         class="aiz-side-nav-link {{ areActiveRoutes(['website.pages', 'custom-pages.create', 'custom-pages.edit'])}}">
                                         <span class="aiz-side-nav-text">{{translate('Pages')}}</span>
                                     </a>

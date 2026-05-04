@@ -4,9 +4,13 @@ namespace App\Http\Controllers\Api\V2;
 
 use App\Http\Controllers\Controller;
 use App\Models\Address;
+use App\Models\Carrier;
 use App\Models\Cart;
+use App\Models\City;
 use App\Models\CombinedOrder;
+use App\Models\Country;
 use App\Models\Product;
+use App\Models\State;
 use App\Models\User;
 use App\Support\Checkout\AllowedPaymentMethods;
 use App\Support\Checkout\PaymentGatewayConfig;
@@ -20,11 +24,143 @@ use Throwable;
 
 class StorefrontCheckoutBridgeController extends Controller
 {
+    public function statesList(): JsonResponse
+    {
+        $states = State::where('status', 1)->orderBy('name')->get(['id', 'name', 'zone_id']);
+        return response()->json(['success' => true, 'data' => $states]);
+    }
+
     public function shippingRates(Request $request): JsonResponse
     {
         $addressId = (int) $request->input('address_id', 0);
+        $stateName = (string) $request->input('state', '');
         $user = $request->user();
 
+        $shippingType = get_setting('shipping_type');
+
+        // ── For carrier_wise_shipping: resolve zone from state name or address ──
+        if ($shippingType === 'carrier_wise_shipping') {
+            $zoneId = null;
+
+            // Authenticated user with a saved address
+            if ($user && $addressId > 0) {
+                $address = Address::where('id', $addressId)->where('user_id', $user->id)->first();
+                if ($address) {
+                    if ($address->city_id) {
+                        $city = City::find($address->city_id);
+                        if ($city && $city->state_id) {
+                            $state = State::find($city->state_id);
+                            $zoneId = $state?->zone_id ?: null;
+                        }
+                    }
+                    if (!$zoneId && $address->state_id) {
+                        $state = State::find($address->state_id);
+                        $zoneId = $state?->zone_id ?: null;
+                    }
+                    // Fallback: match state by name from address text
+                    if (!$zoneId && $address->country_id) {
+                        $country = Country::find($address->country_id);
+                        $zoneId = $country?->zone_id ?: null;
+                    }
+                }
+            }
+
+            // Guest or no city_id: match zone by state name sent from frontend
+            if (!$zoneId && $stateName !== '') {
+                $state = State::where('name', $stateName)->first();
+                $zoneId = $state?->zone_id ?: null;
+            }
+
+            if (!$zoneId) {
+                return response()->json([
+                    'success' => true,
+                    'data' => ['items' => []],
+                    'message' => 'No carriers available for the selected state.',
+                ]);
+            }
+
+            // Get active carriers that serve this zone
+            $carriers = Carrier::where('status', 1)
+                ->where(function ($q) use ($zoneId) {
+                    $q->where('free_shipping', 1)
+                      ->orWhereIn('id', function ($sub) use ($zoneId) {
+                          $sub->select('carrier_ranges.carrier_id')
+                              ->from('carrier_range_prices')
+                              ->join('carrier_ranges', 'carrier_ranges.id', '=', 'carrier_range_prices.carrier_range_id')
+                              ->where('carrier_range_prices.zone_id', $zoneId);
+                      });
+                })
+                ->get();
+
+            $carriers = $carriers->filter(function (Carrier $carrier) use ($zoneId) {
+                $carrierName = strtolower((string) $carrier->name);
+
+                if (in_array((int) $zoneId, [1, 2], true)) {
+                    return str_contains($carrierName, 'st');
+                }
+
+                if ((int) $zoneId === 3) {
+                    return str_contains($carrierName, 'dtdc');
+                }
+
+                return true;
+            })->values();
+
+            $carts = $user
+                ? Cart::where('user_id', $user->id)->active()->get()
+                : Cart::where('temp_user_id', $request->input('cart_token', ''))->active()->get();
+
+            $shippingInfo = [
+                'country_id' => 1,
+                'state_id' => null,
+                'city_id' => null,
+                'area_id' => null,
+            ];
+
+            if ($user && $addressId > 0) {
+                $address = Address::where('id', $addressId)->where('user_id', $user->id)->first();
+                if ($address) {
+                    $shippingInfo['city_id'] = $address->city_id;
+                    $shippingInfo['state_id'] = $address->state_id;
+                    if ($address->city_id) {
+                        $city = City::find($address->city_id);
+                        $shippingInfo['state_id'] = $city?->state_id ?: $address->state_id;
+                    }
+                }
+            }
+
+            if (!$shippingInfo['state_id'] && $stateName !== '') {
+                $shippingInfo['state_id'] = State::where('name', $stateName)->value('id');
+            }
+
+            $items = [];
+            foreach ($carriers as $carrier) {
+                if ($carrier->free_shipping) {
+                    $cost = 0;
+                } else {
+                    $cost = 0;
+                    if ($carts->isNotEmpty()) {
+                        foreach ($carts as $key => $cart) {
+                            $cost += getShippingCost($carts, $key, $shippingInfo, $carrier->id);
+                        }
+                    }
+                }
+                $items[] = [
+                    'id'                  => $carrier->id,
+                    'name'                => $carrier->name,
+                    'cost'                => round($cost, 2),
+                    'estimated_days_min'  => $carrier->transit_time,
+                    'estimated_days_max'  => (int) $carrier->transit_time + 2,
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'data'    => ['items' => $items],
+            ]);
+        }
+
+        // ── Non-carrier shipping types ─────────────────────────────────────────
         if (!$user || $addressId <= 0) {
             return response()->json([
                 'success' => true,
@@ -40,7 +176,7 @@ class StorefrontCheckoutBridgeController extends Controller
             ]);
         }
 
-        $this->prepareCartForCheckout($user, $addressId);
+        $this->prepareCartForCheckout($user, $addressId, 0);
         $summary = $this->buildSummary($user);
 
         return response()->json([
@@ -65,7 +201,7 @@ class StorefrontCheckoutBridgeController extends Controller
             'shipping_method_id' => ['required', 'integer'],
         ]);
 
-        $this->prepareCartForCheckout($user, (int) $payload['address_id']);
+        $this->prepareCartForCheckout($user, (int) $payload['address_id'], (int) $payload['shipping_method_id']);
 
         return response()->json([
             'success' => true,
@@ -84,7 +220,7 @@ class StorefrontCheckoutBridgeController extends Controller
             'shipping_method_id' => ['required', 'integer'],
         ]);
 
-        $this->prepareCartForCheckout($user, (int) $payload['address_id']);
+        $this->prepareCartForCheckout($user, (int) $payload['address_id'], (int) $payload['shipping_method_id']);
 
         return response()->json([
             'success' => true,
@@ -113,7 +249,7 @@ class StorefrontCheckoutBridgeController extends Controller
         }
 
         $this->assertGatewayConfigured($gateway);
-        $this->prepareCartForCheckout($user, (int) $payload['shipping_address_id']);
+        $this->prepareCartForCheckout($user, (int) $payload['shipping_address_id'], (int) $payload['shipping_method_id']);
 
         $request->merge([
             'payment_type' => $gateway,
@@ -248,7 +384,7 @@ class StorefrontCheckoutBridgeController extends Controller
         return $user;
     }
 
-    private function prepareCartForCheckout(User $user, int $addressId): void
+    private function prepareCartForCheckout(User $user, int $addressId, int $carrierId = 0): void
     {
         $address = Address::where('id', $addressId)
             ->where('user_id', $user->id)
@@ -270,22 +406,28 @@ class StorefrontCheckoutBridgeController extends Controller
 
         $shippingInfo = [
             'country_id' => $address->country_id,
+            'state_id' => $address->state_id,
             'city_id' => $address->city_id,
             'area_id' => $address->area_id,
         ];
 
+        $shippingType = get_setting('shipping_type');
+
         foreach ($carts as $key => $cart) {
             $cart->address_id = $address->id;
             if (Schema::hasColumn('carts', 'shipping_type')) {
-                $cart->shipping_type = 'home_delivery';
+                $cart->shipping_type = $shippingType === 'carrier_wise_shipping' ? 'carrier' : 'home_delivery';
             }
             if (Schema::hasColumn('carts', 'pickup_point')) {
                 $cart->pickup_point = 0;
             }
             if (Schema::hasColumn('carts', 'carrier_id')) {
-                $cart->carrier_id = 0;
+                $cart->carrier_id = $shippingType === 'carrier_wise_shipping' ? $carrierId : 0;
             }
-            $cart->shipping_cost = getShippingCost($carts, $key, $shippingInfo);
+            $cart->shipping_cost = getShippingCost(
+                $carts, $key, $shippingInfo,
+                $shippingType === 'carrier_wise_shipping' ? $carrierId : ''
+            );
             $cart->save();
         }
     }

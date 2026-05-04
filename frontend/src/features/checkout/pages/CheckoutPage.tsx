@@ -329,7 +329,7 @@ export function CheckoutPage() {
               });
               dispatch(clearCart());
               dispatch(resetCheckout());
-              navigate('/checkout/confirmation', { state: { gateway: 'razorpay', orderNumber: paymentData.orderNumber } });
+              navigate('/checkout/confirmation', { state: { gateway: 'razorpay', orderNumber: paymentData.orderNumber, orderId: paymentData.orderId } });
             } catch {
               dispatch(setCheckoutData({ isProcessing: false, error: 'Payment verification failed' }));
               dispatch(setStep('payment'));
@@ -451,7 +451,7 @@ export function CheckoutPage() {
               });
               dispatch(clearCart());
               dispatch(resetCheckout());
-              navigate('/checkout/confirmation', { state: { gateway: 'razorpay', orderNumber: paymentData.orderNumber, guestCheckoutToken: checkout.guestCheckoutToken } });
+              navigate('/checkout/confirmation', { state: { gateway: 'razorpay', orderNumber: paymentData.orderNumber, orderId: paymentData.orderId, guestCheckoutToken: checkout.guestCheckoutToken } });
             } catch {
               dispatch(setCheckoutData({ isProcessing: false, error: 'Payment verification failed' }));
               dispatch(setStep('payment'));

@@ -215,7 +215,7 @@ Route::group(['prefix' => 'v2', 'middleware' => ['app_language']], function () {
             Route::get('re-order/{id}', 're_order')->middleware('auth:sanctum');
         });
 
-        Route::get('invoice/download/{id}', [InvoiceController::class, 'invoice_download'])->middleware('auth:sanctum');
+        Route::get('invoice/download/{id}', [InvoiceController::class, 'invoice_download']);
 
         Route::prefix('classified')->group(function () {
             Route::controller(CustomerProductController::class)->group(function () {

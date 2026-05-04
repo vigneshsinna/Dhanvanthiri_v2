@@ -264,15 +264,18 @@
             </div>
             <div class="row gutters-5">
                 <div class="col text-md-left text-center">
-                    @if(json_decode($order->shipping_address))
+                    @php
+                        $shipping_address = json_decode($order->shipping_address);
+                    @endphp
+                    @if(is_object($shipping_address))
                         <address>
                             <strong class="text-main">
-                                {{ json_decode($order->shipping_address)->name }}
+                                {{ $shipping_address->name ?? '' }}
                             </strong><br>
-                            {{ json_decode($order->shipping_address)->email }}<br>
-                            {{ json_decode($order->shipping_address)->phone }}<br>
-                            {{ json_decode($order->shipping_address)->address }}, {{ json_decode($order->shipping_address)->city }}, @if(isset(json_decode($order->shipping_address)->state)) {{ json_decode($order->shipping_address)->state }} - @endif {{ json_decode($order->shipping_address)->postal_code }}<br>
-                            {{ json_decode($order->shipping_address)->country }}
+                            {{ $shipping_address->email ?? '' }}<br>
+                            {{ $shipping_address->phone ?? '' }}<br>
+                            {{ $shipping_address->address ?? '' }}, {{ $shipping_address->city ?? '' }}, @if(!empty($shipping_address->state)) {{ $shipping_address->state }} - @endif {{ $shipping_address->postal_code ?? '' }}<br>
+                            {{ $shipping_address->country ?? '' }}
                         </address>
                     @else
                         <address>

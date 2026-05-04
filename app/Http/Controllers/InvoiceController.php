@@ -102,9 +102,28 @@ class InvoiceController extends Controller
         $config = [];
 
         $order = Order::findOrFail($id);
-        $userType = auth()->user()?->user_type;
-        $ownsOrder = in_array(auth()->id(), [$order->user_id, $order->seller_id]);
-        if (in_array($userType, ['admin', 'staff', 'super_admin'], true) || $ownsOrder) {
+        
+        // Support both Web and API (Sanctum) authentication
+        $user = auth('sanctum')->user() ?? auth()->user();
+        $userType = $user?->user_type;
+        $userId = $user?->id;
+        
+        $ownsOrder = $userId ? in_array($userId, [$order->user_id, $order->seller_id]) : false;
+        
+        // Secure Guest Access Check
+        $isGuestOwner = false;
+        $guestToken = request()->header('X-Cart-Token') ?? request()->query('guest_token');
+        
+        if ($guestToken && !$userId) {
+            $session = \App\Models\GuestCheckoutSession::where('guest_checkout_token_hash', $guestToken)
+                ->where('combined_order_id', $order->id)
+                ->first();
+            if ($session) {
+                $isGuestOwner = true;
+            }
+        }
+
+        if (in_array($userType, ['admin', 'staff', 'super_admin'], true) || $ownsOrder || $isGuestOwner) {
             return PDF::loadView('backend.invoices.invoice', [
                 'order' => $order,
                 'font_family' => $font_family,

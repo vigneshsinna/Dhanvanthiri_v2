@@ -1,38 +1,37 @@
-# Git-Aware Sync for Hostinger (Mapping to 'core' folder)
-# This script maps project files to 'core/' and public files to root.
+# Git-Aware Sync for Hostinger (Backend + Frontend)
+# Maps Backend to 'core/' and Frontend to 'app/'
 
 $sshHost = "217.21.74.44"
 $sshPort = 65002
 $sshUser = "u362580417"
 $remoteRoot = "/home/u362580417/domains/dhanvanthrifoods.com/public_html"
+$sshArgs = @("-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=15")
 
-# SSH arguments for bypassing prompts
-$sshArgs = @("-o", "StrictHostKeyChecking=no")
+Write-Host "--- Starting Backend & Frontend Sync ---" -ForegroundColor Cyan
 
-Write-Host "--- Starting Clean Git-Aware Sync (with Core Mapping) ---" -ForegroundColor Cyan
-
-# 1. Get changed files from Git and filter out utility/frontend files
+# 1. Get changed files from Git
 $gitFiles = git status --porcelain | ForEach-Object { 
     $line = $_.Trim()
-    if ($line -notmatch '^D ') { # Skip deleted files
+    if ($line -notmatch '^D ') { 
         $parts = $line -split '\s+', 2
         if ($parts.Count -eq 2) {
             $file = $parts[1]
             $exclude = $false
-            $patterns = @("\.ps1$", "\.bat$", "\.tar\.gz$", "\.zip$", "^node_modules/", "^vendor/", "^scratch/", "^temp/", "^\.git/", "^frontend/")
-            foreach ($p in $patterns) {
-                if ($file -match $p) { $exclude = $true; break }
+            # Exclude unwanted patterns (But ALLOW frontend/dist)
+            $patterns = @("\.ps1$", "\.bat$", "\.tar\.gz$", "\.zip$", "^node_modules/", "^scratch/", "^temp/", "^\.git/")
+            foreach ($p in $patterns) { if ($file -match $p) { $exclude = $true; break } }
+            
+            # Special case for frontend: only allow 'dist' files
+            if ($file.StartsWith("frontend/")) {
+                if ($file -notmatch "^frontend/dist/") { $exclude = $true }
             }
-
-            # EXCEPTION: Always allow this specific vendor fix
-            if ($file -match "CoreComponentRepository\.php$") { $exclude = $false }
-
+            
             if (-not $exclude) { $file }
         }
     }
 }
 
-# FORCE: Always include the neutralized licensing fix in the sync list
+# Always include the licensing fix
 $licensingFix = "vendor/mehedi-iitdu/core-component-repository/src/CoreComponentRepository.php"
 if ($gitFiles -notcontains $licensingFix) {
     if ($null -eq $gitFiles) { $gitFiles = @($licensingFix) }
@@ -40,48 +39,47 @@ if ($gitFiles -notcontains $licensingFix) {
 }
 
 if ($null -eq $gitFiles -or $gitFiles.Count -eq 0) {
-    Write-Host "No project changes detected to sync." -ForegroundColor Yellow
+    Write-Host "No changes detected." -ForegroundColor Yellow
     exit
 }
 
-Write-Host "Detected $($gitFiles.Count) project files to sync:"
-foreach ($f in $gitFiles) { Write-Host "  $f" -ForegroundColor Gray }
+Write-Host "Detected $($gitFiles.Count) files to sync."
 
 foreach ($relativePath in $gitFiles) {
-    $localRelativePath = $relativePath.Replace('/', '\')
-    $localPath = Join-Path (Get-Location) $localRelativePath
+    $localPath = Join-Path (Get-Location) ($relativePath.Replace('/', '\'))
     
     if (Test-Path $localPath -PathType Leaf) {
         # --- MAPPING LOGIC ---
         if ($relativePath.StartsWith("public/")) {
-            # Files in 'public/' go to the root (e.g. public/favicon.png -> public_html/favicon.png)
+            # public/favicon.png -> public_html/favicon.png
             $cleanRelative = $relativePath -replace '^public/', ''
             $remoteFile = "$remoteRoot/$cleanRelative"
+        } elseif ($relativePath.StartsWith("frontend/dist/")) {
+            # frontend/dist/index.html -> public_html/app/index.html
+            $cleanRelative = $relativePath -replace '^frontend/dist/', ''
+            $remoteFile = "$remoteRoot/app/$cleanRelative"
         } else {
-            # Everything else goes into 'core/' (e.g. app/Admin.php -> public_html/core/app/Admin.php)
+            # app/Controllers/... -> public_html/core/app/Controllers/...
             $remoteFile = "$remoteRoot/core/$relativePath"
         }
         
         $remoteDir = Split-Path $remoteFile -Parent
+        $remoteFile = $remoteFile.Replace('\', '/')
+        $remoteDir = $remoteDir.Replace('\', '/')
         
-        Write-Host "Updating: $relativePath -> $remoteFile ..." -NoNewline
+        Write-Host "Syncing: $relativePath -> $remoteFile" -ForegroundColor Gray
         
         try {
-            # Ensure remote directory exists
             ssh -p $sshPort @sshArgs "${sshUser}@${sshHost}" "mkdir -p '$remoteDir'"
-            
-            # Upload file directly to its folder
             scp -P $sshPort @sshArgs "$localPath" "${sshUser}@${sshHost}:${remoteFile}"
-            
-            Write-Host " Done." -ForegroundColor Green
+            Start-Sleep -Milliseconds 800
         } catch {
-            Write-Host " Failed!" -ForegroundColor Red
-            Write-Host " Error: $($_.Exception.Message)" -ForegroundColor Gray
+            Write-Host "  Error syncing $relativePath: $($_.Exception.Message)" -ForegroundColor Red
         }
     }
 }
 
-Write-Host "Clearing server cache (in core)..."
+Write-Host "Clearing server cache..."
 ssh -p $sshPort @sshArgs "${sshUser}@${sshHost}" "cd $remoteRoot/core && php artisan optimize:clear"
 
 Write-Host "--- Sync Complete! ---" -ForegroundColor Green

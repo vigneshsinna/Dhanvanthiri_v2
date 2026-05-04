@@ -44,6 +44,9 @@
 		.text-left{
 			text-align:<?php echo  $text_align ?>;
 		}
+		.text-left{
+			text-align:<?php echo  $text_align ?>;
+		}
 		.text-right{
 			text-align:<?php echo  $not_text_align ?>;
 		}
@@ -57,18 +60,22 @@
 
 		@php
 			$logo = get_setting('header_logo');
+			
+			// Defensive address decoding with fallback object to prevent "property on null" errors
 			$shipping = json_decode($order->shipping_address);
 			if (!is_object($shipping)) {
 				$shipping = (object) [
-					'name' => 'N/A', 'email' => 'N/A', 'phone' => 'N/A',
-					'address' => 'N/A', 'city' => 'N/A', 'state' => 'N/A',
-					'postal_code' => 'N/A', 'country' => 'N/A'
+					'name' => '', 'email' => '', 'phone' => '',
+					'address' => '', 'city' => '', 'state' => '',
+					'postal_code' => '', 'country' => ''
 				];
 			}
+			
 			$billing = json_decode($order->billing_address);
 			if (!is_object($billing)) {
-				$billing = $shipping;
+				$billing = clone $shipping;
 			}
+			
 			$first_order = $order->orderDetails->first();
 		@endphp
 
@@ -98,55 +105,14 @@
 					</tr>
 					<tr>
 						<td class="gry-color small">{{  translate('Email') }}: {{ get_setting('contact_email') }}</td>
-						<td class="text-right small"><span class="gry-color small">{{  translate('Order ID') }}:</span> <span class="strong">{{ $order->code }}</span></td>
+						<td class="text-right small"><span class="gry-color small">{{  translate('Order Code') }}:</span> <span class="strong">{{ $order->code }}</span></td>
 					</tr>
 					<tr>
 						<td class="gry-color small">{{  translate('Phone') }}: {{ get_setting('contact_phone') }}</td>
-						<td class="text-right small"><span class="gry-color small">{{  translate('Order Date') }}:</span> <span class=" strong">{{ date('d-m-Y', $order->date) }}</span></td>
-					</tr>
-					<tr>
-						@php 
-							$gstin = get_seller_gstin($order);
-						@endphp
-						<td class="gry-color small">@if($gstin != null && is_numeric($first_order->gst_amount)) {{ translate('GSTIN') }}: {{ $gstin }} @endif</td>
-						<td class="text-right small">
-							<span class="gry-color small">
-								{{  translate('Payment method') }}:
-							</span> 
-							<span class="strong">
-								{{ translate(ucfirst(str_replace('_', ' ', $order->payment_type))) }}
-							</span>
-						</td>
-					</tr>
-					<tr>
-						<td class="gry-color small">
-						</td>
-						<td class="text-right gry-color small">
-							<span class="gry-color small">
-								{{  translate('Delivery Type') }}:
-							</span> 
-							<span class="strong">
-								@if ($order->shipping_type != null && $order->shipping_type == 'home_delivery')
-									{{ translate('Home Delivery') }}
-								@elseif ($order->shipping_type == 'pickup_point')
-									@if ($order->pickup_point != null)
-										{{ $order->pickup_point->getTranslation('name') }} ({{ translate('Pickip Point') }})
-									@else
-										{{ translate('Pickup Point') }}
-									@endif
-								@elseif ($order->shipping_type == 'carrier')
-									@if ($order->carrier != null)
-										{{ $order->carrier->name }} ({{ translate('Carrier') }})
-										<br>
-										{{ translate('Transit Time').' - '.$order->carrier->transit_time }}
-									@else
-										{{ translate('Carrier') }}
-									@endif
-								@endif
-							</span>
-						</td>
+						<td class="text-right small"><span class="gry-color small">{{  translate('Order Date') }}:</span> <span class="strong">{{ date('d-m-Y', $order->date) }}</span></td>
 					</tr>
 				</table>
+
 			</div>
 		</div>
 				
@@ -161,18 +127,18 @@
 							<td width="50%" valign="top">
 								<table width="100%">
 									<tr><td class="strong small gry-color">{{ translate('Bill to') }}:</td></tr>
-									<tr><td class="strong">{{ $billing->name }}</td></tr>
+									<tr><td class="strong">{{ $billing->name ?? '' }}</td></tr>
 									<tr>
 										<td class="gry-color small">
-											{{ $billing->address }},
-											{{ $billing->city }},
+											{{ $billing->address ?? '' }},
+											{{ $billing->city ?? '' }},
 											@if(!empty($billing->state)) {{ $billing->state }} - @endif
-											{{ $billing->postal_code }},
-											{{ $billing->country }}
+											{{ $billing->postal_code ?? '' }},
+											{{ $billing->country ?? '' }}
 										</td>
 									</tr>
-									<tr><td class="gry-color small">{{ translate('Email') }}: {{ $billing->email }}</td></tr>
-									<tr><td class="gry-color small">{{ translate('Phone') }}: {{ $billing->phone }}</td></tr>
+									<tr><td class="gry-color small">{{ translate('Email') }}: {{ $billing->email ?? '' }}</td></tr>
+									<tr><td class="gry-color small">{{ translate('Phone') }}: {{ $billing->phone ?? '' }}</td></tr>
 								</table>
 							</td>
 
@@ -180,18 +146,18 @@
 							<td width="50%" valign="top">
 								<table width="100%">
 									<tr><td class="strong small gry-color">{{ translate('Ship to') }}:</td></tr>
-									<tr><td class="strong">{{ $shipping->name }}</td></tr>
+									<tr><td class="strong">{{ $shipping->name ?? '' }}</td></tr>
 									<tr>
 										<td class="gry-color small">
-											{{ $shipping->address }},
-											{{ $shipping->city }},
+											{{ $shipping->address ?? '' }},
+											{{ $shipping->city ?? '' }},
 											@if(!empty($shipping->state)) {{ $shipping->state }} - @endif
-											{{ $shipping->postal_code }},
-											{{ $shipping->country }}
+											{{ $shipping->postal_code ?? '' }},
+											{{ $shipping->country ?? '' }}
 										</td>
 									</tr>
-									<tr><td class="gry-color small">{{ translate('Email') }}: {{ $shipping->email }}</td></tr>
-									<tr><td class="gry-color small">{{ translate('Phone') }}: {{ $shipping->phone }}</td></tr>
+									<tr><td class="gry-color small">{{ translate('Email') }}: {{ $shipping->email ?? '' }}</td></tr>
+									<tr><td class="gry-color small">{{ translate('Phone') }}: {{ $shipping->phone ?? '' }}</td></tr>
 								</table>
 							</td>
 						</tr>
@@ -355,47 +321,6 @@
 											<tr>
 												<th class="gry-color text-left">{{ translate('Sub Total') }}</th>
 												<td class="currency">{{ single_price($order->orderDetails->sum('price') + $order->orderDetails->sum('shipping_cost') - $order->orderDetails->sum('coupon_discount')) }}</td>
-											</tr>
-											<tr class="border-bottom">
-												<th class="gry-color text-left">{{ translate('Total GST') }}</th>
-												<td class="currency">{{ single_price($order->orderDetails->sum('gst_amount')) }}</td>
-											</tr>
-											
-											@else
-											<tr>
-												<th class="gry-color text-left">{{ translate('Sub Total') }}</th>
-												<td class="currency">{{ single_price($order->orderDetails->sum('price')) }}</td>
-											</tr>
-											<tr>
-												<th class="gry-color text-left">{{ translate('Shipping Cost') }}</th>
-												<td class="currency">{{ single_price($order->orderDetails->sum('shipping_cost')) }}</td>
-											</tr>
-											<tr class="border-bottom">
-												<th class="gry-color text-left">{{ translate('Total Tax') }}</th>
-												<td class="currency">{{ single_price($order->orderDetails->sum('tax')) }}</td>
-											</tr>
-											<tr class="border-bottom">
-												<th class="gry-color text-left">{{ translate('Coupon Discount') }}</th>
-												<td class="currency">{{ single_price($order->coupon_discount) }}</td>
-											</tr>
-											@endif
-											<tr>
-												<th class="text-left "><span style="font-weight: bold;">{{ translate('Grand Total') }}</span></th>
-												<td class="currency"><span style="font-weight: bold;">{{ single_price($order->grand_total) }}</span></td>
-											</tr>
-										</tbody>
-									</table>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-
-		</div>
-		
-	</div>
-</body>
-</html>
 											</tr>
 											<tr class="border-bottom">
 												<th class="gry-color text-left">{{ translate('Total GST') }}</th>

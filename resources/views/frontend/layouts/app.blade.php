@@ -54,11 +54,8 @@
     @endif
 
     <!-- Favicon -->
-    @php
-        $site_icon = uploaded_asset(get_setting('site_icon'));
-    @endphp
-    <link rel="icon" href="{{ $site_icon }}">
-    <link rel="apple-touch-icon" href="{{ $site_icon }}">
+    <link rel="icon" href="{{ static_asset('favicon.png') }}">
+    <link rel="apple-touch-icon" href="{{ static_asset('favicon.png') }}">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -47,15 +47,14 @@
 								
 	                        </div>
 	                    </div>
-						<div class="row gutters-5">
+{{-- <div class="row gutters-5">
 							<div class="col-md">
 		                        <div class="form-group">
 		                            <label for="system_key" class="fs-12 fw-700" style="color: #666;">System Key. <span class="fs-12 fw-500">If you have don't have System key, <a href="https://activeitzone.com/activation" target="_blank" class="text-blue hov-text-primary"><i>Click Here</i></a></span> </label>
 		                            <input type="text" class="form-control rounded-2 border" style="height: 36px !important;" id="system_key" name="system_key" placeholder="***************************" required>
 		                        </div>
 	                        </div>
-	                    </div>
-						<div class="row gutters-5">
+	                    </div> --}}						<div class="row gutters-5">
 							<div class="col-md-auto">
 								<button type="submit" class="btn btn-primary btn-block">{{ translate('Update Now') }}</button>
 							</div>

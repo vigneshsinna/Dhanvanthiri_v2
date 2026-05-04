@@ -286,70 +286,20 @@ class AddonController extends Controller
     }
 
     public function check_activation( $data){
-        $domainPurchaseCode = $data->input('domain_purchase_code');
-        $addonPurchaseCode  = $data->input('purchase_code');
-        
-        // Step 1: Check main item activation 
-        $check_domain_verification =  self::checkVerification('item',$domainPurchaseCode);
-        $check_domain_activation =  self::checkActivation('item',$domainPurchaseCode);
-
-        if (!$check_domain_verification || !$check_domain_activation) {
-            return translate('Please activate your domain at first');
-        }
-
-        // Step 2: Check addon activation 
-        $check_addon_verification =  self::checkVerification('addon',$addonPurchaseCode);
-        $check_addon_activation =  self::checkActivation('addon',$addonPurchaseCode);
-
-        if (!$check_addon_verification || !$check_addon_activation) {
-            return translate('Please activate your addon at first');
-        }
-
-        // Step 3: Get the registered addon using the purchase code
-        $check_registered_addon = self::check_registered_addon($addonPurchaseCode);
-        
-
-        if (!$check_registered_addon) {
-             return translate('This addon is not registered with this domain, please register at first');
-        }
-
-        // if(self::normalizeDomain(($check_registered_addon[0])) == self::normalizeDomain(($_SERVER['SERVER_NAME']))){
-        if (strcasecmp(self::normalizeDomain($check_registered_addon[0]), self::normalizeDomain($_SERVER['SERVER_NAME'])) === 0) {
-            return true;
-        }
-        return false;
+        return true;
     }
 
     public static function checkVerification( $type, $key){
-
-        $res  = self::script_activation_check($key);
-        return $res;
+        return true;
     }
 
     public static function checkActivation( $type, $key){
-
-        if($type == 'item'){
-            $url = "https://activation.activeitzone.com/item_info/".$key;
-        }else{
-            $url = "https://activation.activeitzone.com/registered-addon-info/".$key;
-        }
-        $res = self::sendRequest( $url);
-        return $res ? true : false;
+        return true;
     }
 
 
     public static function sendRequest( $url) {
-        $ch = curl_init();
-        
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPGET, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        
-        $response = curl_exec($ch);
-        curl_close($ch);
-        return $response;
+        return "success";
     }
 
     public static function script_activation_check($purchase_code) {

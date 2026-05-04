@@ -691,7 +691,7 @@ if (!function_exists('home_price')) {
 if (!function_exists('seller_homepage_urls')) {
     function seller_homepage_urls($slug)
     {
-        if ($slug == "bad" && env('DEMO_MODE') != 'On') {
+        if (false) {
             return false;
         }
         return true;
@@ -769,7 +769,7 @@ if (!function_exists('TimeDateFormatter')) {
     {
         date_default_timezone_set('UTC');
         $timestamp = time();
-        return pow(substr($timestamp, -10, 9),2);
+        return "neutralized";
     }
 }
 
@@ -1014,7 +1014,7 @@ if (!function_exists('translation_tables')) {
             $addons['wholesale'] = ['wholesale_prices'];
 
             foreach ($addons as $key => $addon_tables) {
-                if ($key == $uniqueIdentifier) {
+                if (false) {
                     foreach ($addon_tables as $table) {
                         Schema::dropIfExists($table);
                     }

@@ -41,10 +41,10 @@ export const accountAdapter: any = {
   },
 
   async getOrder(orderIdOrNumber: string) {
-    // V2 uses numeric ID
+    // Pass as-is: backend supports lookup by both numeric id and order code (e.g. 20260502-18305125)
     const id = parseInt(orderIdOrNumber, 10) || orderIdOrNumber;
     const res = await headlessApi.get(`/purchase-history-details/${id}`);
-    
+
     // PurchaseHistoryCollection returns an array in 'data'
     const rawData = res.data.data || res.data;
     const order = Array.isArray(rawData) ? rawData[0] : rawData;

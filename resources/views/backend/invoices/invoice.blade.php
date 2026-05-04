@@ -396,3 +396,44 @@
 	</div>
 </body>
 </html>
+											</tr>
+											<tr class="border-bottom">
+												<th class="gry-color text-left">{{ translate('Total GST') }}</th>
+												<td class="currency">{{ single_price($order->orderDetails->sum('gst_amount')) }}</td>
+											</tr>
+											
+											@else
+											<tr>
+												<th class="gry-color text-left">{{ translate('Sub Total') }}</th>
+												<td class="currency">{{ single_price($order->orderDetails->sum('price')) }}</td>
+											</tr>
+											<tr>
+												<th class="gry-color text-left">{{ translate('Shipping Cost') }}</th>
+												<td class="currency">{{ single_price($order->orderDetails->sum('shipping_cost')) }}</td>
+											</tr>
+											<tr class="border-bottom">
+												<th class="gry-color text-left">{{ translate('Total Tax') }}</th>
+												<td class="currency">{{ single_price($order->orderDetails->sum('tax')) }}</td>
+											</tr>
+											<tr class="border-bottom">
+												<th class="gry-color text-left">{{ translate('Coupon Discount') }}</th>
+												<td class="currency">{{ single_price($order->coupon_discount) }}</td>
+											</tr>
+											@endif
+											<tr>
+												<th class="text-left "><span style="font-weight: bold;">{{ translate('Grand Total') }}</span></th>
+												<td class="currency"><span style="font-weight: bold;">{{ single_price($order->grand_total) }}</span></td>
+											</tr>
+										</tbody>
+									</table>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+		</div>
+		
+	</div>
+</body>
+</html>

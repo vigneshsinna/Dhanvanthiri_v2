@@ -37,5 +37,6 @@ describe('AdminOrdersPage', () => {
     expect(tableScope.getByText(/lakshmi@example.com/i)).toBeInTheDocument();
     expect(tableScope.getByText(/razorpay/i)).toBeInTheDocument();
     expect(tableScope.getByText(/captured/i)).toBeInTheDocument();
+    expect(tableScope.getAllByRole('button', { name: /download invoice/i }).length).toBeGreaterThan(0);
   });
 });

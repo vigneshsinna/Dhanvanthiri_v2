@@ -615,7 +615,7 @@
                     </tbody>
                 </table>
                 <div class="no-print text-right">
-                    <a href="{{ route('invoice.download', $order->id) }}" type="button" class="btn btn-icon btn-light"><i
+                    <a href="{{ route('admin.orders.invoice.download', $order->id) }}" type="button" class="btn btn-icon btn-light"><i
                             class="las la-print"></i></a>
                 </div>
             </div>

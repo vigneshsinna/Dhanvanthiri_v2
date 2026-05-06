@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import {
+  downloadAdminOrderInvoice,
   useAdminOrdersQuery,
   useAdminUpdateOrderStatusMutation,
   useAdminExportOrdersMutation,
@@ -69,6 +70,7 @@ export function AdminOrdersPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<number | null>(null);
 
   const [exportJobId, setExportJobId] = useState<number | null>(null);
   const exportMutation = useAdminExportOrdersMutation();
@@ -115,6 +117,18 @@ export function AdminOrdersPage() {
       }
     } catch (e) {
       console.error('Failed to dispatch export job', e);
+    }
+  }
+
+  async function handleDownloadInvoice(order: { id: number; orderNumber: string }) {
+    setDownloadingInvoiceId(order.id);
+    try {
+      await downloadAdminOrderInvoice(order.id, `${order.orderNumber}.pdf`);
+    } catch (e) {
+      console.error('Failed to download invoice', e);
+      alert('Failed to download invoice.');
+    } finally {
+      setDownloadingInvoiceId(null);
     }
   }
 
@@ -238,9 +252,19 @@ export function AdminOrdersPage() {
                   </div>
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <Link to={`/admin/orders/${order.id}`} className="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2">
-                    View Details
-                  </Link>
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadInvoice(order)}
+                      disabled={downloadingInvoiceId === order.id}
+                      className="inline-flex rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {downloadingInvoiceId === order.id ? 'Downloading...' : 'Download Invoice'}
+                    </button>
+                    <Link to={`/admin/orders/${order.id}`} className="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2">
+                      View Details
+                    </Link>
+                  </div>
                 </td>
               </tr>
             ))}

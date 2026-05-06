@@ -19,6 +19,8 @@ vi.mock('@/features/auth/api', () => ({
     mutateAsync: mockMutateAsync,
     isPending: false,
   }),
+  useSocialProvidersQuery: () => ({ data: [] }),
+  getSocialLoginRedirectUrl: (provider: string) => `/social/${provider}`,
 }));
 
 describe('LoginPage', () => {
@@ -69,9 +71,9 @@ describe('LoginPage', () => {
   });
 
   it.each([
-    ['admin', 'admin-token'],
-    ['super_admin', 'super-admin-token'],
-  ])('redirects %s users to /admin after successful login', async (role, accessToken) => {
+    ['admin', 'admin-token', '/store-admin'],
+    ['super_admin', 'super-admin-token', '/store-admin/modules'],
+  ])('redirects %s users to the role-specific admin portal after successful login', async (role, accessToken, destination) => {
     mockMutateAsync.mockResolvedValue({
       data: {
         access_token: accessToken,
@@ -91,7 +93,31 @@ describe('LoginPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/admin', { replace: true });
+      expect(mockNavigate).toHaveBeenCalledWith(destination, { replace: true });
+    });
+  });
+
+  it('does not send customer users to an admin URL from login state', async () => {
+    mockMutateAsync.mockResolvedValue({
+      data: {
+        access_token: 'customer-token',
+        user: {
+          id: 1,
+          name: 'Lakshmi',
+          email: 'lakshmi@example.com',
+          role: 'customer',
+        },
+      },
+    });
+
+    renderWithProviders(<LoginPage />, { route: '/login' });
+
+    await userEvent.type(screen.getByLabelText(/email/i), 'lakshmi@example.com');
+    await userEvent.type(screen.getByLabelText(/password/i), 'Password1!');
+    await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/products', { replace: true });
     });
   });
 });

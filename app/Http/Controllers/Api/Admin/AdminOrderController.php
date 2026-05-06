@@ -192,9 +192,7 @@ class AdminOrderController extends Controller
     public function invoice(Request $request, int $id)
     {
         $this->ensureAdmin($request);
-        $order = Order::findOrFail($id);
 
-        // Try to use the existing InvoiceController
         try {
             return app(\App\Http\Controllers\Api\V2\InvoiceController::class)->invoice_download($id);
         } catch (\Throwable $e) {

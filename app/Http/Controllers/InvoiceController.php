@@ -25,8 +25,8 @@ class InvoiceController extends Controller
             return redirect(storefront_url());
         }
 
-        $config = ['mode' => 'utf-8', 'format' => 'A4-L', 'orientation' => 'L'];
-        $font_family = "'Roboto', sans-serif";
+        $font_family = $this->invoiceFontFamily($order);
+        $config = $this->invoicePdfConfig($font_family);
 
         $language_code = Session::get('locale', Config::get('app.locale'));
         $language = Language::where('code', $language_code)->first()
@@ -69,7 +69,7 @@ class InvoiceController extends Controller
 
         return view('backend.invoices.invoice', [
             'order' => $order,
-            'font_family' => "'Roboto', sans-serif",
+            'font_family' => $this->invoiceFontFamily($order),
             'direction' => $direction,
             'text_align' => $text_align,
             'not_text_align' => $not_text_align,
@@ -79,11 +79,64 @@ class InvoiceController extends Controller
 
     protected function findOrder($id)
     {
-        $order = Order::find($id);
+        $order = Order::with(['user', 'orderDetails.product.stocks'])->find($id);
         if (!$order) {
-            $order = Order::where('combined_order_id', $id)->first();
+            $order = Order::with(['user', 'orderDetails.product.stocks'])
+                ->where('combined_order_id', $id)
+                ->first();
         }
         return $order;
+    }
+
+    protected function invoiceFontFamily(Order $order): string
+    {
+        $hasTamil = $order->orderDetails->contains(function ($detail) {
+            $product = $detail->product;
+            if (!$product) {
+                return false;
+            }
+
+            $names = collect([$product->name, $product->getTranslation('name')])
+                ->merge($product->product_translations->pluck('name'));
+
+            return $names->contains(fn ($name) => is_string($name) && preg_match('/\p{Tamil}/u', $name));
+        });
+
+        return $hasTamil && $this->tamilFontAvailable()
+            ? "'Noto Sans Tamil','Roboto',sans-serif"
+            : "'Roboto',sans-serif";
+    }
+
+    protected function tamilFontAvailable(): bool
+    {
+        return is_file(base_path('public/fonts/NotoSansTamil-Regular.ttf'))
+            || is_file(base_path('public/assets/fonts/NotoSansTamil-Regular.ttf'));
+    }
+
+    protected function invoicePdfConfig(string $fontFamily): array
+    {
+        $config = ['mode' => 'utf-8', 'format' => 'A4-L', 'orientation' => 'L'];
+
+        if (!str_contains($fontFamily, 'Noto Sans Tamil')) {
+            return $config;
+        }
+
+        $fontPath = is_file(base_path('public/fonts/NotoSansTamil-Regular.ttf'))
+            ? base_path('public/fonts/')
+            : base_path('public/assets/fonts/');
+
+        Config::set('pdf.font_path', $fontPath);
+        Config::set('pdf.font_data', [
+            'notosanstamil' => [
+                'R' => 'NotoSansTamil-Regular.ttf',
+                'B' => is_file($fontPath . 'NotoSansTamil-Bold.ttf') ? 'NotoSansTamil-Bold.ttf' : 'NotoSansTamil-Regular.ttf',
+                'useOTL' => 0xFF,
+                'useKashida' => 75,
+            ],
+        ]);
+        $config['default_font'] = 'notosanstamil';
+
+        return $config;
     }
 
     protected function authorizeOrderAccess(Order $order): bool

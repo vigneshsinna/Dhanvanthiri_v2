@@ -11,7 +11,7 @@
 		}
 		body{
 			font-size: 0.875rem;
-            font-family: '<?php echo  $font_family ?>';
+            font-family: <?php echo  $font_family ?>;
             font-weight: normal;
             direction: <?php echo  $direction ?>;
             text-align: <?php echo  $text_align ?>;
@@ -61,22 +61,72 @@
 		@php
 			$logo = get_setting('header_logo');
             $businessContact = $businessContact ?? \App\Support\BusinessContact::details();
-			
-			// Defensive address decoding with fallback object to prevent "property on null" errors
-			$shipping = json_decode($order->shipping_address);
-			if (!is_object($shipping)) {
-				$shipping = (object) [
-					'name' => '', 'email' => '', 'phone' => '',
-					'address' => '', 'city' => '', 'state' => '',
-					'postal_code' => '', 'country' => ''
-				];
+
+			$decodeAddress = function ($value) {
+				if (is_array($value)) {
+					return $value;
+				}
+				if (is_object($value)) {
+					return (array) $value;
+				}
+				if (!is_string($value) || trim($value) === '') {
+					return [];
+				}
+
+				$decoded = json_decode($value, true);
+				return is_array($decoded) ? $decoded : [];
+			};
+
+			$hasUsableAddress = function (array $address) {
+				foreach (['name', 'email', 'phone', 'address', 'city', 'state', 'postal_code', 'country'] as $field) {
+					if (trim((string) ($address[$field] ?? '')) !== '') {
+						return true;
+					}
+				}
+
+				return false;
+			};
+
+			$userFallback = [
+				'name' => $order->user->name ?? '',
+				'email' => $order->user->email ?? '',
+				'phone' => $order->user->phone ?? '',
+				'address' => $order->user->address ?? '',
+				'city' => $order->user->city ?? '',
+				'state' => $order->user->state ?? '',
+				'postal_code' => $order->user->postal_code ?? '',
+				'country' => $order->user->country ?? '',
+			];
+
+			$shippingData = $decodeAddress($order->shipping_address);
+			if (!$hasUsableAddress($shippingData) && !empty($order->combined_order_id)) {
+				$combinedShipping = optional(\App\Models\CombinedOrder::find($order->combined_order_id))->shipping_address;
+				$shippingData = $decodeAddress($combinedShipping);
 			}
-			
-			$billing = json_decode($order->billing_address);
-			if (!is_object($billing)) {
-				$billing = clone $shipping;
+			if (!$hasUsableAddress($shippingData)) {
+				$shippingData = $userFallback;
+			} else {
+				$shippingData = array_replace($userFallback, array_filter($shippingData, fn ($value) => trim((string) $value) !== ''));
 			}
-			
+
+			$billingData = $decodeAddress($order->billing_address ?? null);
+			if (!$hasUsableAddress($billingData)) {
+				$billingData = $shippingData;
+			} else {
+				$billingData = array_replace($shippingData, array_filter($billingData, fn ($value) => trim((string) $value) !== ''));
+			}
+
+			$formatAddressLine = function ($address) {
+				return collect([
+					$address->address ?? '',
+					$address->city ?? '',
+					trim(((string) ($address->state ?? '')) . (!empty($address->state) && !empty($address->postal_code) ? ' - ' : '') . ((string) ($address->postal_code ?? ''))),
+					$address->country ?? '',
+				])->map(fn ($part) => trim((string) $part))->filter()->implode(', ');
+			};
+
+			$shipping = (object) $shippingData;
+			$billing = (object) $billingData;
 			$first_order = $order->orderDetails->first();
 		@endphp
 
@@ -131,11 +181,7 @@
 									<tr><td class="strong">{{ $billing->name ?? '' }}</td></tr>
 									<tr>
 										<td class="gry-color small">
-											{{ $billing->address ?? '' }},
-											{{ $billing->city ?? '' }},
-											@if(!empty($billing->state)) {{ $billing->state }} - @endif
-											{{ $billing->postal_code ?? '' }},
-											{{ $billing->country ?? '' }}
+											{{ $formatAddressLine($billing) }}
 										</td>
 									</tr>
 									<tr><td class="gry-color small">{{ translate('Email') }}: {{ $billing->email ?? '' }}</td></tr>
@@ -150,11 +196,7 @@
 									<tr><td class="strong">{{ $shipping->name ?? '' }}</td></tr>
 									<tr>
 										<td class="gry-color small">
-											{{ $shipping->address ?? '' }},
-											{{ $shipping->city ?? '' }},
-											@if(!empty($shipping->state)) {{ $shipping->state }} - @endif
-											{{ $shipping->postal_code ?? '' }},
-											{{ $shipping->country ?? '' }}
+											{{ $formatAddressLine($shipping) }}
 										</td>
 									</tr>
 									<tr><td class="gry-color small">{{ translate('Email') }}: {{ $shipping->email ?? '' }}</td></tr>
@@ -202,7 +244,7 @@
 								@if ($orderDetail->product != null)
 									<tr class="">
 										<td>
-											{{ $orderDetail->product->name }} 
+											{{ $orderDetail->product->getTranslation('name') }}
 											@if($orderDetail->variation != null) ({{ $orderDetail->variation }}) @endif
 											<br>
 											<small>

@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\VerificationController;
 use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\DemoController;
 use App\Http\Controllers\HeadlessStorefrontController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\Payment\AamarpayController;
 use App\Http\Controllers\Payment\AuthorizenetController;
@@ -80,6 +81,9 @@ Route::controller(AddressController::class)->group(function () {
     Route::post('/get-area', 'getAreas')->name('get-area');
     Route::post('/get-cities-by-country', 'getCitiesByCountry')->name('get-city-by-country');
 });
+
+Route::get('invoice/{order_id}', [InvoiceController::class, 'invoice_download'])->name('invoice.download');
+Route::get('/invoice-print/{order_id}', [InvoiceController::class, 'invoice_print'])->name('invoice.print');
 
 Route::controller(PaypalController::class)->group(function () {
     Route::get('/paypal/payment/done', 'getDone')->name('payment.done');

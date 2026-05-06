@@ -237,7 +237,7 @@
                                         </a>
                                     @endcan
                                     <a class="btn btn-soft-info btn-icon btn-circle btn-sm"
-                                        href="{{ route('invoice.download', $order->id) }}"
+                                        href="{{ route('admin.orders.invoice.download', $order->id) }}"
                                         title="{{ translate('Download Invoice') }}">
                                         <i class="las la-download"></i>
                                     </a>

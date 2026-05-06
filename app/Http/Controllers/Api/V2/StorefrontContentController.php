@@ -8,6 +8,7 @@ use App\Models\BusinessSetting;
 use App\Models\Contact;
 use App\Models\Currency;
 use App\Models\Page;
+use App\Support\BusinessContact;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Mail;
@@ -127,11 +128,11 @@ class StorefrontContentController extends Controller
             'message' => ['required', 'string'],
         ]);
 
-        $admin = get_admin();
-        if (!$admin) {
+        $recipientEmail = BusinessContact::email();
+        if (!$recipientEmail) {
             return response()->json([
                 'result' => false,
-                'message' => 'No admin recipient configured',
+                'message' => 'No business contact email configured',
             ], 500);
         }
 
@@ -145,7 +146,7 @@ class StorefrontContentController extends Controller
         ];
 
         try {
-            Mail::to($admin->email)->queue(new ContactMailManager($mailPayload));
+            Mail::to($recipientEmail)->queue(new ContactMailManager($mailPayload));
 
             Contact::create([
                 'name' => $validated['name'],

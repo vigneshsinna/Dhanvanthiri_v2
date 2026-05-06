@@ -2,12 +2,10 @@
 
 namespace App\Utility;
 
-use App\Mail\InvoiceEmailManager;
 use App\Models\User;
 use App\Models\SmsTemplate;
 use App\Http\Controllers\OTPVerificationController;
 use App\Models\EmailTemplate;
-use Mail;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\OrderNotification;
 use App\Models\FirebaseNotification;
@@ -16,34 +14,8 @@ class NotificationUtility
 {
     public static function sendOrderPlacedNotification($order, $request = null)
     {       
-        //sends email to Customer, Seller and Admin with the invoice pdf attached
-        $adminId = get_admin()->id;
-        $userIds = array($order->seller_id);
-        if($order->user->email != null){
-            array_push($userIds, $order->user_id);
-        }
-        if ($order->seller_id != $adminId) {
-            array_push($userIds, $adminId);
-        }
-        $users = User::findMany($userIds);
-        foreach($users as $user){
-            $emailIdentifier = 'order_placed_email_to_'.$user->user_type;
-            $emailTemplate = EmailTemplate::whereIdentifier($emailIdentifier)->first();
-
-            if($emailTemplate != null && $emailTemplate->status == 1){
-                $emailSubject = $emailTemplate->subject;
-                $emailSubject = str_replace('[[order_code]]', $order->code, $emailSubject);
-
-                $array['view']      = 'emails.invoice';
-                $array['subject']   = $emailSubject;
-                $array['order']     = $order;
-                if($emailTemplate->status == 1){
-                    try {
-                        Mail::to($user->email)->queue(new InvoiceEmailManager($array));
-                    } catch (\Exception $e) {}
-                }
-            }   
-        }
+        // Send only the customer order confirmation email for placed orders.
+        EmailUtility::order_confirmation_email($order);
 
         if (addon_is_activated('otp_system') && SmsTemplate::where('identifier', 'order_placement')->first()->status == 1) {
             try {

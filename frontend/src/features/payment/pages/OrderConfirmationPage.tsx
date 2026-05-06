@@ -25,7 +25,16 @@ export function OrderConfirmationPage() {
       if (!orderId) throw new Error("Order ID missing");
       setIsDownloading(true);
       try {
-        await accountAdapter.downloadInvoice(orderId, guestCheckoutToken);
+        const response = await accountAdapter.downloadInvoice(orderId, guestCheckoutToken);
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `invoice-${orderNumber || orderId}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
       } finally {
         setIsDownloading(false);
       }

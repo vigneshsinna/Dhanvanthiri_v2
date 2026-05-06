@@ -1,46 +1,44 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { http, HttpResponse } from 'msw';
 import { renderWithProviders, screen } from '@/test/test-utils';
+import { server } from '@/test/msw-server';
 import { AboutPage } from './AboutPage';
 
-// Mock react-helmet-async to avoid HelmetProvider warnings
 vi.mock('react-helmet-async', () => ({
   Helmet: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   HelmetProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
+beforeAll(() => server.listen({ onUnhandledRequest: 'bypass' }));
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
 describe('AboutPage', () => {
-  it('renders main heading', () => {
-    renderWithProviders(<AboutPage />);
-    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
-  });
+  it('renders the admin-managed about page content with two images and description', async () => {
+    server.use(
+      http.get('/api/v2/pages/about', () => HttpResponse.json({
+        success: true,
+        data: {
+          id: 10,
+          slug: 'about',
+          title: 'About Dhanvanthiri Foods',
+          content: `
+            <p><img src="/uploads/all/about/brand-story.png" alt="Admin brand story" /></p>
+            <p>Admin controlled about description.</p>
+            <p><img src="/uploads/all/about/mission-vision.png" alt="Admin mission vision" /></p>
+          `,
+          body: '',
+          meta_title: 'About Us - Dhanvanthiri Foods',
+          meta_description: 'Admin managed about meta description.',
+        },
+      }))
+    );
 
-  it('shows brand name "Dhanvanthiri"', () => {
     renderWithProviders(<AboutPage />);
-    const matches = screen.getAllByText(/dhanvanthiri/i);
-    expect(matches.length).toBeGreaterThan(0);
-  });
 
-  it('has About Dhanvanthiri Foods section heading', () => {
-    renderWithProviders(<AboutPage />);
-    expect(screen.getByText(/about dhanvanthiri foods/i)).toBeInTheDocument();
-  });
-
-  it('mentions traditional Tamil foods', () => {
-    renderWithProviders(<AboutPage />);
-    const matches = screen.getAllByText(/traditional tamil foods/i);
-    expect(matches.length).toBeGreaterThan(0);
-  });
-
-  it('renders logo image with alt text', () => {
-    renderWithProviders(<AboutPage />);
-    const logo = screen.getByAltText(/dhanvanthiri logo/i);
-    expect(logo).toBeInTheDocument();
-    expect(logo.tagName).toBe('IMG');
-  });
-
-  it('has background image for hero section', () => {
-    renderWithProviders(<AboutPage />);
-    const bgImage = screen.getByAltText(/traditional tamil kitchen/i);
-    expect(bgImage).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /about dhanvanthiri foods/i })).toBeInTheDocument();
+    expect(screen.getByText(/admin controlled about description/i)).toBeInTheDocument();
+    expect(screen.getByAltText(/admin brand story/i)).toHaveAttribute('src', '/uploads/all/about/brand-story.png');
+    expect(screen.getByAltText(/admin mission vision/i)).toHaveAttribute('src', '/uploads/all/about/mission-vision.png');
   });
 });

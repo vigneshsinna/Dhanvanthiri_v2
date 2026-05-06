@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Currency;
 use App\Models\Language;
 use App\Models\Order;
+use App\Support\BusinessContact;
 use Session;
 use PDF;
 use Config;
@@ -14,133 +15,50 @@ class InvoiceController extends Controller
     //download invoice
     public function invoice_download($id)
     {
-        $default_currency = Currency::find(get_setting('system_default_currency')) ?? Currency::query()->first();
-        $currency_code = Session::get('currency_code', $default_currency?->code ?? 'USD');
+        $order = $this->findOrder($id);
+        if (!$order) {
+            abort(404);
+        }
+
+        if (!$this->authorizeOrderAccess($order)) {
+            flash(translate("You do not have the right permission to access this invoice."))->error();
+            return redirect(storefront_url());
+        }
+
+        $config = ['mode' => 'utf-8', 'format' => 'A4-L', 'orientation' => 'L'];
+        $font_family = "'Roboto', sans-serif";
+
         $language_code = Session::get('locale', Config::get('app.locale'));
         $language = Language::where('code', $language_code)->first()
             ?? Language::where('code', Config::get('app.locale'))->first()
             ?? Language::query()->first();
 
-        if (($language?->rtl ?? 0) == 1) {
-            $direction = 'rtl';
-            $text_align = 'right';
-            $not_text_align = 'left';
-        } else {
-            $direction = 'ltr';
-            $text_align = 'left';
-            $not_text_align = 'right';
-        }
+        $direction = (($language?->rtl ?? 0) == 1) ? 'rtl' : 'ltr';
+        $text_align = $direction == 'rtl' ? 'right' : 'left';
+        $not_text_align = $direction == 'rtl' ? 'left' : 'right';
 
-        if (
-            $currency_code == 'BDT' ||
-            $language_code == 'bd'
-        ) {
-            // bengali font
-            $font_family = "'Hind Siliguri','freeserif'";
-        } elseif (
-            $currency_code == 'KHR' ||
-            $language_code == 'kh'
-        ) {
-            // khmer font
-            $font_family = "'Hanuman','sans-serif'";
-        } elseif ($currency_code == 'AMD') {
-            // Armenia font
-            $font_family = "'arnamu','sans-serif'";
-            // }elseif($currency_code == 'ILS'){
-            //     // Israeli font
-            //     $font_family = "'Varela Round','sans-serif'";
-        } elseif (
-            $currency_code == 'AED' ||
-            $currency_code == 'EGP' ||
-            $language_code == 'sa' ||
-            $currency_code == 'IQD' ||
-            $language_code == 'ir' ||
-            $language_code == 'om' ||
-            $currency_code == 'ROM' ||
-            $currency_code == 'SDG' ||
-            $currency_code == 'ILS' ||
-            $language_code == 'jo'
-        ) {
-            // middle east/arabic/Israeli font
-            $font_family = "xbriyaz";
-        } elseif ($currency_code == 'THB') {
-            // thai font
-            $font_family = "'Kanit','sans-serif'";
-        } elseif (
-            $currency_code == 'CNY' ||
-            $language_code == 'zh'
-        ) {
-            // Chinese font
-            $font_family = "'sun-exta','gb'";
-        } elseif (
-            $currency_code == 'MMK' ||
-            $language_code == 'mm'
-        ) {
-            // Myanmar font
-            $font_family = 'tharlon';
-        } elseif (
-            $currency_code == 'THB' ||
-            $language_code == 'th'
-        ) {
-            // Thai font
-            $font_family = "'zawgyi-one','sans-serif'";
-        } elseif (
-            $currency_code == 'USD'
-        ) {
-            // Thai font
-            $font_family = "'Roboto','sans-serif'";
-        } else {
-            // general for all
-            $font_family = "freeserif";
-        }
-
-        // $config = ['instanceConfigurator' => function($mpdf) {
-        //     $mpdf->showImageErrors = true;
-        // }];
-        // mpdf config will be used in 4th params of loadview
-
-        $config = [];
-
-        $order = Order::findOrFail($id);
-        
-        // Support both Web and API (Sanctum) authentication
-        $user = auth('sanctum')->user() ?? auth()->user();
-        $userType = $user?->user_type;
-        $userId = $user?->id;
-        
-        $ownsOrder = $userId ? in_array($userId, [$order->user_id, $order->seller_id]) : false;
-        
-        // Secure Guest Access Check
-        $isGuestOwner = false;
-        $guestToken = request()->header('X-Cart-Token') ?? request()->query('guest_token');
-        
-        if ($guestToken && !$userId) {
-            $session = \App\Models\GuestCheckoutSession::where('guest_checkout_token_hash', $guestToken)
-                ->where('combined_order_id', $order->id)
-                ->first();
-            if ($session) {
-                $isGuestOwner = true;
-            }
-        }
-
-        if (in_array($userType, ['admin', 'staff', 'super_admin'], true) || $ownsOrder || $isGuestOwner) {
-            return PDF::loadView('backend.invoices.invoice', [
-                'order' => $order,
-                'font_family' => $font_family,
-                'direction' => $direction,
-                'text_align' => $text_align,
-                'not_text_align' => $not_text_align
-            ], [], $config)->download('order-' . $order->code . '.pdf');
-        }
-        flash(translate("You do not have the right permission to access this invoice."))->error();
-        return redirect(storefront_url());
+        return PDF::loadView('backend.invoices.invoice', [
+            'order' => $order,
+            'font_family' => $font_family,
+            'direction' => $direction,
+            'text_align' => $text_align,
+            'not_text_align' => $not_text_align,
+            'businessContact' => BusinessContact::details(),
+        ], [], $config)->download('order-' . $order->code . '.pdf');
     }
 
     public function invoice_print($id)
     {
-        $order = Order::findOrFail($id);
+        $order = $this->findOrder($id);
+        if (!$order) {
+            abort(404);
+        }
 
-        // You may want to apply the same font logic here too if needed
+        if (!$this->authorizeOrderAccess($order)) {
+            flash(translate("You do not have the right permission to access this invoice."))->error();
+            return redirect(storefront_url());
+        }
+
         $language_code = Session::get('locale', Config::get('app.locale'));
         $language = Language::where('code', $language_code)->first()
             ?? Language::where('code', Config::get('app.locale'))->first()
@@ -151,11 +69,57 @@ class InvoiceController extends Controller
 
         return view('backend.invoices.invoice', [
             'order' => $order,
-            'font_family' => "'Roboto', sans-serif", // or reuse your logic
+            'font_family' => "'Roboto', sans-serif",
             'direction' => $direction,
             'text_align' => $text_align,
-            'not_text_align' => $not_text_align
+            'not_text_align' => $not_text_align,
+            'businessContact' => BusinessContact::details(),
         ]);
     }
+
+    protected function findOrder($id)
+    {
+        $order = Order::find($id);
+        if (!$order) {
+            $order = Order::where('combined_order_id', $id)->first();
+        }
+        return $order;
+    }
+
+    protected function authorizeOrderAccess(Order $order): bool
+    {
+        $user = auth('sanctum')->user() ?? auth()->user();
+        $userType = $user?->user_type;
+        $userId = $user?->id;
+
+        // 1) Admin/Staff Access
+        if ($user && in_array($userType, ['admin', 'staff', 'super_admin'], true)) {
+            return true;
+        }
+
+        // 2) Registered User Ownership
+        if ($userId && in_array($userId, [$order->user_id, $order->seller_id])) {
+            return true;
+        }
+
+        // 3) Secure Guest Access Check
+        $guestToken = request()->header('X-Cart-Token') ?? request()->query('guest_token');
+        if ($guestToken) {
+            $tokenHash = hash('sha256', $guestToken);
+            $session = \App\Models\GuestCheckoutSession::where('guest_checkout_token_hash', $tokenHash)
+                ->where(function($q) use ($order) {
+                    $q->where('combined_order_id', $order->combined_order_id)
+                      ->orWhere('order_code', $order->code);
+                })
+                ->first();
+
+            if ($session) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 
 }

@@ -8,6 +8,7 @@ import { ResetPasswordPage } from '@/features/auth/pages/ResetPasswordPage';
 import { ProfilePage } from '@/features/auth/pages/ProfilePage';
 import { SecurityPage } from '@/features/auth/pages/SecurityPage';
 import { HomePage } from '@/pages/HomePage';
+import { AboutPage } from '@/pages/AboutPage';
 import { CatalogPage } from '@/features/catalog/pages/CatalogPage';
 import { ProductDetailPage } from '@/features/catalog/pages/ProductDetailPage';
 import { CartPage } from '@/features/cart/pages/CartPage';
@@ -79,6 +80,7 @@ export const router = createBrowserRouter([
       { path: 'blog/:slug', element: <BlogPostPage /> },
       { path: 'contact', element: <ContactPage /> },
       { path: 'about', element: <Navigate to="/pages/about" replace /> },
+      { path: 'pages/about', element: <AboutPage /> },
       { path: 'pages/contact', element: <ContactPage /> },
       { path: 'pages/:slug', element: <DynamicPage /> },
       { path: 'faq', element: <FaqPage /> },

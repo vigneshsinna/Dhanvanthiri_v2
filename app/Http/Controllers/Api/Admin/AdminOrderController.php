@@ -413,6 +413,7 @@ class AdminOrderController extends Controller
         return [
             'id' => $o->id,
             'code' => $o->code,
+            'order_number' => $o->code,
             'customer_name' => $o->user?->name,
             'customer_email' => $o->user?->email,
             'status' => $o->delivery_status,
@@ -434,6 +435,10 @@ class AdminOrderController extends Controller
             'coupon_discount' => (float) ($o->coupon_discount ?? 0),
             'tracking_code' => $o->tracking_code,
             'shipping_address' => $o->shipping_address,
+            'invoice' => [
+                'invoice_number' => 'INV-' . strtoupper((string) $o->code),
+                'issued_at' => optional($o->created_at)->toISOString() ?? now()->toISOString(),
+            ],
             'items' => $o->orderDetails->map(fn($d) => [
                 'id' => $d->id,
                 'product_id' => $d->product_id,

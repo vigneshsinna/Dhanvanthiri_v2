@@ -341,8 +341,7 @@ class CheckoutController extends Controller
             $order->payment_details = $payment;
             $order->save();
 
-            // Order paid notification to Customer, Seller, & Admin
-            EmailUtility::order_email($order, 'paid'); 
+            EmailUtility::order_confirmation_email($order);
             
             // Calculate Commission from seller, Customer Affiliate earning and Customers Club Point
             calculateCommissionAffilationClubPoint($order);
@@ -362,8 +361,7 @@ class CheckoutController extends Controller
             $order->payment_details = $payment;
             $order->save();
 
-            // Order paid notification to Customer, Seller, & Admin
-            EmailUtility::order_email($order, 'paid'); 
+            EmailUtility::order_confirmation_email($order);
             
             // Calculate Commission from seller, Customer Affiliate earning and Customers Club Point
             calculateCommissionAffilationClubPoint($order);

@@ -380,10 +380,10 @@ Route::controller(AddressController::class)->group(function () {
     Route::post('/get-cities-by-country', 'getCitiesByCountry')->name('get-city-by-country');
 });
 
-Route::group(['middleware' => ['auth']], function () {
+Route::get('invoice/{order_id}', [InvoiceController::class, 'invoice_download'])->name('invoice.download');
+Route::get('/invoice-print/{order_id}', [InvoiceController::class, 'invoice_print'])->name('invoice.print');
 
-    Route::get('invoice/{order_id}', [InvoiceController::class, 'invoice_download'])->name('invoice.download');
-    Route::get('/invoice-print/{order_id}', [InvoiceController::class, 'invoice_print'])->name('invoice.print');
+Route::group(['middleware' => ['auth']], function () {
     // Reviews
     Route::resource('/reviews', ReviewController::class);
 

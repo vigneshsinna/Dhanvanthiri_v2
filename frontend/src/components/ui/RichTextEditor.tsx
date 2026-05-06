@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 
 interface RichTextEditorProps {
   value: string;
@@ -15,21 +15,42 @@ const TOOLBAR_BUTTONS = [
   { divider: true },
   { cmd: 'formatBlock:H2', icon: 'H2', title: 'Heading 2' },
   { cmd: 'formatBlock:H3', icon: 'H3', title: 'Heading 3' },
-  { cmd: 'formatBlock:P', icon: '¶', title: 'Paragraph' },
+  { cmd: 'formatBlock:P', icon: 'P', title: 'Paragraph' },
   { divider: true },
-  { cmd: 'insertUnorderedList', icon: '• List', title: 'Bullet List' },
+  { cmd: 'insertUnorderedList', icon: 'Bullet List', title: 'Bullet List' },
   { cmd: 'insertOrderedList', icon: '1. List', title: 'Numbered List' },
   { divider: true },
-  { cmd: 'justifyLeft', icon: '⫷', title: 'Align Left' },
-  { cmd: 'justifyCenter', icon: '⫿', title: 'Align Center' },
+  { cmd: 'justifyLeft', icon: 'Left', title: 'Align Left' },
+  { cmd: 'justifyCenter', icon: 'Center', title: 'Align Center' },
   { divider: true },
-  { cmd: 'createLink', icon: '🔗', title: 'Insert Link' },
-  { cmd: 'removeFormat', icon: '✕', title: 'Clear Formatting' },
+  { cmd: 'createLink', icon: 'Link', title: 'Insert Link' },
+  { cmd: 'insertImage', icon: 'Image', title: 'Insert Image' },
+  { cmd: 'removeFormat', icon: 'Clear', title: 'Clear Formatting' },
 ] as const;
+
+function isSafeImageSrc(value: string): boolean {
+  const src = value.trim();
+  return src.startsWith('/') || src.startsWith('http://') || src.startsWith('https://');
+}
+
+function escapeAttribute(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
 
 export function RichTextEditor({ value, onChange, placeholder = 'Start typing...', minHeight = '200px' }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const isInternalChange = useRef(false);
+
+  const syncEditor = useCallback(() => {
+    if (editorRef.current) {
+      isInternalChange.current = true;
+      onChange(editorRef.current.innerHTML);
+    }
+  }, [onChange]);
 
   const handleCommand = useCallback((cmd: string) => {
     if (cmd.startsWith('formatBlock:')) {
@@ -38,24 +59,21 @@ export function RichTextEditor({ value, onChange, placeholder = 'Start typing...
     } else if (cmd === 'createLink') {
       const url = prompt('Enter URL:');
       if (url) document.execCommand('createLink', false, url);
+    } else if (cmd === 'insertImage') {
+      const url = prompt('Enter image URL or uploaded file path:');
+      if (!url || !isSafeImageSrc(url)) return;
+      const alt = prompt('Enter image alt text:') || '';
+      document.execCommand('insertHTML', false, `<img src="${escapeAttribute(url.trim())}" alt="${escapeAttribute(alt.trim())}" />`);
     } else {
       document.execCommand(cmd, false);
     }
-    // Sync after command
-    if (editorRef.current) {
-      isInternalChange.current = true;
-      onChange(editorRef.current.innerHTML);
-    }
-  }, [onChange]);
+    syncEditor();
+  }, [syncEditor]);
 
   const handleInput = useCallback(() => {
-    if (editorRef.current) {
-      isInternalChange.current = true;
-      onChange(editorRef.current.innerHTML);
-    }
-  }, [onChange]);
+    syncEditor();
+  }, [syncEditor]);
 
-  // Set initial content (only on mount or when value changes externally)
   const lastSetValue = useRef(value);
   if (editorRef.current && value !== lastSetValue.current && !isInternalChange.current) {
     editorRef.current.innerHTML = value;
@@ -64,8 +82,7 @@ export function RichTextEditor({ value, onChange, placeholder = 'Start typing...
   isInternalChange.current = false;
 
   return (
-    <div className="rounded-lg border border-slate-300 overflow-hidden bg-white">
-      {/* Toolbar */}
+    <div className="overflow-hidden rounded-lg border border-slate-300 bg-white">
       <div className="flex flex-wrap items-center gap-0.5 border-b border-slate-200 bg-slate-50 px-2 py-1.5">
         {TOOLBAR_BUTTONS.map((btn, i) => {
           if ('divider' in btn) {
@@ -77,7 +94,7 @@ export function RichTextEditor({ value, onChange, placeholder = 'Start typing...
               type="button"
               title={btn.title}
               onMouseDown={(e) => { e.preventDefault(); handleCommand(btn.cmd); }}
-              className={`rounded px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-200 transition ${('style' in btn && btn.style) ? btn.style : ''}`}
+              className={`rounded px-2 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-200 ${('style' in btn && btn.style) ? btn.style : ''}`}
             >
               {btn.icon}
             </button>
@@ -85,7 +102,6 @@ export function RichTextEditor({ value, onChange, placeholder = 'Start typing...
         })}
       </div>
 
-      {/* Editor area */}
       <div
         ref={editorRef}
         contentEditable

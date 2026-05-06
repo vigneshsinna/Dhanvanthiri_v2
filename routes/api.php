@@ -89,20 +89,7 @@ Route::group(['prefix' => 'v2', 'middleware' => ['app_language']], function () {
         ]);
     });
 
-    Route::post('product-queries', function (Request $request) {
-        $request->validate([
-            'product_id' => ['required', 'integer', 'exists:products,id'],
-            'question' => ['required', 'string', 'max:1000'],
-        ]);
-
-        \App\Models\ProductQuery::create([
-            'product_id' => $request->input('product_id'),
-            'customer_id' => $request->user()?->id,
-            'question' => $request->input('question'),
-        ]);
-
-        return response()->json(['success' => true, 'message' => 'Question submitted']);
-    })->middleware('auth:sanctum');
+    Route::post('product-queries', [ProductQueryController::class, 'store']);
 
     // ── Storefront capability flags (public, cacheable) ──────
     Route::get('capabilities', [CapabilityController::class, 'index']);

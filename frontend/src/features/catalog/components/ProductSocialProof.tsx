@@ -17,6 +17,7 @@ interface QAItem {
     question: string;
     answer: string;
     customer_name: string;
+    created_at?: string;
     answered_at: string;
 }
 
@@ -28,20 +29,25 @@ export function ProductQASection({ productId }: { productId: number }) {
     const [showForm, setShowForm] = useState(false);
     const [question, setQuestion] = useState('');
     const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
     const [expandedId, setExpandedId] = useState<number | null>(null);
     const [submitted, setSubmitted] = useState(false);
 
-    const queries = unwrapCollection<QAItem>(data);
+    const queries = unwrapCollection<QAItem>(data).map((q) => ({
+        ...q,
+        answered_at: q.answered_at || q.created_at || '',
+    }));
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!question.trim()) return;
         submitMut.mutate(
-            { question, customer_name: name || undefined },
+            { question, customer_name: name || undefined, customer_email: email || undefined },
             {
                 onSuccess: () => {
                     setQuestion('');
                     setName('');
+                    setEmail('');
                     setShowForm(false);
                     setSubmitted(true);
                 },
@@ -75,13 +81,22 @@ export function ProductQASection({ productId }: { productId: number }) {
             {showForm && (
                 <form onSubmit={handleSubmit} className="mb-6 rounded-xl border bg-white p-5 shadow-sm space-y-3">
                     {!isAuthenticated && (
-                        <input
-                            type="text"
-                            placeholder="Your name (optional)"
-                            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                        />
+                        <>
+                            <input
+                                type="text"
+                                placeholder="Your name (optional)"
+                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                            />
+                            <input
+                                type="email"
+                                placeholder="Your email (optional)"
+                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                            />
+                        </>
                     )}
                     <textarea
                         placeholder="Write your question about this product..."

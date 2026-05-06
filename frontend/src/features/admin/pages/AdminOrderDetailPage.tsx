@@ -172,13 +172,7 @@ export function AdminOrderDetailPage() {
         description="Track invoice, shipping, status transitions, and return activity from one order workspace."
         actions={(
           <div className="flex flex-wrap items-center gap-2">
-            {invoiceData ? (
-              <Button variant="outline" onClick={handleDownloadInvoice}>Download Invoice</Button>
-            ) : (
-              <span className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-400">
-                Invoice not yet generated
-              </span>
-            )}
+            <Button variant="outline" onClick={handleDownloadInvoice}>Download Invoice</Button>
             <Link to="/store-admin/returns" className="inline-flex rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
               Returns Queue
             </Link>
@@ -365,25 +359,23 @@ export function AdminOrderDetailPage() {
           {/* Invoice */}
           <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="mb-3 text-lg font-semibold text-slate-950">Invoice</h2>
-            {invoiceData ? (
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Invoice Number</span>
-                  <span className="font-medium text-slate-950">{invoiceData.invoice_number}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-500">Issued</span>
-                  <span className="text-slate-700">{new Date(invoiceData.issued_at).toLocaleDateString('en-IN')}</span>
-                </div>
-                <Button variant="outline" size="sm" className="mt-2 w-full" onClick={handleDownloadInvoice}>
-                  View / Download Invoice
-                </Button>
-              </div>
-            ) : (
-              <p className="text-sm text-slate-400 italic">
-                Invoice will be generated when the order is confirmed.
-              </p>
-            )}
+            <div className="space-y-2 text-sm">
+              {invoiceData && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Invoice Number</span>
+                    <span className="font-medium text-slate-950">{invoiceData.invoice_number}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Issued</span>
+                    <span className="text-slate-700">{new Date(invoiceData.issued_at).toLocaleDateString('en-IN')}</span>
+                  </div>
+                </>
+              )}
+              <Button variant="outline" size="sm" className="mt-2 w-full" onClick={handleDownloadInvoice}>
+                View / Download Invoice
+              </Button>
+            </div>
           </div>
 
           {/* Create Shipment */}

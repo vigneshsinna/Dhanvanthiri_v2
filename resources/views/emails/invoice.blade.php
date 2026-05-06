@@ -60,8 +60,10 @@
 </head>
 <body>
 	<div>
+        @yield('confirmation_content')
 		@php
 			$logo = get_setting('header_logo');
+            $businessContact = $businessContact ?? \App\Support\BusinessContact::details();
 		@endphp
 		<div style="background: #eceff4;padding: 1.5rem;">
 			<table>
@@ -81,15 +83,15 @@
 					<td class="text-right"></td>
 				</tr>
 				<tr>
-					<td class="gry-color small">{{ get_setting('contact_address') }}</td>
+					<td class="gry-color small">{{ $businessContact['address'] ?? get_setting('contact_address') }}</td>
 					<td class="text-right"></td>
 				</tr>
 				<tr>
-					<td class="gry-color small">{{  translate('Email') }}: {{ get_setting('contact_email') }}</td>
+					<td class="gry-color small">{{  translate('Email') }}: {{ $businessContact['email'] ?? get_setting('contact_email') }}</td>
 					<td class="text-right small"><span class="gry-color small">{{  translate('Order ID') }}:</span> <span class="strong">{{ $order->code }}</span></td>
 				</tr>
 				<tr>
-					<td class="gry-color small">{{  translate('Phone') }}: {{ get_setting('contact_phone') }}</td>
+					<td class="gry-color small">{{  translate('Phone') }}: {{ $businessContact['phone'] ?? get_setting('contact_phone') }}</td>
 					<td class="text-right small"><span class="gry-color small">{{  translate('Order Date') }}:</span> <span class=" strong">{{ date('d-m-Y', $order->date) }}</span></td>
 				</tr>
 			</table>

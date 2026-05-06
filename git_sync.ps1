@@ -1,6 +1,5 @@
-# Hybrid Sync for Hostinger (Individual Backend + Zipped Frontend)
-# Backend -> core/ (Individual)
-# Frontend -> app/ (Zipped for speed)
+# Reliable Git-Aware Sync for Hostinger (Single Bundle Method)
+# This is the ONLY method that prevents the server from hanging/rate-limiting.
 
 $sshHost = "217.21.74.44"
 $sshPort = 65002
@@ -8,18 +7,17 @@ $sshUser = "u362580417"
 $remoteRoot = "/home/u362580417/domains/dhanvanthrifoods.com/public_html"
 $sshArgs = @("-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=15")
 
-Write-Host "--- Starting Hybrid Backend & Frontend Sync ---" -ForegroundColor Cyan
+Write-Host "--- Starting Reliable Combined Sync ---" -ForegroundColor Cyan
 
-# --- 1. BACKEND SYNC (Individual files from Git) ---
-$backendFiles = git status --porcelain | ForEach-Object { 
+# 1. Get changed files from Git
+$gitFiles = git status --porcelain | ForEach-Object { 
     $line = $_.Trim()
     if ($line -notmatch '^D ') { 
         $parts = $line -split '\s+', 2
         if ($parts.Count -eq 2) {
             $file = $parts[1]
-            # Exclude utility files and frontend folder (we handle frontend separately)
-            $patterns = @("\.ps1$", "\.bat$", "\.tar\.gz$", "\.zip$", "^node_modules/", "^scratch/", "^temp/", "^\.git/", "^frontend/")
             $exclude = $false
+            $patterns = @("\.ps1$", "\.bat$", "\.tar\.gz$", "\.zip$", "^node_modules/", "^scratch/", "^temp/", "^\.git/", "^frontend/")
             foreach ($p in $patterns) { if ($file -match $p) { $exclude = $true; break } }
             if (-not $exclude) { $file }
         }
@@ -28,58 +26,52 @@ $backendFiles = git status --porcelain | ForEach-Object {
 
 # Always include the licensing fix
 $licensingFix = "vendor/mehedi-iitdu/core-component-repository/src/CoreComponentRepository.php"
-if ($backendFiles -notcontains $licensingFix) {
-    if ($null -eq $backendFiles) { $backendFiles = @($licensingFix) }
-    else { $backendFiles += $licensingFix }
+if ($gitFiles -notcontains $licensingFix) {
+    if ($null -eq $gitFiles) { $gitFiles = @($licensingFix) }
+    else { $gitFiles += $licensingFix }
 }
 
-if ($backendFiles.Count -gt 0) {
-    Write-Host "Syncing $($backendFiles.Count) Backend files individually..." -ForegroundColor Yellow
-    foreach ($relativePath in $backendFiles) {
-        $localPath = Join-Path (Get-Location) ($relativePath.Replace('/', '\'))
-        if (Test-Path $localPath -PathType Leaf) {
-            if ($relativePath.StartsWith("public/")) {
-                $cleanRelative = $relativePath -replace '^public/', ''
-                $remoteFile = "$remoteRoot/$cleanRelative"
-            } else {
-                $remoteFile = "$remoteRoot/core/$relativePath"
-            }
-            $remoteDir = (Split-Path $remoteFile -Parent).Replace('\', '/')
-            $remoteFile = $remoteFile.Replace('\', '/')
-            
-            Write-Host "  $relativePath -> Done." -ForegroundColor Gray
-            ssh -p $sshPort @sshArgs "${sshUser}@${sshHost}" "mkdir -p '$remoteDir'"
-            scp -P $sshPort @sshArgs "$localPath" "${sshUser}@${sshHost}:${remoteFile}"
-            Start-Sleep -Milliseconds 500
-        }
+Write-Host "1. Bundling all changes..." -ForegroundColor Yellow
+
+$staging = "temp_sync_staging"
+if (Test-Path $staging) { Remove-Item $staging -Recurse -Force }
+New-Item -ItemType Directory -Path $staging | Out-Null
+
+# Copy Backend files to staging
+foreach ($f in $gitFiles) {
+    if ($f.StartsWith("public/")) {
+        $relDest = $f -replace '^public/', ''
+    } else {
+        $relDest = "core/$f"
     }
+    $localDest = Join-Path $staging ($relDest.Replace('/', '\'))
+    $parent = Split-Path $localDest -Parent
+    if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Path $parent | Out-Null }
+    Copy-Item $f $localDest -Force
 }
 
-# --- 2. FRONTEND SYNC (Zipped for Speed) ---
+# Copy Frontend files to staging
 if (Test-Path "frontend/dist") {
-    Write-Host "Syncing Frontend (Zipped Mode)..." -ForegroundColor Yellow
-    
-    # Bundle frontend/dist into a tar.gz (Tar is better for Linux)
-    if (Test-Path "frontend.tar.gz") { Remove-Item "frontend.tar.gz" }
-    
-    # We use tar.exe to ensure forward slashes and Linux compatibility
-    Set-Location "frontend/dist"
-    tar.exe -czf ../../frontend.tar.gz .
-    Set-Location ../..
-    
-    Write-Host "  Uploading frontend.tar.gz ..." -ForegroundColor Gray
-    scp -P $sshPort @sshArgs "frontend.tar.gz" "${sshUser}@${sshHost}:${remoteRoot}/app/frontend.tar.gz"
-    
-    Write-Host "  Extracting on server ..." -ForegroundColor Gray
-    $extractCmd = "cd ${remoteRoot}/app && tar -xzf frontend.tar.gz --overwrite && rm frontend.tar.gz"
-    ssh -p $sshPort @sshArgs "${sshUser}@${sshHost}" $extractCmd
-    
-    Remove-Item "frontend.tar.gz"
-    Write-Host "  Frontend sync complete!" -ForegroundColor Green
+    $frontendStaging = Join-Path $staging "app"
+    New-Item -ItemType Directory -Path $frontendStaging | Out-Null
+    Copy-Item "frontend/dist/*" $frontendStaging -Recurse -Force
 }
 
-# --- 3. CACHE CLEAR ---
-Write-Host "Clearing server cache..."
-ssh -p $sshPort @sshArgs "${sshUser}@${sshHost}" "cd $remoteRoot/core && php artisan optimize:clear"
+# Create the TAR bundle (Linux-friendly)
+if (Test-Path "sync.tar.gz") { Remove-Item "sync.tar.gz" }
+Set-Location $staging
+tar.exe -czf ../sync.tar.gz .
+Set-Location ..
 
-Write-Host "--- Hybrid Sync Complete! ---" -ForegroundColor Green
+Remove-Item $staging -Recurse -Force
+
+Write-Host "2. Uploading 'sync.tar.gz' (Single Connection)..." -ForegroundColor Yellow
+scp -P $sshPort @sshArgs "sync.tar.gz" "${sshUser}@${sshHost}:${remoteRoot}/sync.tar.gz"
+
+Write-Host "3. Extracting, clearing cache, and running migrations..." -ForegroundColor Yellow
+$remoteCmd = "cd ${remoteRoot} && tar -xzf sync.tar.gz --overwrite && rm sync.tar.gz && cd core && php artisan optimize:clear && php artisan migrate --force"
+ssh -p $sshPort @sshArgs "${sshUser}@${sshHost}" $remoteCmd
+
+if (Test-Path "sync.tar.gz") { Remove-Item "sync.tar.gz" }
+
+Write-Host "--- Sync Complete! No more hangs. ---" -ForegroundColor Green

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V2;
 use App\Models\Currency;
 use App\Models\Language;
 use App\Models\Order;
+use App\Support\BusinessContact;
 use Session;
 use PDF;
 use Config;
@@ -102,7 +103,8 @@ class InvoiceController extends Controller
             'font_family' => $font_family,
             'direction' => $direction,
             'text_align' => $text_align,
-            'not_text_align' => $not_text_align
+            'not_text_align' => $not_text_align,
+            'businessContact' => BusinessContact::details(),
         ], [], $config)->download('order-' . $order->code . '.pdf');
     }
 }

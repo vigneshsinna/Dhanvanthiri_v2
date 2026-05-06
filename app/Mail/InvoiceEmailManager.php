@@ -32,7 +32,9 @@ class InvoiceEmailManager extends Mailable
                 ->from(env('MAIL_FROM_ADDRESS'), env('MAIL_FROM_NAME'))
                 ->subject($this->array['subject'])
                 ->with([
-                    'order' => $this->array['order']
+                    'order' => $this->array['order'],
+                    'content' => $this->array['content'] ?? null,
+                    'businessContact' => $this->array['business_contact'] ?? [],
                 ]);
      }
 }

@@ -368,17 +368,13 @@ export const catalogAdapter: any = {
   },
 
   async productQueries(productId: number) {
-    // V2 may not have product Q&A, return empty
-    return {
-      data: {
-        items: [],
-      },
-    };
+    const res = await headlessApi.get(`/product-queries/${productId}`);
+    return res.data;
   },
 
-  async submitProductQuery(productId: number, data: { question: string }) {
-    // V2 may not support this
-    return { data: { message: 'Question submitted' } };
+  async submitProductQuery(productId: number, data: { question: string; customer_name?: string; customer_email?: string }) {
+    const res = await headlessApi.post('/product-queries', { product_id: productId, ...data });
+    return res.data;
   },
 
   async crossSells(productId: number) {

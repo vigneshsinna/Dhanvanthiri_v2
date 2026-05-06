@@ -1765,9 +1765,6 @@ if (!function_exists('checkout_done')) {
             $order->payment_details = $payment;
             $order->save();
 
-            // Order paid notification to Customer, Seller, & Admin
-            EmailUtility::order_email($order, 'paid'); 
-            
             try {
                 NotificationUtility::sendOrderPlacedNotification($order);
                 calculateCommissionAffilationClubPoint($order);

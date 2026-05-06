@@ -539,11 +539,13 @@ class GuestCheckoutService
 
     private function buildConfirmedPaymentPayload(GuestCheckoutSession $session, CombinedOrder $combinedOrder, array $payment): array
     {
-        $orderNumber = $this->resolveOrderNumber($combinedOrder);
+        $firstOrder = $combinedOrder->orders->first();
+        $orderNumber = $firstOrder ? $firstOrder->code : ('ORD-' . $combinedOrder->id);
+        $orderId = $firstOrder ? $firstOrder->id : $combinedOrder->id;
         $orderAccess = $this->issueOrderAccessToken($session, $orderNumber);
 
         return [
-            'order_id' => $combinedOrder->id,
+            'order_id' => $orderId,
             'order_number' => $orderNumber,
             'status' => 'confirmed',
             'payment' => $payment,

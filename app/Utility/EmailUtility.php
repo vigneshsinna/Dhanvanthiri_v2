@@ -3,6 +3,8 @@
 namespace App\Utility;
 
 use App\Mail\MailManager;
+use App\Mail\InvoiceEmailManager;
+use App\Support\BusinessContact;
 use App\Models\EmailTemplate;
 use App\Models\User;
 use Mail;
@@ -195,6 +197,103 @@ class EmailUtility
                 } catch (\Exception $e) {}
             }   
         }  
+    }
+
+    public static function order_confirmation_email($order): void
+    {
+        $emailTemplate = EmailTemplate::whereIdentifier('order_confirmation_email_to_customer')->first()
+            ?? EmailTemplate::whereIdentifier('order_placed_email_to_customer')->first();
+
+        if ($emailTemplate == null || (int) ($emailTemplate->status ?? 1) !== 1) {
+            return;
+        }
+
+        $recipient = self::orderRecipientEmail($order);
+        if ($recipient === null) {
+            return;
+        }
+
+        $businessContact = BusinessContact::details();
+        $customerName = self::orderCustomerName($order);
+        $orderDetails = $order->relationLoaded('orderDetails') ? $order->orderDetails : $order->orderDetails()->with('product')->get();
+
+        $storeName = get_setting('site_name') ?: config('app.name');
+        $emailSubject = str_replace(
+            ['[[order_code]]', '[[order_number]]', '[[store_name]]'],
+            [$order->code, $order->code, $storeName],
+            $emailTemplate->subject ?: 'Order Confirmation - [[order_number]]'
+        );
+
+        $emailBody = $emailTemplate->default_text ?: ($emailTemplate->body ?? '');
+        $emailBody = str_replace(
+            [
+                '[[store_name]]',
+                '[[customer_name]]',
+                '[[order_code]]',
+                '[[order_number]]',
+                '[[order_date]]',
+                '[[order_amount]]',
+                '[[admin_email]]',
+                '[[contact_email]]',
+                '[[contact_phone]]',
+                '[[contact_address]]',
+                '[[order_items]]',
+            ],
+            [
+                $storeName,
+                $customerName,
+                $order->code,
+                $order->code,
+                date('d-m-Y', $order->date ?: strtotime($order->created_at)),
+                single_price($order->grand_total),
+                $businessContact['email'],
+                $businessContact['email'],
+                $businessContact['phone'],
+                $businessContact['address'],
+                self::orderItemsHtml($orderDetails),
+            ],
+            $emailBody
+        );
+
+        $array = [
+            'view' => 'emails.order_confirmation',
+            'subject' => $emailSubject,
+            'order' => $order->loadMissing('orderDetails.product'),
+            'content' => $emailBody,
+            'business_contact' => $businessContact,
+        ];
+
+        try {
+            Mail::to($recipient)->queue(new InvoiceEmailManager($array));
+        } catch (\Exception $e) {
+        }
+    }
+
+    private static function orderRecipientEmail($order): ?string
+    {
+        $shippingAddress = json_decode($order->shipping_address ?? '');
+        $email = $order->user?->email ?: ($shippingAddress->email ?? null);
+
+        return filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : null;
+    }
+
+    private static function orderCustomerName($order): string
+    {
+        $shippingAddress = json_decode($order->shipping_address ?? '');
+
+        return $order->user?->name ?: ($shippingAddress->name ?? translate('Customer'));
+    }
+
+    private static function orderItemsHtml($orderDetails): string
+    {
+        $items = [];
+        foreach ($orderDetails as $orderDetail) {
+            $productName = $orderDetail->product?->getTranslation('name') ?? $orderDetail->product?->name ?? translate('Product');
+            $variation = $orderDetail->variation ? ' (' . e($orderDetail->variation) . ')' : '';
+            $items[] = '<li>' . e($productName) . $variation . ' x ' . (int) $orderDetail->quantity . '</li>';
+        }
+
+        return '<ul>' . implode('', $items) . '</ul>';
     }
 
     // User Email Verification

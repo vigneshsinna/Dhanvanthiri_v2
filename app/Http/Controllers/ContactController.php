@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\ContactMailManager;
 use App\Models\Contact;
 use App\Models\User;
+use App\Support\BusinessContact;
 use App\Rules\Recaptcha;
 use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
@@ -70,7 +71,11 @@ class ContactController extends Controller
                 Rule::when(get_setting('google_recaptcha') == 1 && get_setting('recaptcha_contact_form') == 1, ['required', new Recaptcha()], ['sometimes'])
             ],
         ]);
-        $admin = get_admin();
+        $recipientEmail = BusinessContact::email() ?? get_admin()?->email;
+        if (!$recipientEmail) {
+            flash(translate('No business contact email configured'))->error();
+            return back();
+        }
 
         $array['name'] = $request->name;
         $array['email'] = $request->email;
@@ -80,7 +85,7 @@ class ContactController extends Controller
         $array['from'] = $request->email;
 
         try {
-            Mail::to($admin->email)->queue(new ContactMailManager($array));
+            Mail::to($recipientEmail)->queue(new ContactMailManager($array));
             Contact::insert([
                 'name' => $request->name,
                 'email' => $request->email,

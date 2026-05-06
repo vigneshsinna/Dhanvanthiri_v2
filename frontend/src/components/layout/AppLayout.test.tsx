@@ -1,9 +1,11 @@
+import { act } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders, screen } from '@/test/test-utils';
 import { AppLayout } from './AppLayout';
 
 const mockUseCartQuery = vi.fn();
 const mockUseWebsiteSettingsQuery = vi.fn();
+const mockSyncCartStateFromResponse = vi.fn();
 
 vi.mock('@/features/auth/api', () => ({
   useMeQuery: () => ({ data: null, isLoading: false }),
@@ -12,6 +14,7 @@ vi.mock('@/features/auth/api', () => ({
 
 vi.mock('@/features/cart/api', () => ({
   useCartQuery: () => mockUseCartQuery(),
+  syncCartStateFromResponse: (payload: unknown) => mockSyncCartStateFromResponse(payload),
 }));
 
 vi.mock('@/features/cms/api', async () => {
@@ -33,6 +36,7 @@ describe('AppLayout', () => {
     localStorage.clear();
     mockUseCartQuery.mockReset();
     mockUseCartQuery.mockReturnValue({ data: null, isLoading: false });
+    mockSyncCartStateFromResponse.mockReset();
     mockUseWebsiteSettingsQuery.mockReset();
     mockUseWebsiteSettingsQuery.mockReturnValue({ data: null, isLoading: false });
   });
@@ -129,6 +133,21 @@ describe('AppLayout', () => {
     expect(screen.getByText('3')).toBeInTheDocument();
   });
 
+  it('shows add-to-cart confirmation near the cart icon', () => {
+    renderWithProviders(<AppLayout />);
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent('dhanvanthiri:cart-added'));
+    });
+
+    const cartLink = screen.getByLabelText(/cart/i);
+    const notice = screen.getByRole('status');
+
+    expect(notice).toHaveTextContent(/added to cart/i);
+    expect(cartLink).toContainElement(notice);
+    expect(notice).toHaveClass('top-full');
+  });
+
   it('syncs cart badge from nested API payload item_count', async () => {
     mockUseCartQuery.mockReturnValue({
       data: {
@@ -158,7 +177,13 @@ describe('AppLayout', () => {
 
     renderWithProviders(<AppLayout />);
 
-    expect(await screen.findByText('3')).toBeInTheDocument();
+    expect(mockSyncCartStateFromResponse).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        data: expect.objectContaining({
+          item_count: 3,
+        }),
+      }),
+    }));
   });
 
   it('shows Tamil navigation label when locale is Tamil', () => {

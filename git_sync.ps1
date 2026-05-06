@@ -39,6 +39,7 @@ New-Item -ItemType Directory -Path $staging | Out-Null
 
 # Copy Backend files to staging
 foreach ($f in $gitFiles) {
+    Write-Host "  - $f" -ForegroundColor Gray
     if ($f.StartsWith("public/")) {
         $relDest = $f -replace '^public/', ''
     } else {
@@ -52,6 +53,7 @@ foreach ($f in $gitFiles) {
 
 # Copy Frontend files to staging
 if (Test-Path "frontend/dist") {
+    Write-Host "  - Entire frontend/dist folder" -ForegroundColor Gray
     $frontendStaging = Join-Path $staging "app"
     New-Item -ItemType Directory -Path $frontendStaging | Out-Null
     Copy-Item "frontend/dist/*" $frontendStaging -Recurse -Force

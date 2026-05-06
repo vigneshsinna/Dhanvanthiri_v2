@@ -30,6 +30,7 @@ export function AppLayout() {
   const logoutMut = useLogoutMutation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showCartNotice, setShowCartNotice] = useState(false);
   const pageContentRef = useRef<HTMLDivElement>(null);
   const footerRef = useRef<HTMLElement>(null);
 
@@ -56,6 +57,7 @@ export function AppLayout() {
     shop: getLocalizedText(currentLocale, { en: 'Shop', ta: 'கடை' }),
     allProducts: getLocalizedText(currentLocale, { en: 'All Products', ta: 'அனைத்து தயாரிப்புகள்' }),
     cart: getLocalizedText(currentLocale, { en: 'Cart', ta: 'கார்ட்' }),
+    addedToCart: getLocalizedText(currentLocale, { en: 'Added to cart', ta: 'கார்டில் சேர்க்கப்பட்டது' }),
     company: getLocalizedText(currentLocale, { en: 'Company', ta: 'நிறுவனம்' }),
     aboutUs: getLocalizedText(currentLocale, { en: 'About Us', ta: 'எங்களை பற்றி' }),
     contact: getLocalizedText(currentLocale, { en: 'Contact', ta: 'தொடர்பு' }),
@@ -140,6 +142,21 @@ export function AppLayout() {
   useEffect(() => {
     syncCartStateFromResponse(cartData);
   }, [cartData]);
+
+  useEffect(() => {
+    let timeout: number | undefined;
+    const showNotice = () => {
+      setShowCartNotice(true);
+      if (timeout) window.clearTimeout(timeout);
+      timeout = window.setTimeout(() => setShowCartNotice(false), 2200);
+    };
+
+    window.addEventListener('dhanvanthiri:cart-added', showNotice);
+    return () => {
+      window.removeEventListener('dhanvanthiri:cart-added', showNotice);
+      if (timeout) window.clearTimeout(timeout);
+    };
+  }, []);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -251,6 +268,14 @@ export function AppLayout() {
               {cart.itemCount > 0 && (
                 <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-accent-500 text-[10px] font-bold text-white shadow-sm">
                   {cart.itemCount}
+                </span>
+              )}
+              {showCartNotice && (
+                <span
+                  role="status"
+                  className="absolute right-0 top-full mt-2 whitespace-nowrap rounded-full bg-brand-900 px-3.5 py-2 text-xs font-semibold text-white shadow-xl shadow-slate-900/20"
+                >
+                  {copy.addedToCart}
                 </span>
               )}
             </Link>

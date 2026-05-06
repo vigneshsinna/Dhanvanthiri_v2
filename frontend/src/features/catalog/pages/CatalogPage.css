@@ -539,6 +539,20 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+.catalog-btn-cart:disabled {
+  cursor: wait;
+  opacity: 0.78;
+}
+
+.catalog-btn-cart-success,
+.catalog-btn-cart-success:hover {
+  background: #1f7a5c;
+  border-color: #1f7a5c;
+  color: #fff;
+  cursor: default;
+  transform: none;
+}
+
 .catalog-btn-sold-out {
   background: #f1f5f9;
   color: #94a3b8;

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useProductsQuery, useCategoriesQuery } from '@/features/catalog/api';
@@ -119,6 +119,7 @@ export function CatalogPage() {
   const { data, isLoading: productsLoading } = useProductsQuery({ perPage: 100, search: searchTerm || undefined });
   const { data: catData } = useCategoriesQuery();
   const addToCart = useAddCartItemMutation();
+  const [cartFeedback, setCartFeedback] = useState<{ productId: number; status: 'adding' | 'added' | 'error' } | null>(null);
 
   const apiProducts: Product[] = data?.data?.data ?? data?.data ?? [];
   const copy = {
@@ -130,6 +131,8 @@ export function CatalogPage() {
     bestSellers: getLocalizedText(currentLocale, { en: 'Best Sellers', ta: 'சிறந்த விற்பனைகள்' }),
     clearFilters: getLocalizedText(currentLocale, { en: 'Clear Filters', ta: 'வடிகட்டலை நீக்கு' }),
     addToCart: getLocalizedText(currentLocale, { en: 'Add to Cart', ta: 'கார்டில் சேர்' }),
+    addingToCart: getLocalizedText(currentLocale, { en: 'Adding...', ta: 'சேர்க்கிறது...' }),
+    addedToCart: getLocalizedText(currentLocale, { en: 'Added', ta: 'சேர்க்கப்பட்டது' }),
     soldOut: getLocalizedText(currentLocale, { en: 'Sold Out', ta: 'விற்றுத் தீர்ந்தது' }),
     whyChoose: getLocalizedText(currentLocale, { en: 'Why Choose Dhanvanthiri Foods', ta: 'ஏன் Dhanvanthiri Foods தேர்வு செய்ய வேண்டும்' }),
     faq: getLocalizedText(currentLocale, { en: 'Frequently Asked Questions', ta: 'அடிக்கடி கேட்கப்படும் கேள்விகள்' }),
@@ -202,8 +205,24 @@ export function CatalogPage() {
   }, [mergedProducts, activeCategory, sortBy, searchTerm]);
 
   const handleAddToCart = (product: Product) => {
-    addToCart.mutate({ product_id: product.id, quantity: 1 });
+    setCartFeedback({ productId: product.id, status: 'adding' });
+    addToCart.mutate(
+      { product_id: product.id, quantity: 1 },
+      {
+        onSuccess: () => {
+          setCartFeedback({ productId: product.id, status: 'added' });
+          window.dispatchEvent(new CustomEvent('dhanvanthiri:cart-added'));
+        },
+        onError: () => setCartFeedback({ productId: product.id, status: 'error' }),
+      },
+    );
   };
+
+  useEffect(() => {
+    if (!cartFeedback || cartFeedback.status === 'adding') return;
+    const timeout = window.setTimeout(() => setCartFeedback(null), 2200);
+    return () => window.clearTimeout(timeout);
+  }, [cartFeedback]);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { all: mergedProducts.length };
@@ -415,14 +434,19 @@ export function CatalogPage() {
                       <div className="catalog-card-cta">
                         {inStock ? (
                           <button
-                            className="catalog-btn-cart"
+                            className={`catalog-btn-cart ${cartFeedback?.productId === product.id && cartFeedback.status === 'added' ? 'catalog-btn-cart-success' : ''}`}
                             data-testid="storefront-add-to-cart"
+                            disabled={cartFeedback?.productId === product.id}
                             onClick={(e) => {
                               e.preventDefault();
                               handleAddToCart(product);
                             }}
                           >
-                            {copy.addToCart}
+                            {cartFeedback?.productId === product.id && cartFeedback.status === 'adding'
+                              ? copy.addingToCart
+                              : cartFeedback?.productId === product.id && cartFeedback.status === 'added'
+                                ? copy.addedToCart
+                                : copy.addToCart}
                           </button>
                         ) : (
                           <button className="catalog-btn-cart catalog-btn-sold-out" disabled>

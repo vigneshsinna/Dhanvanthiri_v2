@@ -56,12 +56,13 @@ export function useAddCartItemMutation() {
     },
     onSuccess: (res) => {
       syncCartStateFromResponse(res);
+      qc.setQueryData(queryKeys.cart.current, res);
     },
     onMutate: async () => {
       await qc.cancelQueries({ queryKey: queryKeys.cart.current });
     },
-    onSettled: async () => {
-      await qc.invalidateQueries({ queryKey: queryKeys.cart.current });
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.cart.current });
     },
   });
 }
@@ -73,7 +74,11 @@ export function useUpdateCartItemMutation() {
       const res = await cartAdapter.updateItem({ itemId, quantity });
       return res;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.cart.current }),
+    onSuccess: (res) => {
+      syncCartStateFromResponse(res);
+      qc.setQueryData(queryKeys.cart.current, res);
+      void qc.invalidateQueries({ queryKey: queryKeys.cart.current });
+    },
   });
 }
 
@@ -84,7 +89,11 @@ export function useRemoveCartItemMutation() {
       const res = await cartAdapter.removeItem(itemId);
       return res;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.cart.current }),
+    onSuccess: (res) => {
+      syncCartStateFromResponse(res);
+      qc.setQueryData(queryKeys.cart.current, res);
+      void qc.invalidateQueries({ queryKey: queryKeys.cart.current });
+    },
   });
 }
 
@@ -95,7 +104,11 @@ export function useClearCartMutation() {
       const res = await cartAdapter.clearCart();
       return res;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.cart.current }),
+    onSuccess: (res) => {
+      syncCartStateFromResponse(res);
+      qc.setQueryData(queryKeys.cart.current, res);
+      void qc.invalidateQueries({ queryKey: queryKeys.cart.current });
+    },
   });
 }
 

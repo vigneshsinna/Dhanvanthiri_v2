@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { useFeaturedProductsQuery } from '@/features/catalog/api';
@@ -83,6 +83,7 @@ export function HomePage() {
   } = useFeaturedProductsQuery();
   const { data: bannerData } = useBannersQuery('home_hero');
   const addToCart = useAddCartItemMutation();
+  const [cartFeedback, setCartFeedback] = useState<{ productId: number; status: 'adding' | 'added' | 'error' } | null>(null);
 
   const apiFeatured: Product[] = featuredData?.data?.data ?? featuredData?.data ?? [];
   const banners = unwrapCmsCollection<any>(bannerData);
@@ -135,12 +136,30 @@ export function HomePage() {
       ta: 'அக்கறை, தூய்மை மற்றும் உண்மைத்தன்மையுடன் தயாரிக்கப்படும் பாரம்பரிய தமிழ் சுவைகள்.',
     }),
     addToCart: getLocalizedText(currentLocale, { en: 'Add to Cart', ta: 'கார்டில் சேர்' }),
+    addingToCart: getLocalizedText(currentLocale, { en: 'Adding...', ta: 'சேர்க்கிறது...' }),
+    addedToCart: getLocalizedText(currentLocale, { en: 'Added', ta: 'சேர்க்கப்பட்டது' }),
     soldOut: getLocalizedText(currentLocale, { en: 'Sold Out', ta: 'விற்றுத் தீர்ந்தது' }),
   };
 
   const handleAddToCart = (product: Product) => {
-    addToCart.mutate({ product_id: product.id, quantity: 1 });
+    setCartFeedback({ productId: product.id, status: 'adding' });
+    addToCart.mutate(
+      { product_id: product.id, quantity: 1 },
+      {
+        onSuccess: () => {
+          setCartFeedback({ productId: product.id, status: 'added' });
+          window.dispatchEvent(new CustomEvent('dhanvanthiri:cart-added'));
+        },
+        onError: () => setCartFeedback({ productId: product.id, status: 'error' }),
+      },
+    );
   };
+
+  useEffect(() => {
+    if (!cartFeedback || cartFeedback.status === 'adding') return;
+    const timeout = window.setTimeout(() => setCartFeedback(null), 2200);
+    return () => window.clearTimeout(timeout);
+  }, [cartFeedback]);
 
   const meta = {
     title: "Traditional Tamil Foods | Pickles, Thokku & Podi (Pan-India Delivery)",
@@ -351,13 +370,18 @@ export function HomePage() {
                     <div className="cardCta">
                       {inStock ? (
                         <button
-                          className="btnAddCart"
+                          className={`btnAddCart ${cartFeedback?.productId === p.id && cartFeedback.status === 'added' ? 'btnAddCartSuccess' : ''}`}
+                          disabled={cartFeedback?.productId === p.id}
                           onClick={(e) => {
                             e.preventDefault();
                             handleAddToCart(p);
                           }}
                         >
-                          {copy.addToCart}
+                          {cartFeedback?.productId === p.id && cartFeedback.status === 'adding'
+                            ? copy.addingToCart
+                            : cartFeedback?.productId === p.id && cartFeedback.status === 'added'
+                              ? copy.addedToCart
+                              : copy.addToCart}
                         </button>
                       ) : (
                         <button className="btnAddCart btnSoldOut" disabled>

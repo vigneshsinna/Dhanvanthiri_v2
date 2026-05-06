@@ -99,7 +99,23 @@ describe('HomePage', () => {
 
     expect(mockAddToCart).toHaveBeenCalledWith(
       expect.objectContaining({ product_id: expect.any(Number), quantity: 1 }),
+      expect.any(Object),
     );
+  });
+
+  it('shows button confirmation and notifies the layout after adding a featured product to cart', async () => {
+    const user = userEvent.setup();
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+    mockAddToCart.mockImplementation((_payload, options) => {
+      options?.onSuccess?.();
+    });
+
+    renderWithProviders(<HomePage />);
+
+    await user.click(screen.getAllByRole('button', { name: /add to cart/i })[0]);
+
+    expect(screen.getByRole('button', { name: /added/i })).toBeDisabled();
+    expect(dispatchSpy).toHaveBeenCalledWith(expect.objectContaining({ type: 'dhanvanthiri:cart-added' }));
   });
 
   it('renders Tamil hero copy when locale is Tamil', () => {

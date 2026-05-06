@@ -153,20 +153,24 @@ function normalizeCart(groups: V2CartGroup[], summary?: V2CartSummary, cartToken
   return normalized;
 }
 
+async function getNormalizedCart() {
+  const context = cartContext();
+  const responseCartToken = 'temp_user_id' in context ? context.temp_user_id : undefined;
+  const [cartRes, summaryRes] = await Promise.all([
+    headlessApi.post('/carts', context),
+    headlessApi.post('/cart-summary', context).catch(() => null),
+  ]);
+
+  const groups = unwrapCartGroups(cartRes.data);
+  const summary = summaryRes ? unwrapCartSummary(summaryRes.data) : undefined;
+
+  return normalizeCart(groups, summary, responseCartToken);
+}
+
 export const cartAdapter: any = {
   async getCart() {
     // V2 uses POST /carts to list cart
-    const context = cartContext();
-    const responseCartToken = 'temp_user_id' in context ? context.temp_user_id : undefined;
-    const [cartRes, summaryRes] = await Promise.all([
-      headlessApi.post('/carts', context),
-      headlessApi.post('/cart-summary', context).catch(() => null),
-    ]);
-
-    const groups = unwrapCartGroups(cartRes.data);
-    const summary = summaryRes ? unwrapCartSummary(summaryRes.data) : undefined;
-
-    return normalizeCart(groups, summary, responseCartToken);
+    return getNormalizedCart();
   },
 
   async addItem(payload: { product_id: number; variant_id?: number; variant?: string; quantity: number }) {
@@ -184,30 +188,20 @@ export const cartAdapter: any = {
       store.dispatch(setCartToken(tempUserId));
     }
 
-    const updatedContext = cartContext();
-    const responseCartToken = 'temp_user_id' in updatedContext ? updatedContext.temp_user_id : undefined;
-    const [cartRes, summaryRes] = await Promise.all([
-      headlessApi.post('/carts', updatedContext),
-      headlessApi.post('/cart-summary', updatedContext).catch(() => null),
-    ]);
-
-    const groups = unwrapCartGroups(cartRes.data);
-    const summary = summaryRes ? unwrapCartSummary(summaryRes.data) : undefined;
-
-    return normalizeCart(groups, summary, responseCartToken);
+    return getNormalizedCart();
   },
 
   async updateItem({ itemId, quantity }: { itemId: number; quantity: number }) {
-    const res = await headlessApi.post('/carts/change-quantity', {
+    await headlessApi.post('/carts/change-quantity', {
       id: itemId,
       quantity,
     });
-    return { data: res.data };
+    return getNormalizedCart();
   },
 
   async removeItem(itemId: number) {
-    const res = await headlessApi.delete(`/carts/${itemId}`);
-    return { data: res.data };
+    await headlessApi.delete(`/carts/${itemId}`);
+    return getNormalizedCart();
   },
 
   async clearCart() {
@@ -220,7 +214,7 @@ export const cartAdapter: any = {
     } catch {
       // Cart may already be empty
     }
-    return { data: { message: 'Cart cleared' } };
+    return getNormalizedCart();
   },
 
   async applyCoupon(payload: { code: string }) {

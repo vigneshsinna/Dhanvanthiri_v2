@@ -188,6 +188,12 @@ export function ProductDetailPage() {
   const productWhyLove = Array.isArray(product.why_love)
     ? product.why_love
     : String(product.why_love ?? '').split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean);
+  const productChips = Array.isArray(detail?.chips)
+    ? detail.chips
+    : String(detail?.chips ?? '').split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean);
+  const productPairWith = Array.isArray(detail?.pair_with)
+    ? detail.pair_with
+    : String(detail?.pair_with ?? '').split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean);
 
   const handleAddToCart = () => {
     addToCart.mutate({
@@ -380,9 +386,9 @@ export function ProductDetailPage() {
           </div>
 
           {/* Chips */}
-          {detail && detail.chips.length > 0 && (
+          {productChips.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {detail.chips.map((chip: string, i: number) => (
+              {productChips.map((chip: string, i: number) => (
                 <span key={i} className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 border border-amber-100">
                   {chip}
                 </span>
@@ -408,11 +414,11 @@ export function ProductDetailPage() {
           )}
 
           {/* Pair With */}
-          {detail && detail.pair_with.length > 0 && (
+          {productPairWith.length > 0 && (
             <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm animate-on-scroll scale-in">
               <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">{t('Best Paired With', 'இணைந்து சாப்பிட')}</h3>
               <div className="flex flex-wrap gap-2">
-                {detail.pair_with.map((item: string, i: number) => (
+                {productPairWith.map((item: string, i: number) => (
                   <span key={i} className="rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
                     {item}
                   </span>

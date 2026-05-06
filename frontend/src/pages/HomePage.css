@@ -655,6 +655,20 @@
     outline-offset: 2px;
 }
 
+.btnAddCart:disabled {
+    cursor: wait;
+    opacity: 0.78;
+}
+
+.btnAddCartSuccess,
+.btnAddCartSuccess:hover {
+    background: #1f7a5c;
+    border-color: #1f7a5c;
+    color: #fff;
+    cursor: default;
+    transform: none;
+}
+
 .btnSoldOut {
     background: #f1f5f9;
     color: #94a3b8;

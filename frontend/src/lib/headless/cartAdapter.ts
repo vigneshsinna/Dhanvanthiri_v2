@@ -195,12 +195,15 @@ export const cartAdapter: any = {
     await headlessApi.post('/carts/change-quantity', {
       id: itemId,
       quantity,
+      ...cartContext(),
     });
     return getNormalizedCart();
   },
 
   async removeItem(itemId: number) {
-    await headlessApi.delete(`/carts/${itemId}`);
+    const context = cartContext();
+    const url = `/carts/${itemId}` + ('temp_user_id' in context ? `?temp_user_id=${context.temp_user_id}` : '');
+    await headlessApi.delete(url);
     return getNormalizedCart();
   },
 

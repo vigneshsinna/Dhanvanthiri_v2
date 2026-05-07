@@ -119,24 +119,33 @@ export function CartPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1 rounded-lg border border-slate-300">
                     <button
-                      className="px-2.5 py-1 text-slate-600 hover:bg-slate-50"
+                      className="px-2.5 py-1 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                      disabled={updateItem.isPending || removeItem.isPending}
                       onClick={() => {
                         if (item.quantity <= 1) removeItem.mutate(item.id);
                         else updateItem.mutate({ itemId: item.id, quantity: item.quantity - 1 });
                       }}
                     >−</button>
-                    <span className="w-8 text-center text-sm">{item.quantity}</span>
+                    <span className="w-8 text-center text-sm">
+                      {updateItem.isPending && updateItem.variables?.itemId === item.id ? (
+                         <span className="animate-pulse">...</span>
+                      ) : item.quantity}
+                    </span>
                     <button
-                      className="px-2.5 py-1 text-slate-600 hover:bg-slate-50"
+                      className="px-2.5 py-1 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                      disabled={updateItem.isPending || removeItem.isPending}
                       onClick={() => updateItem.mutate({ itemId: item.id, quantity: item.quantity + 1 })}
                     >+</button>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="font-semibold text-slate-900">₹{item.line_total}</span>
                     <button
+                      disabled={removeItem.isPending}
                       onClick={() => removeItem.mutate(item.id)}
-                      className="text-sm text-red-500 hover:text-red-700"
-                    >{t('Remove', 'நீக்கு')}</button>
+                      className="text-sm text-red-500 hover:text-red-700 disabled:opacity-50"
+                    >
+                      {removeItem.isPending && removeItem.variables === item.id ? t('Removing...', 'நீக்கப்படுகிறது...') : t('Remove', 'நீக்கு')}
+                    </button>
                   </div>
                 </div>
               </div>

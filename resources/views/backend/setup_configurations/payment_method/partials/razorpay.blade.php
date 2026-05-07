@@ -23,6 +23,17 @@
                 placeholder="{{ translate('RAZOR SECRET') }}" required>
         </div>
     </div>
+    <div class="form-group row">
+        <div class="col-md-4">
+            <label class="col-from-label">{{ translate('Razorpay Test Mode') }}</label>
+        </div>
+        <div class="col-md-8">
+            <label class="aiz-switch aiz-switch-success mb-0">
+                <input type="checkbox" onchange="updateSettings(this, 'razorpay_test_mode')" @if(get_setting('razorpay_test_mode') == 1) checked @endif>
+                <span class="slider round"></span>
+            </label>
+        </div>
+    </div>
     <div class="form-group mb-0 text-right">
         <button type="submit" class="btn btn-sm btn-primary">{{ translate('Save') }}</button>
     </div>

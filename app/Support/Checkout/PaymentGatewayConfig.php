@@ -54,6 +54,7 @@ class PaymentGatewayConfig
     {
         return [
             'enabled' => $this->isEnabled('razorpay'),
+            'test_mode' => $this->booleanSetting(['razorpay_test_mode'], false),
             'key_id' => $this->setting(['razorpay_key_id', 'RAZOR_KEY', 'RAZORPAY_KEY_ID'], env('RAZOR_KEY', env('RAZORPAY_KEY_ID', ''))),
             'key_secret' => $this->secret(['razorpay_key_secret', 'RAZOR_SECRET', 'RAZORPAY_KEY_SECRET'], env('RAZOR_SECRET', env('RAZORPAY_KEY_SECRET', ''))),
             'webhook_secret' => $this->secret(['razorpay_webhook_secret', 'RAZOR_WEBHOOK_SECRET', 'RAZORPAY_WEBHOOK_SECRET'], env('RAZOR_WEBHOOK_SECRET', env('RAZORPAY_WEBHOOK_SECRET', ''))),
@@ -114,6 +115,7 @@ class PaymentGatewayConfig
             }
 
             $this->setSetting('razorpay', $enabled ? '1' : '0');
+            $this->setSetting('razorpay_test_mode', ($settings['test_mode'] ?? $settings['razorpay_test_mode'] ?? '0') === '1' ? '1' : '0');
             $this->saveOptionalSetting('razorpay_key_id', $settings['key_id'] ?? $settings['razorpay_key_id'] ?? null);
             $this->saveOptionalSecret('razorpay_key_secret', $settings['key_secret'] ?? $settings['razorpay_key_secret'] ?? null);
             $this->saveOptionalSecret('razorpay_webhook_secret', $settings['webhook_secret'] ?? $settings['razorpay_webhook_secret'] ?? null);

@@ -293,7 +293,7 @@ class CartController extends Controller
         $stock = $product->stocks->where('variant', $cart->variation)->first()->qty ?? 0;
         if ($stock >= $request->quantity || $product->digital == 1) {
             $cart->update(['quantity' => $request->quantity]);
-            return $this->successResponse(null, translate('Cart updated'));
+            return $this->successResponse(['id' => $cart->id, 'quantity' => $cart->quantity], translate('Cart updated'));
         }
 
         return $this->failedResponse(null, translate('Maximum available quantity reached'));
@@ -345,8 +345,9 @@ class CartController extends Controller
         if ($cart) {
             if (($owner['user_id'] && $cart->user_id == $owner['user_id']) ||
                 (!$owner['user_id'] && $cart->temp_user_id == $owner['temp_user_id'])) {
+                $deletedId = $cart->id;
                 $cart->delete();
-                return $this->successResponse(null, translate('Product is successfully removed from your cart'));
+                return $this->successResponse(['id' => $deletedId], translate('Product is successfully removed from your cart'));
             }
         }
 
@@ -383,4 +384,3 @@ class CartController extends Controller
         return $this->successResponse(null, translate('Cart status updated successfully'));
     }
 }
-

@@ -524,14 +524,21 @@ export function CheckoutPage() {
 
   // Use the selected shipping rate cost from the fetched rates when summary is not available
   const selectedShippingRate = shippingRates.find((r: ShippingRate) => r.id === checkout.shippingMethodId);
-  const liveShippingCost = summary?.shipping_cost ?? selectedShippingRate?.cost ?? 0;
+  
+  // Refined shipping cost display:
+  // 1. If we have a final summary (Payment step), use it.
+  // 2. If we are on Address step and info is incomplete, show null (TBD).
+  // 3. If info is complete but query is loading, show null (Calculating).
+  // 4. Otherwise use the selected rate's cost or 0 if it's truly free.
+  const isInfoComplete = isAuthenticated ? !!selectedAddress : !!(guestInfo.state && guestInfo.guest_email && guestInfo.guest_phone);
+  const liveShippingCost = summary?.shipping_cost ?? (isInfoComplete && !shippingRatesLoading ? (selectedShippingRate?.cost ?? 0) : null);
 
   const amountPreview = {
     subtotal: summary?.subtotal ?? cart.subtotal ?? 0,
     discount: summary?.discount_amount ?? cart.discountAmount ?? 0,
     shipping: liveShippingCost,
     tax: summary?.tax_amount ?? 0,
-    total: summary?.grand_total ?? ((cart.subtotal ?? 0) - (cart.discountAmount ?? 0) + liveShippingCost),
+    total: summary?.grand_total ?? ((cart.subtotal ?? 0) - (cart.discountAmount ?? 0) + (liveShippingCost ?? 0)),
   };
 
   const selectedMethod = paymentMethods.find((m) => m.code === checkout.gateway);
@@ -769,7 +776,14 @@ export function CheckoutPage() {
           <div className="mt-4 space-y-2 border-t pt-4 text-sm">
             <div className="flex justify-between"><span className="text-slate-600">{t('Subtotal', 'துணை மொத்தம்')}</span><span>Rs {amountPreview.subtotal.toFixed(2)}</span></div>
             {amountPreview.discount > 0 && <div className="flex justify-between text-green-600"><span>{t('Discount', 'தள்ளுபடி')}</span><span>-Rs {amountPreview.discount.toFixed(2)}</span></div>}
-            <div className="flex justify-between"><span className="text-slate-600">{t('Shipping', 'அனுப்புதல்')}</span><span>{amountPreview.shipping === 0 ? 'FREE' : `Rs ${amountPreview.shipping.toFixed(2)}`}</span></div>
+            <div className="flex justify-between">
+              <span className="text-slate-600">{t('Shipping', 'அனுப்புதல்')}</span>
+              <span>
+                {amountPreview.shipping === null 
+                  ? (shippingRatesLoading ? t('Calculating...', 'கணக்கிடுகிறது...') : t('TBD', 'பிறகு கணக்கிடப்படும்'))
+                  : (amountPreview.shipping === 0 ? 'FREE' : `Rs ${amountPreview.shipping.toFixed(2)}`)}
+              </span>
+            </div>
             {amountPreview.tax > 0 && <div className="flex justify-between"><span className="text-slate-600">{t('Tax', 'வரி')}</span><span>Rs {amountPreview.tax.toFixed(2)}</span></div>}
             <div className="mt-2 flex justify-between border-t pt-2 text-base font-semibold"><span>{t('Payable', 'செலுத்த வேண்டியது')}</span><span>Rs {amountPreview.total.toFixed(2)}</span></div>
           </div>

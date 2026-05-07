@@ -111,6 +111,18 @@ trait ApiResponseTrait
     }
 
     /**
+     * Error response — generic failure.
+     */
+    protected function failedResponse($data = null, string $message = 'Failure', int $status = 400): \Illuminate\Http\JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'message' => $message,
+            'data'    => $data,
+        ], $status);
+    }
+
+    /**
      * Error response — business rule violation.
      */
     protected function businessErrorResponse(string $code, string $message, array $details = [], int $status = 409): JsonResponse

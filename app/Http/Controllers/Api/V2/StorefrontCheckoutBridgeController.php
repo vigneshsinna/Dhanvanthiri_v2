@@ -162,13 +162,15 @@ class StorefrontCheckoutBridgeController extends Controller
 
         // ── Non-carrier shipping types ─────────────────────────────────────────
         if (!$user || $addressId <= 0) {
+            $cost = $this->calculateGuestNonCarrierShippingCost($request, $stateName);
+
             return response()->json([
                 'success' => true,
                 'data' => [
                     'items' => [[
                         'id' => 1,
                         'name' => 'Home Delivery',
-                        'cost' => 0,
+                        'cost' => round($cost, 2),
                         'estimated_days_min' => 3,
                         'estimated_days_max' => 7,
                     ]],
@@ -578,5 +580,37 @@ class StorefrontCheckoutBridgeController extends Controller
             'phonepe_order_id' => $payData['orderId'] ?? $payData['data']['orderId'] ?? null,
             'merchant_transaction_id' => $merchantTransactionId,
         ];
+    }
+
+    private function calculateGuestNonCarrierShippingCost(Request $request, string $stateName): float
+    {
+        $tempUserId = $request->input('cart_token');
+        if (!$tempUserId) {
+            return 0;
+        }
+
+        $carts = Cart::where('temp_user_id', $tempUserId)->active()->get();
+        if ($carts->isEmpty()) {
+            return 0;
+        }
+
+        $stateId = null;
+        if ($stateName !== '') {
+            $stateId = State::where('name', $stateName)->value('id');
+        }
+
+        $shippingInfo = [
+            'country_id' => 1,
+            'state_id' => $stateId,
+            'city_id' => null,
+            'area_id' => null,
+        ];
+
+        $totalCost = 0;
+        foreach ($carts as $key => $cart) {
+            $totalCost += getShippingCost($carts, $key, $shippingInfo, '');
+        }
+
+        return (float) $totalCost;
     }
 }

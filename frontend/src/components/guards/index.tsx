@@ -15,18 +15,3 @@ export function PrivateRoute({ children }: Props) {
 
   return children;
 }
-
-export function AdminRoute({ children }: Props) {
-  const { isAuthenticated, user } = useAppSelector((s) => s.auth);
-  const location = useLocation();
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
-  }
-
-  if (!user || !['admin', 'super_admin'].includes(user.role)) {
-    return <Navigate to="/" replace />;
-  }
-
-  return children;
-}

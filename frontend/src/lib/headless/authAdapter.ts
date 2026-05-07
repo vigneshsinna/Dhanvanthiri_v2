@@ -59,6 +59,11 @@ function normalizeUser(v2User: V2User): AuthUser {
   };
 }
 
+function rememberAuth(user: AuthUser, accessToken: string) {
+  localStorage.setItem('auth_token', accessToken);
+  localStorage.setItem('auth_user', JSON.stringify(user));
+}
+
 export const authAdapter: any = {
   async socialProviders() {
     const res = await headlessApi.get<SocialLoginSetting[]>('/activated-social-login');
@@ -85,15 +90,15 @@ export const authAdapter: any = {
       identity_matrix: 'headless-storefront',
     });
     const v2 = res.data;
+    const user = normalizeUser(v2.user);
 
-    // Store token in localStorage for V2 client compatibility
     if (v2.access_token) {
-      localStorage.setItem('auth_token', v2.access_token);
+      rememberAuth(user, v2.access_token);
     }
 
     return {
       data: {
-        user: normalizeUser(v2.user),
+        user,
         access_token: v2.access_token,
       },
     };
@@ -108,14 +113,15 @@ export const authAdapter: any = {
       register_by: 'email',
     });
     const v2 = res.data;
+    const user = normalizeUser(v2.user);
 
     if (v2.access_token) {
-      localStorage.setItem('auth_token', v2.access_token);
+      rememberAuth(user, v2.access_token);
     }
 
     return {
       data: {
-        user: normalizeUser(v2.user),
+        user,
         access_token: v2.access_token,
       },
     };
@@ -142,6 +148,7 @@ export const authAdapter: any = {
   async logout() {
     const res = await headlessApi.get('/auth/logout');
     localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
     return { data: res.data };
   },
 

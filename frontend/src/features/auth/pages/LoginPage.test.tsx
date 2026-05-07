@@ -25,6 +25,7 @@ vi.mock('@/features/auth/api', () => ({
 
 describe('LoginPage', () => {
   beforeEach(() => {
+    localStorage.clear();
     mockMutateAsync.mockReset();
     mockNavigate.mockReset();
   });
@@ -119,5 +120,40 @@ describe('LoginPage', () => {
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/products', { replace: true });
     });
+  });
+
+  it('clears an existing admin session before trying a new customer login', async () => {
+    mockMutateAsync.mockRejectedValue({
+      response: { data: { message: 'Unauthorized' } },
+    });
+    localStorage.setItem('auth_token', 'old-admin-token');
+    localStorage.setItem('auth_user', JSON.stringify({
+      id: 99,
+      name: 'Admin',
+      email: 'admin@example.com',
+      role: 'admin',
+    }));
+
+    const { store } = renderWithProviders(<LoginPage />, {
+      preloadedState: {
+        auth: {
+          isAuthenticated: true,
+          user: { id: 99, name: 'Admin', email: 'admin@example.com', role: 'admin' },
+          accessToken: 'old-admin-token',
+        },
+      },
+    });
+
+    await userEvent.type(screen.getByLabelText(/email/i), 'customer@example.com');
+    await userEvent.type(screen.getByLabelText(/password/i), 'WrongPassword1!');
+    await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Unauthorized')).toBeInTheDocument();
+    });
+
+    expect(store.getState().auth.isAuthenticated).toBe(false);
+    expect(localStorage.getItem('auth_token')).toBeNull();
+    expect(localStorage.getItem('auth_user')).toBeNull();
   });
 });

@@ -79,6 +79,7 @@ export function AppLayout() {
   const { data: meData } = useMeQuery(isAuthenticated);
   useEffect(() => {
     if (meData?.data?.user && accessToken) {
+      localStorage.setItem('auth_user', JSON.stringify(meData.data.user));
       dispatch(setCredentials({ user: meData.data.user, accessToken }));
     }
   }, [accessToken, dispatch, meData]);
@@ -114,7 +115,7 @@ export function AppLayout() {
           label: String(item?.label ?? '').trim(),
           href: normalizeNavHref(String(item?.href ?? '').trim()),
         }))
-        .filter((item: NavItem) => item.label && item.href);
+        .filter((item: NavItem) => item.label && item.href && !isAdminNavHref(item.href));
     }
 
     return [
@@ -178,6 +179,8 @@ export function AppLayout() {
       // Ignore logout transport errors and clear local auth state anyway.
     }
 
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
     dispatch(clearCredentials());
     navigate('/');
   };
@@ -195,6 +198,8 @@ export function AppLayout() {
       ? 'text-brand-700'
       : 'text-slate-600 hover:text-brand-700'
     }`;
+
+  const adminPortalPath = user?.role === 'super_admin' ? '/store-admin/modules' : '/store-admin';
 
   return (
     <div className="flex min-h-screen flex-col bg-stone-50">
@@ -298,9 +303,9 @@ export function AppLayout() {
                   {user?.name ?? copy.profile}
                 </Link>
                 {user && ['admin', 'super_admin'].includes(user.role) && (
-                  <a href="/admin" className="rounded-lg bg-brand-50 px-3 py-2 text-sm font-medium text-brand-700 hover:bg-brand-100">
+                  <Link to={adminPortalPath} className="rounded-lg bg-brand-50 px-3 py-2 text-sm font-medium text-brand-700 hover:bg-brand-100">
                     {isItUserRole(user.role) ? 'IT Portal' : 'Admin'}
-                  </a>
+                  </Link>
                 )}
                 <button onClick={handleLogout} className="rounded-lg px-3 py-2 text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-900">
                   {copy.logout}
@@ -367,9 +372,9 @@ export function AppLayout() {
                   <Link to="/account/orders" className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100">{copy.orders}</Link>
                   <Link to="/profile" className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100">{copy.profile}</Link>
                   {user && ['admin', 'super_admin'].includes(user.role) && (
-                    <a href="/admin" className="rounded-lg px-3 py-2.5 text-sm font-medium text-brand-700 hover:bg-brand-50">
+                    <Link to={adminPortalPath} className="rounded-lg px-3 py-2.5 text-sm font-medium text-brand-700 hover:bg-brand-50">
                       {isItUserRole(user.role) ? 'IT Portal' : 'Admin'}
-                    </a>
+                    </Link>
                   )}
                   <button onClick={handleLogout} className="rounded-lg px-3 py-2.5 text-left text-sm text-red-600 hover:bg-red-50">{copy.logout}</button>
                 </>
@@ -469,4 +474,8 @@ function normalizeNavHref(href: string): string {
   } catch {
     return href;
   }
+}
+
+function isAdminNavHref(href: string): boolean {
+  return href === '/admin' || href.startsWith('/admin/') || href === '/store-admin' || href.startsWith('/store-admin/');
 }

@@ -44,6 +44,12 @@ Route::controller(DemoController::class)->group(function () {
 
 Route::get('/refresh-csrf', fn () => csrf_token());
 
+Route::get('/login', [HeadlessStorefrontController::class, 'shell']);
+Route::get('/register', [HeadlessStorefrontController::class, 'shell']);
+Route::get('/forgot-password', [HeadlessStorefrontController::class, 'shell']);
+Route::get('/reset-password', [HeadlessStorefrontController::class, 'shell']);
+Route::get('/super-admin', [HeadlessStorefrontController::class, 'shell']);
+
 Route::controller(AizUploadController::class)->group(function () {
     Route::post('/aiz-uploader', 'show_uploader');
     Route::post('/aiz-uploader/upload', 'upload');

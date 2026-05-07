@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { loginSchema, type LoginInput } from '@/features/auth/schemas/loginSchema';
 import { useAppDispatch } from '@/lib/utils/hooks';
-import { setCredentials } from '@/features/auth/store/authSlice';
+import { clearCredentials, setCredentials } from '@/features/auth/store/authSlice';
 import { getSocialLoginRedirectUrl, useLoginMutation, useSocialProvidersQuery } from '@/features/auth/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -12,11 +12,15 @@ import type { UserRole } from '@/features/auth/store/authSlice';
 import { getLocalizedText, getStorefrontLocale } from '@/lib/storefrontLocale';
 
 function getPostLoginDestination(role: UserRole, from?: string): string {
-  if (role === 'admin' || role === 'super_admin') {
-    return from?.startsWith('/admin') ? from : '/admin';
+  if (role === 'super_admin') {
+    return '/store-admin/modules';
   }
 
-  if (from) {
+  if (role === 'admin') {
+    return from?.startsWith('/store-admin') ? from : '/store-admin';
+  }
+
+  if (from && !from.startsWith('/admin') && !from.startsWith('/store-admin')) {
     return from;
   }
 
@@ -40,9 +44,15 @@ export function LoginPage() {
 
   const onSubmit = async (values: LoginInput) => {
     setServerError('');
+    dispatch(clearCredentials());
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
+
     try {
       const res = await loginMut.mutateAsync(values);
       const data = res.data ?? res;
+      localStorage.setItem('auth_token', data.access_token);
+      localStorage.setItem('auth_user', JSON.stringify(data.user));
       dispatch(setCredentials({
         user: data.user,
         accessToken: data.access_token,

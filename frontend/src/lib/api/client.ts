@@ -81,6 +81,8 @@ api.interceptors.response.use(
       }
 
       store.dispatch(clearCredentials());
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
     }
 
     return Promise.reject(error);

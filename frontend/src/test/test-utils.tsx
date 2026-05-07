@@ -9,7 +9,6 @@ import authReducer from '@/features/auth/store/authSlice';
 import catalogReducer from '@/features/catalog/store/catalogSlice';
 import cartReducer from '@/features/cart/store/cartSlice';
 import checkoutReducer from '@/features/checkout/store/checkoutSlice';
-import adminReducer from '@/features/admin/store/adminSlice';
 import type { RootState } from '@/app/store';
 
 /**
@@ -22,7 +21,6 @@ export function createTestStore(preloadedState?: Partial<RootState>): EnhancedSt
       catalog: catalogReducer,
       cart: cartReducer,
       checkout: checkoutReducer,
-      admin: adminReducer,
     },
     preloadedState: preloadedState as RootState,
   });

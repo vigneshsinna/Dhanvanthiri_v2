@@ -10,7 +10,7 @@ $sshArgs = @("-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=15")
 Write-Host "--- Starting Reliable Combined Sync ---" -ForegroundColor Cyan
 
 # 1. Get changed files from Git
-$gitFiles = git status --porcelain | ForEach-Object { 
+$gitFiles = @(git status --porcelain | ForEach-Object { 
     $line = $_.Trim()
     if ($line -notmatch '^D ') { 
         $parts = $line -split '\s+', 2
@@ -22,13 +22,10 @@ $gitFiles = git status --porcelain | ForEach-Object {
             if (-not $exclude) { $file }
         }
     }
-}
+})
 
-# Always include the licensing fix
-$licensingFix = "vendor/mehedi-iitdu/core-component-repository/src/CoreComponentRepository.php"
-if ($gitFiles -notcontains $licensingFix) {
-    if ($null -eq $gitFiles) { $gitFiles = @($licensingFix) }
-    else { $gitFiles += $licensingFix }
+if ($gitFiles.Count -eq 0) {
+    Write-Host "No backend changes detected in Git." -ForegroundColor Gray
 }
 
 Write-Host "1. Bundling all changes..." -ForegroundColor Yellow

@@ -42,8 +42,6 @@ function Sync-File($path, $relativePath, $changeType) {
         }
     }
 
-    # EXCEPTION: Always allow this specific vendor fix
-    if ($relativePath -like "*CoreComponentRepository.php*") { $shouldIgnore = $false }
 
     if (-not $shouldIgnore -and (Test-Path $path -PathType Leaf)) {
         # --- MAPPING LOGIC ---

@@ -112,6 +112,50 @@ describe('AppLayout', () => {
     });
     const allText = document.body.textContent ?? '';
     expect(allText).toContain('Admin');
+    expect(screen.getAllByRole('link', { name: /^admin$/i }).some((link) => link.getAttribute('href') === '/store-admin')).toBe(true);
+  });
+
+  it('hides configured admin navigation from customer users', () => {
+    mockUseWebsiteSettingsQuery.mockReturnValue({
+      data: {
+        navigation: {
+          primary: [
+            { label: 'Products', href: '/products' },
+            { label: 'Admin', href: '/admin' },
+            { label: 'Store Admin', href: '/store-admin' },
+          ],
+        },
+      },
+      isLoading: false,
+    });
+
+    renderWithProviders(<AppLayout />, {
+      preloadedState: {
+        auth: {
+          isAuthenticated: true,
+          user: { id: 1, name: 'Customer', email: 'customer@test.com', role: 'customer' },
+          accessToken: 'token',
+        },
+      },
+    });
+
+    expect(screen.getByRole('link', { name: /^products$/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /^admin$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /store admin/i })).not.toBeInTheDocument();
+  });
+
+  it('links IT users to the module license portal', () => {
+    renderWithProviders(<AppLayout />, {
+      preloadedState: {
+        auth: {
+          isAuthenticated: true,
+          user: { id: 100, name: 'IT User', email: 'it@test.com', role: 'super_admin' },
+          accessToken: 'token',
+        },
+      },
+    });
+
+    expect(screen.getByRole('link', { name: /it portal/i })).toHaveAttribute('href', '/store-admin/modules');
   });
 
   it('shows cart badge when items in cart', () => {

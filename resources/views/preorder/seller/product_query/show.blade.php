@@ -14,7 +14,7 @@
                         <div class="media mb-2">
                             <img class="avatar avatar-xs mr-3"
                                 @if ($query->user != null) src="{{ uploaded_asset($query->user->avatar_original) }}" @endif
-                                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.png') }}';">
+                                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.avif') }}';">
                             <div class="media-body">
                                 <h6 class="mb-0 fw-600">
                                     @if ($query->user != null)

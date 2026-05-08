@@ -18,7 +18,7 @@
                     <span class="d-flex align-items-center justify-content-between aiz-megabox-elem rounded-0 p-3">
                         <span class="d-block fw-400 fs-14">{{ ucfirst(translate($payment_method->name)) }}</span>
                         <span class="rounded-1 h-40px overflow-hidden">
-                            <img src="{{ static_asset('assets/img/cards/'.$payment_method->name.'.png') }}"
+                            <img src="{{ static_asset('assets/img/cards/'.$payment_method->name.'.avif') }}"
                             class="img-fit h-100">
                         </span>
                     </span>
@@ -49,7 +49,7 @@
                         <span class="d-flex align-items-center justify-content-between aiz-megabox-elem rounded-0 p-3">
                             <span class="d-block fw-400 fs-14">{{ translate('Cash on Delivery') }}</span>
                             <span class="rounded-1 h-40px w-70px overflow-hidden">
-                                <img src="{{ static_asset('assets/img/cards/cod.png') }}"
+                                <img src="{{ static_asset('assets/img/cards/cod.avif') }}"
                                 class="img-fit h-100">
                             </span>
                         </span>

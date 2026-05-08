@@ -19,7 +19,7 @@
                 @foreach($conversation->messages as $message)
                     <li class="list-group-item px-0">
                         <div class="media mb-2">
-                          <img class="avatar avatar-xs mr-3" @if($message->sender != null) src="{{ uploaded_asset($message->sender->avatar_original) }}" @endif onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.png') }}';">
+                          <img class="avatar avatar-xs mr-3" @if($message->sender != null) src="{{ uploaded_asset($message->sender->avatar_original) }}" @endif onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.avif') }}';">
                           <div class="media-body">
                             <h6 class="mb-0 fw-600">
                                 @if ($message->user != null)

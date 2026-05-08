@@ -21,10 +21,10 @@
             <span class="avatar avatar-md mb-3">
                 @if ($user->avatar_original != null)
                     <img src="{{ $user_avatar }}"
-                        onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.png') }}';">
+                        onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.avif') }}';">
                 @else
-                    <img src="{{ static_asset('assets/img/avatar-place.png') }}" class="image rounded-circle"
-                        onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.png') }}';">
+                    <img src="{{ static_asset('assets/img/avatar-place.avif') }}" class="image rounded-circle"
+                        onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.avif') }}';">
                 @endif
             </span>
             <!-- Name -->

@@ -192,7 +192,7 @@
 					class="las la-2x la-times"></i></button>
 		</div>
 		<div class="overlay-img">
-			<img src="{{ static_asset('assets/img/authentication_pages/boxed.png') }}" class="w-100" alt="img-show">
+			<img src="{{ static_asset('assets/img/authentication_pages/boxed.avif') }}" class="w-100" alt="img-show">
 		</div>
 	</div>
 @endsection

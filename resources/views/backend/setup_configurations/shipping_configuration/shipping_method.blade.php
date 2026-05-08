@@ -17,7 +17,7 @@
                 <!-- Area Wise Shipping Cost -->
                 <div class="col-md-6 col-lg-4 d-flex">
                     <div class="card text-center px-3 py-4 w-100" data-shipping="Area Wise Shipping Cost">
-                        <img src="{{ static_asset('assets/img/shipping/area_wise_flat_shipping.png') }}" class="card-img-top mx-auto" alt="Shipping Icon">
+                        <img src="{{ static_asset('assets/img/shipping/area_wise_flat_shipping.avif') }}" class="card-img-top mx-auto" alt="Shipping Icon">
 
                         <div class="text-left mx-4">
                             <div class="d-flex align-items-left justify-content-left mb-2">
@@ -35,7 +35,7 @@
 
                 <div class="col-md-6 col-lg-4 d-flex">
                     <div class="card text-center px-3 py-4 w-100" data-shipping="Product Wise Shipping Cost">
-                        <img src="{{ static_asset('assets/img/shipping/product_wise_shipping.png') }}" class="card-img-top mx-auto" alt="Shipping Icon">
+                        <img src="{{ static_asset('assets/img/shipping/product_wise_shipping.avif') }}" class="card-img-top mx-auto" alt="Shipping Icon">
 
                         <div class="text-left mx-4">
                             <div class="d-flex align-items-left justify-content-left mb-2">
@@ -53,7 +53,7 @@
 
                 <div class="col-md-6 col-lg-4 d-flex">
                     <div class="card text-center px-3 py-4 w-100" data-shipping="Flat Rate Shipping Cost">
-                        <img src="{{ static_asset('assets/img/shipping/flat_rate_shipping.png') }}" class="card-img-top mx-auto" alt="Shipping Icon">
+                        <img src="{{ static_asset('assets/img/shipping/flat_rate_shipping.avif') }}" class="card-img-top mx-auto" alt="Shipping Icon">
 
                         <div class="text-left mx-4">
                             <div class="d-flex align-items-left justify-content-left mb-2">
@@ -71,7 +71,7 @@
 
                 <div class="col-md-6 col-lg-4 d-flex">
                     <div class="card text-center px-3 py-4 w-100" data-shipping="Seller Wise Shipping Cost">
-                        <img src="{{ static_asset('assets/img/shipping/seller_wise_flat_shipping.png') }}" class="card-img-top mx-auto" alt="Shipping Icon">
+                        <img src="{{ static_asset('assets/img/shipping/seller_wise_flat_shipping.avif') }}" class="card-img-top mx-auto" alt="Shipping Icon">
 
                         <div class="text-left mx-4">
                             <div class="d-flex align-items-left justify-content-left mb-2">
@@ -91,7 +91,7 @@
                 <!-- Carrier Wise Shipping Cost -->
                 <div class="col-md-6 col-lg-4 d-flex">
                     <div class="card text-center px-3 py-4 w-100" data-shipping="Carrier Wise Shipping Cost">
-                        <img src="{{ static_asset('assets/img/shipping/carrier_wise_shipping.png') }}" class="card-img-top mx-auto" alt="Shipping Icon">
+                        <img src="{{ static_asset('assets/img/shipping/carrier_wise_shipping.avif') }}" class="card-img-top mx-auto" alt="Shipping Icon">
 
                         <div class="text-left mx-4">
                             <div class="d-flex align-items-left justify-content-left mb-2">

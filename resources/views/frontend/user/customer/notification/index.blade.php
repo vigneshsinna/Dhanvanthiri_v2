@@ -68,7 +68,7 @@
                                         <div class="size-35px mr-2">
                                             <img
                                                 src="{{ uploaded_asset($notificationType->image) }}"
-                                                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/notification.png') }}';"
+                                                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/notification.avif') }}';"
                                                 class="img-fit h-100 {{ $notifyImageDesign }}" >
                                         </div>
                                     @endif

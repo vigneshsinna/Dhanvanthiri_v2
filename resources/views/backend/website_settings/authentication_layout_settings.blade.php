@@ -23,7 +23,7 @@
 						<input value="boxed" type="radio" name="authentication_layout_select" @if(($authentication_layout == null) || ($authentication_layout == 'boxed')) checked @endif>
 						<span class="d-block aiz-megabox-elem rounded-0 img-overlay">
 							<div class="h-190px w-100 overflow-hidden">
-								<img src="{{ static_asset('assets/img/authentication_pages/boxed.png') }}" class="w-100" alt="authentication-page">
+								<img src="{{ static_asset('assets/img/authentication_pages/boxed.avif') }}" class="w-100" alt="authentication-page">
 							</div>
 						</span>
 					</label>
@@ -31,7 +31,7 @@
 						<span class="fs-14 fw-500 text-dark">{{ translate('Authentication Layout 1 - Boxed') }}</span>
 						<span>
 							<a href="javascript:void(0);" class="btn btn-xs btn-danger rounded-0"
-								onclick="imageShowOverlay('{{ static_asset('assets/img/authentication_pages/boxed.png') }}')">{{ translate('View') }}</a>
+								onclick="imageShowOverlay('{{ static_asset('assets/img/authentication_pages/boxed.avif') }}')">{{ translate('View') }}</a>
 						</span>
 					</div>
 				</div>
@@ -42,7 +42,7 @@
 						<input value="free" type="radio" name="authentication_layout_select" @if($authentication_layout == 'free') checked @endif>
 						<span class="d-block aiz-megabox-elem rounded-0 img-overlay">
 							<div class="h-190px w-100 overflow-hidden">
-								<img src="{{ static_asset('assets/img/authentication_pages/free.png') }}" class="w-100" alt="authentication-page">
+								<img src="{{ static_asset('assets/img/authentication_pages/free.avif') }}" class="w-100" alt="authentication-page">
 							</div>
 						</span>
 					</label>
@@ -50,7 +50,7 @@
 						<span class="fs-14 fw-500 text-dark">{{ translate('Authentication Layout 2 - Free') }}</span>
 						<span>
 							<a href="javascript:void(0);" class="btn btn-xs btn-danger rounded-0"
-								onclick="imageShowOverlay('{{ static_asset('assets/img/authentication_pages/free.png') }}')">{{ translate('View') }}</a>
+								onclick="imageShowOverlay('{{ static_asset('assets/img/authentication_pages/free.avif') }}')">{{ translate('View') }}</a>
 						</span>
 					</div>
 				</div>
@@ -61,7 +61,7 @@
 						<input value="focused" type="radio" name="authentication_layout_select" @if($authentication_layout == 'focused') checked @endif>
 						<span class="d-block aiz-megabox-elem rounded-0 img-overlay">
 							<div class="h-190px w-100 overflow-hidden">
-								<img src="{{ static_asset('assets/img/authentication_pages/focused.png') }}" class="w-100" alt="authentication-page">
+								<img src="{{ static_asset('assets/img/authentication_pages/focused.avif') }}" class="w-100" alt="authentication-page">
 							</div>
 						</span>
 					</label>
@@ -69,7 +69,7 @@
 						<span class="fs-14 fw-500 text-dark">{{ translate('Authentication Layout 3 - Focused') }}</span>
 						<span>
 							<a href="javascript:void(0);" class="btn btn-xs btn-danger rounded-0"
-								onclick="imageShowOverlay('{{ static_asset('assets/img/authentication_pages/focused.png') }}')">{{ translate('View') }}</a>
+								onclick="imageShowOverlay('{{ static_asset('assets/img/authentication_pages/focused.avif') }}')">{{ translate('View') }}</a>
 						</span>
 					</div>
 				</div>
@@ -266,7 +266,7 @@
 			<button type="button" class="btn text-white d-flex align-items-center justify-content-center"><i class="las la-2x la-times"></i></button>
 		</div>
 		<div class="overlay-img">
-			<img src="{{ static_asset('assets/img/authentication_pages/boxed.png') }}" class="w-100" alt="img-show">
+			<img src="{{ static_asset('assets/img/authentication_pages/boxed.avif') }}" class="w-100" alt="img-show">
 		</div>
 	</div>
 @endsection

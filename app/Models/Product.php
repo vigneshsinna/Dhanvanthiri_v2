@@ -203,21 +203,66 @@ class Product extends Model
         return null;
     }
 
+    public static function sanitizeMediaReference(mixed $reference): ?string
+    {
+        if (blank($reference)) {
+            return null;
+        }
+
+        if (!is_string($reference)) {
+            return self::isUsableMediaReference($reference) ? (string)$reference : null;
+        }
+
+        $invalidStrings = ['undefined', 'null', 'not defined', '[object Object]'];
+        $parts = explode(',', $reference);
+        $validParts = [];
+
+        foreach ($parts as $part) {
+            $trimmed = strtolower(trim($part));
+            if (blank($trimmed) || in_array($trimmed, $invalidStrings)) {
+                continue;
+            }
+            $validParts[] = trim($part);
+        }
+
+        return !empty($validParts) ? implode(',', $validParts) : null;
+    }
+
     protected static function isUsableMediaReference(mixed $reference): bool
     {
         if (blank($reference)) {
             return false;
         }
 
+        // Filter out common JS-generated invalid strings
+        $invalidStrings = ['undefined', 'null', 'not defined', '[object Object]'];
+        if (is_string($reference)) {
+            $trimmed = strtolower(trim($reference));
+            if (in_array($trimmed, $invalidStrings)) {
+                return false;
+            }
+            
+            // If it's a comma separated list, check if at least one part is valid
+            if (str_contains($reference, ',')) {
+                $parts = explode(',', $reference);
+                foreach ($parts as $part) {
+                    if (self::isUsableMediaReference(trim($part))) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+
         if (filter_var($reference, FILTER_VALIDATE_URL)) {
             return true;
         }
 
-        if (!ctype_digit((string) $reference)) {
+        if (ctype_digit((string) $reference)) {
             return true;
         }
 
-        return Upload::query()->whereKey($reference)->exists();
+        return false;
     }
 
 }

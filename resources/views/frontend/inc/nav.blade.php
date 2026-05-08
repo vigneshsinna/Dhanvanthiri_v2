@@ -67,11 +67,11 @@
                 <span class="size-40px rounded-circle overflow-hidden border border-transparent nav-user-img">
                     @if ($user->avatar_original != null)
                         <img src="{{ $user_avatar }}" class="img-fit h-100" alt="{{ translate('avatar') }}"
-                            onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.png') }}';">
+                            onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.avif') }}';">
                     @else
-                        <img src="{{ static_asset('assets/img/avatar-place.png') }}" class="image"
+                        <img src="{{ static_asset('assets/img/avatar-place.avif') }}" class="image"
                             alt="{{ translate('avatar') }}"
-                            onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.png') }}';">
+                            onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.avif') }}';">
                     @endif
                 </span>
                 <!-- Name -->

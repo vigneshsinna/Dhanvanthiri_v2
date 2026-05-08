@@ -423,6 +423,23 @@
                             <h5 class="mb-3 pb-3 fs-17 fw-700" style="border-bottom: 1px dashed #e4e5eb;">
                                 {{ translate('Product Files & Media') }}</h5>
                             <div class="w-100">
+                                <!-- Thumbnail Image -->
+                                <div class="form-group mb-2">
+                                    <label class="col-form-label"
+                                        for="signinSrEmail">{{ translate('Thumbnail Image') }}</label>
+                                    <div class="input-group" data-toggle="aizuploader" data-type="image">
+                                        <div class="input-group-prepend">
+                                            <div class="input-group-text bg-soft-secondary font-weight-medium">
+                                                {{ translate('Browse') }}</div>
+                                        </div>
+                                        <div class="form-control file-amount">{{ translate('Choose File') }}</div>
+                                        <input type="hidden" name="thumbnail_img" class="selected-files">
+                                    </div>
+                                    <div class="file-preview box sm">
+                                    </div>
+                                    <small
+                                            class="text-muted">{{ translate("This image is visible in all product box. Minimum dimensions required: 195px width X 195px height. Keep some blank space around main object of your image as we had to crop some edge in different devices to make it responsive. If no thumbnail is uploaded, the product's first gallery image will be used as the thumbnail image.") }}</small>
+                                </div>
                                 <!-- Gallery Images -->
                                 <div class="form-group mb-2">
                                     <label class="col-form-label"
@@ -440,23 +457,6 @@
                                     </div>
                                     <small
                                         class="text-muted">{{ translate('These images are visible in product details page gallery. Minimum dimensions required: 900px width X 900px height.') }}</small>
-                                </div>
-                                <!-- Thumbnail Image -->
-                                <div class="form-group mb-2">
-                                    <label class="col-form-label"
-                                        for="signinSrEmail">{{ translate('Thumbnail Image') }}</label>
-                                    <div class="input-group" data-toggle="aizuploader" data-type="image">
-                                        <div class="input-group-prepend">
-                                            <div class="input-group-text bg-soft-secondary font-weight-medium">
-                                                {{ translate('Browse') }}</div>
-                                        </div>
-                                        <div class="form-control file-amount">{{ translate('Choose File') }}</div>
-                                        <input type="hidden" name="thumbnail_img" class="selected-files">
-                                    </div>
-                                    <div class="file-preview box sm">
-                                    </div>
-                                    <small
-                                            class="text-muted">{{ translate("This image is visible in all product box. Minimum dimensions required: 195px width X 195px height. Keep some blank space around main object of your image as we had to crop some edge in different devices to make it responsive. If no thumbnail is uploaded, the product's first gallery image will be used as the thumbnail image.") }}</small>
                                 </div>
 
 

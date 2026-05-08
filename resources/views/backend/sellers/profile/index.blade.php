@@ -5,7 +5,7 @@
     <div class="col-md-1"></div>
     <div class="col-md-10">
         <!-- Seller Banner -->
-        <div class="position-relative text-center supplier-banner mx-auto" style="background-image: url('{{ static_asset('assets/img/seller-bg.png') }}');">
+        <div class="position-relative text-center supplier-banner mx-auto" style="background-image: url('{{ static_asset('assets/img/seller-bg.avif') }}');">
             <div class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
                 <div class="mb-2" style="width: 80px; height: 80px;">
                     <img src="{{ uploaded_asset($shop->logo) }}"

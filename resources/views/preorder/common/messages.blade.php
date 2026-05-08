@@ -8,12 +8,12 @@
                         @if ($authUserId != $message->sender_id && $message->sender->shop != null)
                             <a href="{{ storefront_url('shop/' . $message->user->shop->slug) }}" class="avatar avatar-sm mr-3">
                                 <img  class="" src="{{ uploaded_asset($message->user->shop->logo) }}" 
-                                    onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.png') }}';">
+                                    onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.avif') }}';">
                             </a>
                         @else
                         <span class="avatar avatar-sm mr-3">
                             <img class="" @if($message->sender != null) src="{{ uploaded_asset($message->sender->avatar_original) }}" @endif 
-                                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.png') }}';">
+                                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.avif') }}';">
                         </span>
                         @endif
                     </div>
@@ -36,12 +36,12 @@
                         @if ($authUserId != $message->sender_id && $message->sender->shop != null)
                             <a href="{{ storefront_url('shop/' . $message->sender->shop->slug) }}" class="avatar avatar-sm mr-3">
                                 <img  class="" src="{{ uploaded_asset($message->sender->shop->logo) }}" 
-                                    onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.png') }}';">
+                                    onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.avif') }}';">
                             </a>
                         @else
                             <span class="avatar avatar-sm mr-3">
                                 <img @if($message->sender != null) src="{{ uploaded_asset($message->sender->avatar_original) }}" @endif 
-                                    onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.png') }}';">
+                                    onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.avif') }}';">
                             </span>
                         @endif
                     </div>

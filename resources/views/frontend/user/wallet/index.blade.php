@@ -13,7 +13,7 @@
         <!-- Wallet Balance -->
         <div class="col-md-4 mx-auto mb-4">
             <div class="bg-dark text-white overflow-hidden text-center p-4 h-100">
-                <img src="{{ static_asset('assets/img/wallet-icon.png') }}" alt="">
+                <img src="{{ static_asset('assets/img/wallet-icon.avif') }}" alt="">
                 <div class="py-2">
                     <div class="fs-14 fw-400 text-center">{{ translate('Wallet Balance') }}</div>
                     <div class="fs-30 fw-700 text-center">{{ single_price(Auth::user()->balance) }}</div>

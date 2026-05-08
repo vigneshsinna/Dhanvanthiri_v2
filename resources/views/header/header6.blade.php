@@ -33,7 +33,7 @@ $bottomHeaderTextColor = get_setting('bottom_header_text_color');
                         <img id="header-logo-preview" src="{{ uploaded_asset($header_logo) }}" alt="{{ env('APP_NAME') }}"
                             class="mw-100 h-30px h-md-40px" height="40">
                         @else
-                        <img id="header-logo-preview" src="{{ static_asset('assets/img/logo.png') }}" alt="{{ env('APP_NAME') }}"
+                        <img id="header-logo-preview" src="{{ static_asset('assets/img/logo.avif') }}" alt="{{ env('APP_NAME') }}"
                             class="mw-100 h-30px h-md-40px" height="40">
                         @endif
                     </a>
@@ -182,7 +182,7 @@ $bottomHeaderTextColor = get_setting('bottom_header_text_color');
                                                                 }
                                                                 @endphp
                                                                 <img src="{{ uploaded_asset($notificationType->image) }}"
-                                                                    onerror="this.onerror=null;this.src='{{ static_asset('assets/img/notification.png') }}';"
+                                                                    onerror="this.onerror=null;this.src='{{ static_asset('assets/img/notification.avif') }}';"
                                                                     class="img-fit h-100 {{ $notifyImageDesign }}">
                                                             </div>
                                                             @endif
@@ -314,7 +314,7 @@ $bottomHeaderTextColor = get_setting('bottom_header_text_color');
                                                         data-flag="{{ $language->code }}"
                                                         onclick="changeLanguage('{{ $language->code }}')">
                                                         <img src="{{ static_asset('assets/img/placeholder.jpg') }}"
-                                                            data-src="{{ static_asset('assets/img/flags/' . $language->code . '.png') }}"
+                                                            data-src="{{ static_asset('assets/img/flags/' . $language->code . '.avif') }}"
                                                             class="mr-1 lazyload" alt="{{ $language->name }}" height="11">
                                                         {{ $language->name }}
                                                     </a>
@@ -422,11 +422,11 @@ $bottomHeaderTextColor = get_setting('bottom_header_text_color');
                         <span class="size-40px rounded-circle overflow-hidden border border-transparent nav-user-img">
                             @if ($user->avatar_original != null)
                             <img src="{{ uploaded_asset(Auth::user()->avatar_original) }}" class="img-fit h-100" alt="{{ translate('avatar') }}"
-                                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.png') }}';">
+                                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.avif') }}';">
                             @else
-                            <img src="{{ static_asset('assets/img/avatar-place.png') }}" class="image"
+                            <img src="{{ static_asset('assets/img/avatar-place.avif') }}" class="image"
                                 alt="{{ translate('avatar') }}"
-                                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.png') }}';">
+                                onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.avif') }}';">
                             @endif
                         </span>
                         <!-- Name -->

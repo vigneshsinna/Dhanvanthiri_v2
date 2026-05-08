@@ -472,14 +472,14 @@
                 class="card mb-0 @if (addon_is_activated('seller_subscription')) px-4 py-5 @else p-5 h-100 @endif d-flex align-items-center justify-content-center">
                 @if ($authUser->shop?->verification_status == 0)
                     <div class="my-n4 py-1 text-center">
-                        <img src="{{ static_asset('assets/img/non_verified.png') }}" alt=""
+                        <img src="{{ static_asset('assets/img/non_verified.avif') }}" alt=""
                             class="w-xxl-130px w-90px d-block">
                         <a href="{{ route('seller.shop.verify') }}"
                             class="btn btn-sm btn-primary">{{ translate('Verify Now') }}</a>
                     </div>
                 @else
                     <div class="my-2 py-1">
-                        <img src="{{ static_asset('assets/img/verified.png') }}" alt="" width="">
+                        <img src="{{ static_asset('assets/img/verified.avif') }}" alt="" width="">
                     </div>
                 @endif
             </div>

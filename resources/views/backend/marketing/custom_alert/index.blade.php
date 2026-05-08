@@ -49,7 +49,7 @@
                     <input value="bottom-left" class="custom_alert_location" type="radio" onchange="confirm_alert_location('bottom-left')" @if(get_setting('custom_alert_location')=='bottom-left' ) checked @endif>
                     <span class="d-block aiz-megabox-elem rounded-0">
                         <div class="h-120px w-180px overflow-hidden">
-                            <img src="{{ static_asset('assets/img/alerts/alert-bottom-left.png') }}" class="h-100 w-100" alt="alert">
+                            <img src="{{ static_asset('assets/img/alerts/alert-bottom-left.avif') }}" class="h-100 w-100" alt="alert">
                         </div>
                     </span>
                 </label>
@@ -62,7 +62,7 @@
                     <input value="bottom-right" class="custom_alert_location" type="radio" onchange="confirm_alert_location('bottom-right')" @if(get_setting('custom_alert_location')=='bottom-right' ) checked @endif>
                     <span class="d-block aiz-megabox-elem rounded-0">
                         <div class="h-120px w-180px overflow-hidden">
-                            <img src="{{ static_asset('assets/img/alerts/alert-bottom-right.png') }}" class="h-100 w-100" alt="alert">
+                            <img src="{{ static_asset('assets/img/alerts/alert-bottom-right.avif') }}" class="h-100 w-100" alt="alert">
                         </div>
                     </span>
                 </label>
@@ -75,7 +75,7 @@
                     <input value="top-left" class="custom_alert_location" type="radio" onchange="confirm_alert_location('top-left')" @if(get_setting('custom_alert_location')=='top-left' ) checked @endif>
                     <span class="d-block aiz-megabox-elem rounded-0">
                         <div class="h-120px w-180px overflow-hidden">
-                            <img src="{{ static_asset('assets/img/alerts/alert-top-left.png') }}" class="h-100 w-100" alt="alert">
+                            <img src="{{ static_asset('assets/img/alerts/alert-top-left.avif') }}" class="h-100 w-100" alt="alert">
                         </div>
                     </span>
                 </label>
@@ -88,7 +88,7 @@
                     <input value="top-right" class="custom_alert_location" type="radio" onchange="confirm_alert_location('top-right')" @if(get_setting('custom_alert_location')=='top-right' ) checked @endif>
                     <span class="d-block aiz-megabox-elem rounded-0">
                         <div class="h-120px w-180px overflow-hidden">
-                            <img src="{{ static_asset('assets/img/alerts/alert-top-right.png') }}" class="h-100 w-100" alt="alert">
+                            <img src="{{ static_asset('assets/img/alerts/alert-top-right.avif') }}" class="h-100 w-100" alt="alert">
                         </div>
                     </span>
                 </label>

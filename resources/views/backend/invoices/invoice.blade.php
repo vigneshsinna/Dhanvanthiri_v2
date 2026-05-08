@@ -139,7 +139,7 @@
 							@if($logo != null)
 								<img src="{{ uploaded_asset_path($logo) }}" height="30" style="display:inline-block;">
 							@else
-								<img src="{{ uploaded_asset_path('assets/img/logo.png') }}" height="30" style="display:inline-block;">
+								<img src="{{ uploaded_asset_path('assets/img/logo.avif') }}" height="30" style="display:inline-block;">
 							@endif
 						</td>
 						<td style="font-size: 1.5rem;" class="text-right strong">{{  translate('INVOICE') }}</td>

@@ -64,7 +64,7 @@
 					@if($logo != null)
 						<img src="{{ uploaded_asset_path($logo) }}" height="40" style="display:inline-block;">
 					@else
-						<img src="{{ uploaded_asset_path('assets/img/logo.png') }}" height="40" style="display:inline-block;">
+						<img src="{{ uploaded_asset_path('assets/img/logo.avif') }}" height="40" style="display:inline-block;">
 					@endif
 				</td>
 			</tr>

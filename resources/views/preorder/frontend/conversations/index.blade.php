@@ -26,15 +26,15 @@
                                             @if ($conversation->receiver->shop != null)
                                                 <a href="{{ storefront_url('shop/' . $conversation->receiver->shop->slug) }}" class="">
                                                     <img src="{{ uploaded_asset($conversation->receiver->shop->logo) }}" 
-                                                        onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.png') }}';">
+                                                        onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.avif') }}';">
                                                 </a>
                                             @else
-                                                <img @if ($conversation->receiver->avatar_original == null) src="{{ static_asset('assets/img/avatar-place.png') }}" 
+                                                <img @if ($conversation->receiver->avatar_original == null) src="{{ static_asset('assets/img/avatar-place.avif') }}" 
                                                     @else src="{{ uploaded_asset($conversation->receiver->avatar_original) }}" @endif 
-                                                    onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.png') }}';">
+                                                    onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.avif') }}';">
                                             @endif
                                         @else
-                                            <img @if ($conversation->sender->avatar_original == null) src="{{ static_asset('assets/img/avatar-place.png') }}" @else src="{{ uploaded_asset($conversation->sender->avatar_original) }}" @endif class="rounded-circle" onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.png') }}';">
+                                            <img @if ($conversation->sender->avatar_original == null) src="{{ static_asset('assets/img/avatar-place.avif') }}" @else src="{{ uploaded_asset($conversation->sender->avatar_original) }}" @endif class="rounded-circle" onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.avif') }}';">
                                         @endif
                                     </span>
                                 </div>

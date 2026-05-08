@@ -919,8 +919,8 @@
                         @if ($order->user->avatar != null)
                             <img src="{{ uploaded_asset($order->user->avatar_original) }}">
                         @else
-                            <img src="{{ my_asset('assets/frontend/default/img/avatar-place.png') }}0"
-                                onerror="this.onerror=null;this.src='{{ static_asset('/assets/img/avatar-place.png') }}';">
+                            <img src="{{ my_asset('assets/frontend/default/img/avatar-place.avif') }}0"
+                                onerror="this.onerror=null;this.src='{{ static_asset('/assets/img/avatar-place.avif') }}';">
                         @endif
                     </span>
                     <h1 class="h5 mb-1">{{ $order->user->name }}</h1>

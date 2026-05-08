@@ -70,7 +70,7 @@
                         @endphp
                         <div class="row gutters-5 w-200px w-md-300px mw-100 align-items-center">
                             <div class="col-auto">
-                                <img src="{{ $customerAvatar }}" class="size-50px img-fit rounded-circle" alt="Image" onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.png') }}';">
+                                <img src="{{ $customerAvatar }}" class="size-50px img-fit rounded-circle" alt="Image" onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.avif') }}';">
                             </div>
                             <div class="col">
                                 <span class="fw-700 text-truncate-2">{{ $customerName }}</span>

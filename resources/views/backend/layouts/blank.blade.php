@@ -9,8 +9,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
     <!-- Favicon -->
-    <link rel="icon" href="{{ static_asset('favicon.png') }}">
-    <link rel="apple-touch-icon" href="{{ static_asset('favicon.png') }}">
+    <link rel="icon" href="{{ static_asset('favicon.avif') }}">
+    <link rel="apple-touch-icon" href="{{ static_asset('favicon.avif') }}">
   	<title>{{ config('app.name', 'eCommerce') }}</title>
 
     <!-- google font -->

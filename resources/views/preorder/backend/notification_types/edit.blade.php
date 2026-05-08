@@ -13,7 +13,7 @@
                         <li class="nav-item">
                             <a class="nav-link text-reset @if ($language->code == $lang) active @endif py-3"
                                 href="{{ route('preorder.notification-type.edit', ['id' => $notificationType->id, 'lang' => $language->code]) }}">
-                                <img src="{{ static_asset('assets/img/flags/' . $language->code . '.png') }}" height="11"
+                                <img src="{{ static_asset('assets/img/flags/' . $language->code . '.avif') }}" height="11"
                                     class="mr-1">
                                 <span>{{ $language->name }}</span>
                             </a>

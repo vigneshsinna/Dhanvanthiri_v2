@@ -66,7 +66,7 @@
                 <div class="demo-admin-links w-100 py-5 my-lg-5 px-4 mx-auto">
                     <div class="row overflow-hidden rounded-3" style="border: 1px solid #f2f2f2;">
                         <div class="col-md-6 px-0 d-none d-md-block"  style="border-right: 1px solid #f2f2f2;">
-                            <img class="img-fit h-100" src="{{ my_asset('assets/img/demo/link/link.png') }}" alt="animazon">
+                            <img class="img-fit h-100" src="{{ my_asset('assets/img/demo/link/link.avif') }}" alt="animazon">
                         </div>
                         <div class="col-md-6 px-2rem py-5 d-flex flex-column justify-content-center">
                             <div class="mb-4 text-center">

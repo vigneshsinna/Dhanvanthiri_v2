@@ -46,7 +46,7 @@
                     <div class="col-md-10">
                         <div class="custom-file mb-3">
                             <label for="gstin_certificate" class="custom-file-label">
-                                <input type="file" class="custom-file-input preview-input" data-preview="#gst_preview" name="gstin_certificate" id="gstin_certificate" accept=".jpg,.jpeg,.png,.bmp,application/pdf" required>
+                                <input type="file" class="custom-file-input preview-input" data-preview="#gst_preview" name="gstin_certificate" id="gstin_certificate" accept=".jpg,.jpeg,.avif,.bmp,application/pdf" required>
                                 <span class="custom-file-name">{{ translate('Choose file') }}</span>
                             </label>
                         </div>
@@ -82,7 +82,7 @@
                     <div class="col-md-10">
                         <div class="custom-file mb-3">
                             <label class="custom-file-label">
-                                <input type="file" class="custom-file-input preview-input" data-preview="#certificate_preview" name="certificate" id="certificate"  accept=".jpg,.jpeg,.png,.bmp,application/pdf" >
+                                <input type="file" class="custom-file-input preview-input" data-preview="#certificate_preview" name="certificate" id="certificate"  accept=".jpg,.jpeg,.avif,.bmp,application/pdf" >
                                 <span class="custom-file-name">{{ translate('Choose file') }}</span>
                             </label>
                         </div>

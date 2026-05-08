@@ -103,7 +103,7 @@
                 <div class="align-items-stretch d-flex dropdown " id="lang-change">
                     <a class="dropdown-toggle no-arrow" data-toggle="dropdown" href="javascript:void(0);" role="button" aria-haspopup="false" aria-expanded="false">
                         <span class="btn btn-icon">
-                            <img src="{{ static_asset('assets/img/flags/'.$locale.'.png') }}" height="11">
+                            <img src="{{ static_asset('assets/img/flags/'.$locale.'.avif') }}" height="11">
                         </span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-right dropdown-menu-animated dropdown-menu-xs">
@@ -111,7 +111,7 @@
                         @foreach (\App\Models\Language::where('status', 1)->get() as $key => $language)
                             <li>
                                 <a href="javascript:void(0)" data-flag="{{ $language->code }}" class="dropdown-item @if($locale == $language->code) active @endif">
-                                    <img src="{{ static_asset('assets/img/flags/'.$language->code.'.png') }}" class="mr-2">
+                                    <img src="{{ static_asset('assets/img/flags/'.$language->code.'.avif') }}" class="mr-2">
                                     <span class="language">{{ $language->name }}</span>
                                 </a>
                             </li>
@@ -127,7 +127,7 @@
                             <span class="avatar avatar-sm mr-md-2">
                                 <img
                                     src="{{ uploaded_asset(Auth::user()->avatar_original) }}"
-                                    onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.png') }}';"
+                                    onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.avif') }}';"
                                 >
                             </span>
                             <span class="d-none d-md-block">

@@ -46,7 +46,7 @@
                 <div class="col-md-6 my-3">
                     <div class="demo-img-content">
                         <a href="https://demo.activeitzone.com/ecommerce/" target="_blank" class="h-100 w-100">
-                            <img src="{{ static_asset('assets/img/demo/demo_thumb_main.png') }}">
+                            <img src="{{ static_asset('assets/img/demo/demo_thumb_main.avif') }}">
                         </a>
                     </div>
                     <p class="demo-title">{{ translate('animazon Main Demo') }}</p>
@@ -55,7 +55,7 @@
                 <div class="col-md-6 my-3">
                     <div class="demo-img-content">
                         <a href="https://demo.activeitzone.com/ecommerce-grocery/" target="_blank" class="h-100 w-100">
-                            <img src="{{ static_asset('assets/img/demo/demo_thumb_grocery.png') }}">
+                            <img src="{{ static_asset('assets/img/demo/demo_thumb_grocery.avif') }}">
                         </a>
                     </div>
                     <p class="demo-title">{{ translate('Grocery Store') }}</p>
@@ -64,7 +64,7 @@
                 <div class="col-md-6 my-3">
                     <div class="demo-img-content">
                         <a href="https://demo.activeitzone.com/ecommerce-electronics/" target="_blank" class="h-100 w-100">
-                            <img src="{{ static_asset('assets/img/demo/demo_thumb_technology.png') }}">
+                            <img src="{{ static_asset('assets/img/demo/demo_thumb_technology.avif') }}">
                         </a>
                     </div>
                     <p class="demo-title">{{ translate('Electronics Shop') }}</p>
@@ -73,7 +73,7 @@
                 <div class="col-md-6 my-3">
                     <div class="demo-img-content">
                         <a href="https://demo.activeitzone.com/ecommerce-fashion/" target="_blank" class="h-100 w-100">
-                            <img src="{{ static_asset('assets/img/demo/demo_thumb_fashion.png') }}">
+                            <img src="{{ static_asset('assets/img/demo/demo_thumb_fashion.avif') }}">
                         </a>
                     </div>
                     <p class="demo-title">{{ translate('Fashion Store') }}</p>
@@ -82,7 +82,7 @@
                 <div class="col-md-6 my-3">
                     <div class="demo-img-content">
                         <a href="https://demo.activeitzone.com/ecommerce-automobile/" target="_blank" class="h-100 w-100">
-                            <img src="{{ static_asset('assets/img/demo/demo_thumb_automobile.png') }}">
+                            <img src="{{ static_asset('assets/img/demo/demo_thumb_automobile.avif') }}">
                         </a>
                     </div>
                     <p class="demo-title">{{ translate('Automobile Store') }}</p>
@@ -91,7 +91,7 @@
                 <div class="col-md-6 my-3">
                     <div class="demo-img-content">
                         <a href="https://demo.activeitzone.com/ecommerce-furniture/" target="_blank" class="h-100 w-100">
-                            <img src="{{ static_asset('assets/img/demo/demo_thumb_furniture.png') }}">
+                            <img src="{{ static_asset('assets/img/demo/demo_thumb_furniture.avif') }}">
                         </a>
                     </div>
                     <p class="demo-title">{{ translate('Furniture Store') }}</p>
@@ -100,7 +100,7 @@
                 <div class="col-md-6 my-3">
                     <div class="demo-img-content">
                         <a href="https://demo.activeitzone.com/ecommerce-medical/" target="_blank" class="h-100 w-100">
-                            <img src="{{ static_asset('assets/img/demo/demo_thumb_medical.png') }}">
+                            <img src="{{ static_asset('assets/img/demo/demo_thumb_medical.avif') }}">
                         </a>
                     </div>
                     <p class="demo-title">{{ translate('Medical Store') }}</p>
@@ -109,7 +109,7 @@
                 <div class="col-md-6 my-3">
                     <div class="demo-img-content">
                         <a href="https://demo.activeitzone.com/ecommerce-sports/" target="_blank" class="h-100 w-100">
-                            <img src="{{ static_asset('assets/img/demo/demo_thumb_sports.png') }}">
+                            <img src="{{ static_asset('assets/img/demo/demo_thumb_sports.avif') }}">
                         </a>
                     </div>
                     <p class="demo-title">{{ translate('Sports Store') }}</p>
@@ -118,7 +118,7 @@
                 <div class="col-md-6 my-3">
                     <div class="demo-img-content">
                         <a href="https://demo.activeitzone.com/ecommerce-construction/" target="_blank" class="h-100 w-100">
-                            <img src="{{ static_asset('assets/img/demo/demo_thumb_construction.png') }}">
+                            <img src="{{ static_asset('assets/img/demo/demo_thumb_construction.avif') }}">
                         </a>
                     </div>
                     <p class="demo-title">{{ translate('Construction Store') }}</p>
@@ -127,7 +127,7 @@
                 <div class="col-md-6 my-3">
                     <div class="demo-img-content">
                         <a href="https://demo.activeitzone.com/ecommerce-megamart/" target="_blank" class="h-100 w-100">
-                            <img src="{{ static_asset('assets/img/demo/demo_thumb_megamart.png') }}">
+                            <img src="{{ static_asset('assets/img/demo/demo_thumb_megamart.avif') }}">
                         </a>
                     </div>
                     <p class="demo-title">{{ translate('Megamart') }}</p>
@@ -136,7 +136,7 @@
                 <div class="col-md-6 my-3">
                     <div class="demo-img-content">
                         <a href="https://demo.activeitzone.com/ecommerce-beauty-store/" target="_blank" class="h-100 w-100">
-                            <img src="{{ static_asset('assets/img/demo/demo_thumb_beauty.png') }}">
+                            <img src="{{ static_asset('assets/img/demo/demo_thumb_beauty.avif') }}">
                         </a>
                     </div>
                     <p class="demo-title">{{ translate('Beauty Store') }}</p>

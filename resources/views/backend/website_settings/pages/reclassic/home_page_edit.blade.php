@@ -167,7 +167,7 @@
 							<li class="nav-item">
 								<a class="nav-link text-reset @if ($language->code == $lang) active @endif py-3"
 									href="{{route('custom-pages.edit', ['id'=>$page->slug, 'lang'=>$language->code, 'page'=>'home'] )}}">
-									<img src="{{ static_asset('assets/img/flags/' . $language->code . '.png') }}"
+									<img src="{{ static_asset('assets/img/flags/' . $language->code . '.avif') }}"
 										height="11" class="mr-1">
 									<span>{{ $language->name }}</span>
 								</a>

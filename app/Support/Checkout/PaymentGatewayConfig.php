@@ -176,7 +176,7 @@ class PaymentGatewayConfig
         return [
             'payment_type' => $code,
             'payment_type_key' => $code,
-            'image' => static_asset('assets/img/cards/' . $code . '.png'),
+            'image' => static_asset('assets/img/cards/' . $code . '.avif'),
             'name' => $code === 'phonepe' ? 'PhonePe' : 'Razorpay',
             'title' => translate('Checkout with ' . ($code === 'phonepe' ? 'PhonePe' : 'Razorpay')),
             'offline_payment_id' => 0,

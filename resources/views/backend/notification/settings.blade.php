@@ -24,7 +24,7 @@
                     </div>
                     <div class="col-md-6 mb-4">
                         <div class="shadow-lg bg-white rounded d-flex align-items-center px-4 py-2">
-                            <img src="{{ static_asset('assets/img/notification.png') }}" height="35">
+                            <img src="{{ static_asset('assets/img/notification.avif') }}" height="35">
                             <span class="pl-2">{{ translate('Order code') }} : <span class="fw-600 text-blue">20220912-10085522</span> {{ translate('has been Delivered') }}</span>
                         </div>
                         <div class="align-items-center d-flex mt-3">
@@ -34,7 +34,7 @@
                     </div>
                     <div class="col-md-6 mb-4">
                         <div class="shadow-lg bg-white rounded d-flex align-items-center px-4 py-2">
-                            <img src="{{ static_asset('assets/img/notification.png') }}" height="35" class="rounded-1">
+                            <img src="{{ static_asset('assets/img/notification.avif') }}" height="35" class="rounded-1">
                             <span class="pl-2">{{ translate('Order code') }} : <span class="fw-600 text-blue">20220912-10085522</span> {{ translate('has been Delivered') }}</span>
                         </div>
                         <div class="align-items-center d-flex mt-3">
@@ -44,7 +44,7 @@
                     </div>
                     <div class="col-md-6 mb-4">
                         <div class="shadow-lg bg-white rounded d-flex align-items-center px-4 py-2">
-                            <img src="{{ static_asset('assets/img/notification.png') }}" height="35" class="rounded-circle">
+                            <img src="{{ static_asset('assets/img/notification.avif') }}" height="35" class="rounded-circle">
                             <span class="pl-2">{{ translate('Order code') }} : <span class="fw-600 text-blue">20220912-10085522</span> {{ translate('has been Delivered') }}</span>
                         </div>
                         <div class="align-items-center d-flex mt-3">

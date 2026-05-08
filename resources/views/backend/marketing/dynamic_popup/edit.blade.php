@@ -139,7 +139,7 @@
                         </div>
                         <div class="col-lg-4">
                             <div class="h-100 rounded-3 pverflow-hideen">
-                                <img class="h-100 w-100" src="{{ static_asset('assets/img/dynamic-popup.png') }}" alt="Dynamic Popup">
+                                <img class="h-100 w-100" src="{{ static_asset('assets/img/dynamic-popup.avif') }}" alt="Dynamic Popup">
                             </div>
                         </div>
                     </div>

@@ -121,7 +121,7 @@
 							<input value="thecore" type="radio" name="homepage_select" @if(get_setting('homepage_select') == 'thecore') checked @endif>
 							<span class="d-block aiz-megabox-elem rounded-0 img-overlay">
 								<div class="h-350px w-100 overflow-hidden">
-									<img src="{{ static_asset('assets/img/pages/home-thecore.png') }}" class="w-100" alt="home-page-6">
+									<img src="{{ static_asset('assets/img/pages/home-thecore.avif') }}" class="w-100" alt="home-page-6">
 								</div>
 							</span>
 						</label>
@@ -129,7 +129,7 @@
 							<span class="fs-14 fw-500 text-dark">{{ translate('Homepage 6 - The-Core') }}</span>
 							<span>
 								<a href="javascript:void(0);" class="btn btn-xs btn-danger rounded-0"
-									onclick="imageShowOverlay('{{ static_asset('assets/img/pages/home-thecore.png') }}')">{{ translate('View') }}</a>
+									onclick="imageShowOverlay('{{ static_asset('assets/img/pages/home-thecore.avif') }}')">{{ translate('View') }}</a>
 							</span>
 						</div>
 					</div>
@@ -161,7 +161,7 @@
 			<button type="button" class="btn text-white d-flex align-items-center justify-content-center"><i class="las la-2x la-times"></i></button>
 		</div>
 		<div class="overlay-img">
-			<img src="{{ static_asset('assets/img/pages/home-metro.png') }}" class="w-100" alt="img-show">
+			<img src="{{ static_asset('assets/img/pages/home-metro.avif') }}" class="w-100" alt="img-show">
 		</div>
 	</div>
 @endsection

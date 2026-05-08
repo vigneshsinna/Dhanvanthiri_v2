@@ -161,8 +161,8 @@
                         </div>
                         <div class="col-lg-4">
                             <div class="h-100 rounded-3 overflow-hideen">
-                                <img class="w-100 custom-alert custom-alert-small d-none" src="{{ static_asset('assets/img/custom-alert-small.png') }}" alt="custom alert small">
-                                <img class="w-100 custom-alert custom-alert-large d-none" src="{{ static_asset('assets/img/custom-alert-large.png') }}" alt="custom alert large">
+                                <img class="w-100 custom-alert custom-alert-small d-none" src="{{ static_asset('assets/img/custom-alert-small.avif') }}" alt="custom alert small">
+                                <img class="w-100 custom-alert custom-alert-large d-none" src="{{ static_asset('assets/img/custom-alert-large.avif') }}" alt="custom alert large">
                             </div>
                         </div>
                     </div>

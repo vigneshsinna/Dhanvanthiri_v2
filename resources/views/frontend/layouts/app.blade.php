@@ -54,8 +54,8 @@
     @endif
 
     <!-- Favicon -->
-    <link rel="icon" href="{{ static_asset('favicon.png') }}">
-    <link rel="apple-touch-icon" href="{{ static_asset('favicon.png') }}">
+    <link rel="icon" href="{{ static_asset('favicon.avif') }}">
+    <link rel="apple-touch-icon" href="{{ static_asset('favicon.avif') }}">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

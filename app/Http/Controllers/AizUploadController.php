@@ -227,9 +227,9 @@ class AizUploadController extends Controller
 
                                 // // --------watermark Image multiple times------
                                 // if ($width > 1999) {
-                                //     $watermark = 'watermark-2x.png';
+                                //     $watermark = 'watermark-2x.avif';
                                 // } else {
-                                //     $watermark = 'watermark-1x.png';
+                                //     $watermark = 'watermark-1x.avif';
                                 // }
                                 // $watermarkImg = Image::make('public/assets/img/'.$watermark);
                                 // $wmarkWidth=$watermarkImg->width();

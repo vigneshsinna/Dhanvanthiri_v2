@@ -21,7 +21,7 @@
         <!-- Wallet summary -->
         @if (get_setting('wallet_system') == 1)
         <div class="col-xl-8 col-md-6 mb-4">
-            <div class="h-100" style="background-image: url('{{ static_asset("assets/img/wallet-bg.png") }}'); background-size: cover; background-position: center center;">
+            <div class="h-100" style="background-image: url('{{ static_asset("assets/img/wallet-bg.avif") }}'); background-size: cover; background-position: center center;">
                 <div class="p-4 h-100 w-100 w-xl-50">
                     <p class="fs-14 fw-400 text-gray mb-3">{{ translate('Wallet Balance') }}</p>
                     <h1 class="fs-30 fw-700 text-white ">{{ single_price(Auth::user()->balance) }}</h1>
@@ -231,7 +231,7 @@
                 @endphp
                 @if($customer_package != null)
                     <img src="{{ uploaded_asset($customer_package->logo) }}" class="img-fluid mb-4 h-70px"
-                        onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.png') }}';">
+                        onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.avif') }}';">
                     <p class="fs-14 fw-700 mb-3 text-primary">{{ translate('Current Package') }}: {{ $customer_package->getTranslation('name') }}</p>
                     <p class="mb-2 d-flex justify-content-between">
                         <span class="text-secondary">{{ translate('Product Upload') }}</span>

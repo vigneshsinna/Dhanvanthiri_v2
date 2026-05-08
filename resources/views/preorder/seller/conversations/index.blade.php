@@ -18,7 +18,7 @@
                         <div class="col-auto">
                             <div class="media">
                                 <span class="avatar avatar-sm flex-shrink-0">
-                                    <img @if ($conversation->sender->avatar_original == null) src="{{ static_asset('assets/img/avatar-place.png') }}" @else src="{{ uploaded_asset($conversation->sender->avatar_original) }}" @endif class="rounded-circle" onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.png') }}';">
+                                    <img @if ($conversation->sender->avatar_original == null) src="{{ static_asset('assets/img/avatar-place.avif') }}" @else src="{{ uploaded_asset($conversation->sender->avatar_original) }}" @endif class="rounded-circle" onerror="this.onerror=null;this.src='{{ static_asset('assets/img/avatar-place.avif') }}';">
                                 </span>
                             </div>
                         </div>

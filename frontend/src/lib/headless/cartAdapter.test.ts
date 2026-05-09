@@ -176,71 +176,12 @@ describe('cartAdapter', () => {
     expect(response.data.data.cart_token).toBe('guest-cart-xyz');
   });
 
-  it('does not emit a null cart token for no-token guest cart responses', async () => {
-    mockedPost.mockImplementation(async (url: string, body?: unknown) => {
-      expect(body).toEqual({});
-
-      if (url === '/carts') {
-        return {
-          data: {
-            success: true,
-            data: {
-              data: [
-                {
-                  name: 'Inhouse',
-                  owner_id: 1,
-                  sub_total: 'Rs 179.00',
-                  cart_items: [
-                    {
-                      id: 9,
-                      status: 1,
-                      owner_id: 1,
-                      user_id: null,
-                      product_id: 5,
-                      product_name: 'Poondu Thokku',
-                      product_slug: 'poondu-thokku',
-                      auction_product: 0,
-                      product_thumbnail_image: '/uploads/poondu.png',
-                      variation: '',
-                      price: 'Rs 179.00',
-                      currency_symbol: 'Rs',
-                      tax: 'Rs 0.00',
-                      shipping_cost: 0,
-                      quantity: 1,
-                      lower_limit: 1,
-                      upper_limit: 10,
-                      digital: 0,
-                      stock: 10,
-                    },
-                  ],
-                },
-              ],
-            },
-          },
-        } as any;
-      }
-
-      if (url === '/cart-summary') {
-        return {
-          data: {
-            sub_total: 'Rs 179.00',
-            tax: 'Rs 0.00',
-            shipping_cost: 'Rs 0.00',
-            discount: 'Rs 0.00',
-            grand_total: 'Rs 179.00',
-            grand_total_value: 179,
-            coupon_code: '',
-            coupon_applied: false,
-          },
-        } as any;
-      }
-
-      throw new Error(`Unexpected POST ${url}`);
-    });
-
+  it('returns an empty cart without API calls for guests that do not have a cart token yet', async () => {
     const response = await cartAdapter.getCart();
 
-    expect(response.data.data.item_count).toBe(1);
+    expect(mockedPost).not.toHaveBeenCalled();
+    expect(response.data.data.item_count).toBe(0);
+    expect(response.data.data.items).toEqual([]);
     expect(response.data.data).not.toHaveProperty('cart_token');
   });
 
@@ -272,7 +213,7 @@ describe('cartAdapter', () => {
 
     mockedPost.mockImplementation(async (url: string, body?: unknown) => {
       if (url === '/carts/change-quantity') {
-        expect(body).toEqual({ id: 9, quantity: 3 });
+        expect(body).toEqual({ id: 9, quantity: 3, temp_user_id: 'guest-cart-xyz' });
         return { data: { success: true } } as any;
       }
 

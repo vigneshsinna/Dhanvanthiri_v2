@@ -150,11 +150,14 @@ class Product extends Model
 
     // add gallery image to thumb
 
-   public function thumbnailImg(): Attribute
+    public function thumbnailImg(): Attribute
     {
-        return Attribute::get(function ($value, $attributes) {
-            return self::resolveThumbnailReferenceFromAttributes($attributes);
-        });
+        return Attribute::make(
+            get: function ($value, $attributes) {
+                return self::resolveThumbnailReferenceFromAttributes($attributes);
+            },
+            set: fn ($value) => self::sanitizeSingleMediaReference($value),
+        );
     }
 
     public function resolvedThumbnailReference(): Attribute
@@ -162,6 +165,14 @@ class Product extends Model
         return Attribute::get(function ($value, $attributes) {
             return self::resolveThumbnailReferenceFromAttributes($attributes);
         });
+    }
+
+    public function photos(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => self::sanitizeMediaReference($value),
+            set: fn ($value) => self::sanitizeMediaReference($value),
+        );
     }
 
 
@@ -189,13 +200,13 @@ class Product extends Model
     protected static function resolveThumbnailReferenceFromAttributes(array $attributes): ?string
     {
         $thumbnail = $attributes['thumbnail_img'] ?? null;
-        if (self::isUsableMediaReference($thumbnail)) {
+        if (self::isUsableMediaReference($thumbnail, true)) {
             return (string) $thumbnail;
         }
 
-        $photos = array_filter(array_map('trim', explode(',', (string) ($attributes['photos'] ?? ''))));
+        $photos = self::mediaReferenceParts($attributes['photos'] ?? null);
         foreach ($photos as $photo) {
-            if (self::isUsableMediaReference($photo)) {
+            if (self::isUsableMediaReference($photo, true)) {
                 return $photo;
             }
         }
@@ -205,61 +216,102 @@ class Product extends Model
 
     public static function sanitizeMediaReference(mixed $reference): ?string
     {
-        if (blank($reference)) {
-            return null;
-        }
-
-        if (!is_string($reference)) {
-            return self::isUsableMediaReference($reference) ? (string)$reference : null;
-        }
-
-        $invalidStrings = ['undefined', 'null', 'not defined', '[object Object]'];
-        $parts = explode(',', $reference);
-        $validParts = [];
-
-        foreach ($parts as $part) {
-            $trimmed = strtolower(trim($part));
-            if (blank($trimmed) || in_array($trimmed, $invalidStrings)) {
-                continue;
-            }
-            $validParts[] = trim($part);
-        }
+        $validParts = self::mediaReferenceParts($reference);
 
         return !empty($validParts) ? implode(',', $validParts) : null;
     }
 
-    protected static function isUsableMediaReference(mixed $reference): bool
+    public static function sanitizeSingleMediaReference(mixed $reference): ?string
     {
-        if (blank($reference)) {
+        $validParts = self::mediaReferenceParts($reference);
+
+        return $validParts[0] ?? null;
+    }
+
+    protected static function mediaReferenceParts(mixed $reference): array
+    {
+        if (blank($reference) || !is_scalar($reference)) {
+            return [];
+        }
+
+        $parts = explode(',', (string) $reference);
+        $validParts = [];
+
+        foreach ($parts as $part) {
+            $part = trim($part);
+            if (self::isUsableMediaReference($part)) {
+                $validParts[] = $part;
+            }
+        }
+
+        return $validParts;
+    }
+
+    protected static function isUsableMediaReference(mixed $reference, bool $verifyUploadExists = false): bool
+    {
+        if (blank($reference) || !is_scalar($reference)) {
             return false;
         }
 
-        // Filter out common JS-generated invalid strings
-        $invalidStrings = ['undefined', 'null', 'not defined', '[object Object]'];
-        if (is_string($reference)) {
-            $trimmed = strtolower(trim($reference));
-            if (in_array($trimmed, $invalidStrings)) {
-                return false;
-            }
-            
-            // If it's a comma separated list, check if at least one part is valid
-            if (str_contains($reference, ',')) {
-                $parts = explode(',', $reference);
-                foreach ($parts as $part) {
-                    if (self::isUsableMediaReference(trim($part))) {
-                        return true;
-                    }
+        $reference = (string) $reference;
+
+        // Filter out common JS-generated invalid strings and path fragments
+        $invalidStrings = [
+            'undefined',
+            'null',
+            'nan',
+            'not defined',
+            '[object object]',
+            'all',
+            'uploads',
+            'uploads/all',
+            'public/uploads/all',
+            'core/public/uploads/all',
+        ];
+
+        $trimmed = strtolower(trim($reference));
+        $pathFragment = trim(str_replace('\\', '/', $trimmed), '/');
+        if (
+            in_array($trimmed, $invalidStrings, true)
+            || in_array($pathFragment, $invalidStrings, true)
+            || $trimmed === '/'
+            || str_ends_with($trimmed, '/')
+        ) {
+            return false;
+        }
+
+        // If it's a comma separated list, check if at least one part is valid
+        if (str_contains($reference, ',')) {
+            $parts = explode(',', $reference);
+            foreach ($parts as $part) {
+                if (self::isUsableMediaReference(trim($part))) {
+                    return true;
                 }
+            }
+            return false;
+        }
+
+        // If it's a string but not a digit, it should look like a URL or a filename with extension
+        if (!ctype_digit($trimmed)) {
+            if (filter_var($reference, FILTER_VALIDATE_URL)) {
+                return true;
+            }
+
+            $validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg', 'mp4', 'webm', 'ogg'];
+            $ext = strtolower(pathinfo($trimmed, PATHINFO_EXTENSION));
+            if (in_array($ext, $validExtensions)) {
+                return true;
+            }
+
+            return false; // String without extension or URL is likely a fragment
+        }
+
+        if (ctype_digit($trimmed)) {
+            if ((int) $trimmed <= 0) {
                 return false;
             }
-        }
 
-        if (filter_var($reference, FILTER_VALIDATE_URL)) {
-            return true;
-        }
-
-        if (ctype_digit((string) $reference)) {
-            return true;
+            return !$verifyUploadExists || Upload::query()->whereKey((int) $trimmed)->exists();
         }
 
         return false;

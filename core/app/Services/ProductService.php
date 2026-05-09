@@ -62,6 +62,8 @@ class ProductService
             $collection['meta_description'] = strip_tags($collection['description']);
         }
 
+        $collection = $this->sanitizeMediaFields($collection);
+
         if ($collection['meta_img'] == null) {
             $collection['meta_img'] = $collection['thumbnail_img'];
         }
@@ -221,6 +223,8 @@ class ProductService
         if ($collection['meta_description'] == null) {
             $collection['meta_description'] = strip_tags($collection['description']);
         }
+
+        $collection = $this->sanitizeMediaFields($collection);
 
         if ($collection['meta_img'] == null) {
             $collection['meta_img'] = $collection['thumbnail_img'];
@@ -561,6 +565,8 @@ class ProductService
         if (!isset($collection['meta_description']) || $collection['meta_description'] == null) {
             $collection['meta_description'] = isset($collection['description']) ? strip_tags($collection['description']) : '';
         }
+        $collection = $this->sanitizeMediaFields($collection);
+
         if (!isset($collection['meta_img']) || $collection['meta_img'] == null) {
             $collection['meta_img'] = $collection['thumbnail_img'] ?? null;
         }
@@ -680,5 +686,20 @@ class ProductService
         return $products->get();
     }
 
-    
+    private function sanitizeMediaFields($collection)
+    {
+        foreach (['photos'] as $field) {
+            if ($collection->has($field)) {
+                $collection[$field] = Product::sanitizeMediaReference($collection[$field]);
+            }
+        }
+
+        foreach (['thumbnail_img', 'meta_img', 'short_video', 'short_video_thumbnail'] as $field) {
+            if ($collection->has($field)) {
+                $collection[$field] = Product::sanitizeSingleMediaReference($collection[$field]);
+            }
+        }
+
+        return $collection;
+    }
 }

@@ -101,7 +101,7 @@
                     @foreach (get_all_active_language() as $key => $language)
                     <li class="nav-item">
                         <a class="nav-link text-reset @if ($language->code == $lang) active @endif py-3" href="{{ route('products.admin.edit', ['id'=>$product->id, 'lang'=> $language->code] ) }}">
-                            <img src="{{ static_asset('assets/img/flags/'.$language->code.'.png') }}" height="11" class="mr-1">
+                            <img src="{{ static_asset('assets/img/flags/'.$language->code.'.png') }}" height="11" class="mr-1" onerror="this.onerror=null;this.remove();">
                             <span>{{$language->name}}</span>
                         </a>
                     </li>
@@ -402,7 +402,7 @@
                                                 {{ translate('Browse') }}</div>
                                         </div>
                                         <div class="form-control file-amount">{{ translate('Choose File') }}</div>
-                                        <input type="hidden" name="photos" value="{{ $product->photos }}"
+                                        <input type="hidden" name="photos" value="{{ \App\Models\Product::sanitizeMediaReference($product->photos) }}"
                                             class="selected-files">
                                     </div>
                                     <div class="file-preview box sm">
@@ -421,7 +421,7 @@
                                         </div>
                                         <div class="form-control file-amount">{{ translate('Choose File') }}</div>
                                         <input type="hidden" name="thumbnail_img"
-                                            value="{{ $product->thumbnail_img }}" class="selected-files">
+                                            value="{{ \App\Models\Product::sanitizeSingleMediaReference($product->thumbnail_img) }}" class="selected-files">
                                     </div>
                                     <div class="file-preview box sm">
                                     </div>

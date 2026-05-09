@@ -1398,6 +1398,27 @@ if (!function_exists('normalize_uploaded_asset_path')) {
             $path = substr($path, 7);
         }
 
+        $normalized = strtolower(trim($path, '/'));
+        $invalidReferences = [
+            'undefined',
+            'null',
+            'nan',
+            'not defined',
+            '[object object]',
+            'uploads',
+            'uploads/all',
+            'core/public/uploads/all',
+            'public/uploads/all',
+        ];
+
+        if (
+            $path === ''
+            || str_ends_with($path, '/')
+            || in_array($normalized, $invalidReferences, true)
+        ) {
+            return null;
+        }
+
         return $path !== '' ? $path : null;
     }
 }
@@ -1419,8 +1440,7 @@ if (!function_exists('is_direct_asset_reference')) {
             return false;
         }
 
-        return str_contains($normalized, '/')
-            || preg_match('/\.[a-z0-9]{2,5}($|\?)/i', $normalized) === 1;
+        return preg_match('/\.[a-z0-9]{2,5}($|\?)/i', $normalized) === 1;
     }
 }
 

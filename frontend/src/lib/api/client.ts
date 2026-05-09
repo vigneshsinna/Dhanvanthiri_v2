@@ -9,6 +9,7 @@ export const api = axios.create({
 });
 
 let refreshPromise: Promise<string | null> | null = null;
+const systemKey = (import.meta as any).env?.VITE_SYSTEM_KEY || '';
 
 function extractAccessToken(payload: any): string | null {
   return payload?.access_token ?? payload?.data?.access_token ?? null;
@@ -34,7 +35,7 @@ api.interceptors.request.use((config) => {
     config.headers['X-Cart-Token'] = cartToken;
   }
 
-  config.headers['System-Key'] = (import.meta as any).env?.VITE_SYSTEM_KEY || '0d279f87add587c1c6d046cd59ee012d';
+  config.headers['System-Key'] = systemKey;
 
   return config;
 });
@@ -60,7 +61,7 @@ api.interceptors.response.use(
             headers: {
               Authorization: `Bearer ${token}`,
               'Accept-Language': locale,
-              'System-Key': (import.meta as any).env?.VITE_SYSTEM_KEY || '0d279f87add587c1c6d046cd59ee012d',
+              'System-Key': systemKey,
               Accept: 'application/json',
             },
           }).then((response) => extractAccessToken(response.data))

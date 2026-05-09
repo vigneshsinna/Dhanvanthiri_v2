@@ -151,10 +151,15 @@ export function CheckoutPage() {
   const selectedAddress = addresses.find((a) => a.id === checkout.shippingAddressId);
   const shippingState = isAuthenticated ? (selectedAddress?.state ?? '') : guestInfo.state.trim();
 
-  const { data: ratesData } = useShippingRatesQuery(
+  const {
+    data: ratesData,
+    isLoading: loadingShippingRates,
+    isFetching: fetchingShippingRates,
+  } = useShippingRatesQuery(
     checkout.shippingAddressId ?? 0,
     shippingState || undefined,
   );
+  const shippingRatesLoading = loadingShippingRates || fetchingShippingRates;
   const shippingRates = unwrapCollection<ShippingRate>(ratesData);
 
   const { data: paymentMethodsData } = usePaymentMethodsQuery();

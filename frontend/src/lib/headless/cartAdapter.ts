@@ -156,6 +156,11 @@ function normalizeCart(groups: V2CartGroup[], summary?: V2CartSummary, cartToken
 async function getNormalizedCart() {
   const context = cartContext();
   const responseCartToken = 'temp_user_id' in context ? context.temp_user_id : undefined;
+
+  if (!('user_id' in context) && !('temp_user_id' in context)) {
+    return normalizeCart([], undefined, undefined);
+  }
+
   const [cartRes, summaryRes] = await Promise.all([
     headlessApi.post('/carts', context),
     headlessApi.post('/cart-summary', context).catch(() => null),

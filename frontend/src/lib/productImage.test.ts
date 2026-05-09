@@ -60,4 +60,13 @@ describe('productImage', () => {
     expect(isPlaceholderProductImage('http://localhost:8000/assets/img/placeholder.jpg')).toBe(true);
     expect(isPlaceholderProductImage('http://localhost:8000/uploads/products/poondu.png')).toBe(false);
   });
+
+  it('rejects upload directory URLs without a file name', () => {
+    expect(resolveProductImageUrl({ primaryImageUrl: 'https://dhanvanthrifoods.com/public/uploads/all' })).toBeUndefined();
+    expect(resolveProductImageUrl({ primaryImageUrl: 'https://dhanvanthrifoods.com/core/public/uploads/all/' })).toBeUndefined();
+    expect(resolveProductImageUrl({ primaryImageUrl: '/public/uploads/all' })).toBeUndefined();
+    expect(resolveProductImageUrl({ primaryImageUrl: '/public/uploads/all/legacy-storefront/garlic_thokku.png' })).toBe(
+      '/public/uploads/all/legacy-storefront/garlic_thokku.png',
+    );
+  });
 });

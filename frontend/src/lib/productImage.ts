@@ -1,5 +1,6 @@
 const DEFAULT_API_ORIGIN = ((import.meta as any).env.VITE_API_BASE_URL?.replace(/\/api\/?$/, '')) || '';
 const PLACEHOLDER_IMAGE_PATTERN = /\/assets\/img\/placeholder(?:-[^./]+)?\.(jpg|jpeg|png|webp|svg)$/i;
+const INVALID_IMAGE_PATH_PATTERN = /(?:^|\/)(?:core\/public\/|public\/)?uploads\/all\/?$/i;
 
 interface ProductImageOptions {
   apiOrigin?: string;
@@ -17,6 +18,20 @@ export function resolveProductAssetUrl(imageUrl?: string | null, apiOrigin = DEF
 
   const normalized = imageUrl.trim();
   if (!normalized) {
+    return undefined;
+  }
+
+  const pathname = normalized.match(/^(https?:)?\/\//i)
+    ? (() => {
+        try {
+          return new URL(normalized, 'https://dhanvanthrifoods.com').pathname;
+        } catch {
+          return normalized;
+        }
+      })()
+    : normalized;
+
+  if (INVALID_IMAGE_PATH_PATTERN.test(pathname.replace(/\/+$/, ''))) {
     return undefined;
   }
 

@@ -204,7 +204,7 @@
                     <a class="dropdown-toggle no-arrow" data-toggle="dropdown" href="javascript:void(0);"
                         role="button" aria-haspopup="false" aria-expanded="false">
                         <span class="btn btn-topbar btn-circle btn-light p-0 d-flex justify-content-center align-items-center" data-toggle="tooltip" data-title="{{ translate('Language') }}">
-                            <img src="{{ static_asset('assets/img/flags/' . $locale . '.png') }}" height="11">
+                            <img src="{{ static_asset('assets/img/flags/' . $locale . '.png') }}" height="11" onerror="this.onerror=null;this.remove();">
                         </span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-right dropdown-menu-animated dropdown-menu-xs">
@@ -214,7 +214,7 @@
                                 <a href="javascript:void(0)" data-flag="{{ $language->code }}"
                                     class="dropdown-item @if ($locale == $language->code) active @endif">
                                     <img src="{{ static_asset('assets/img/flags/' . $language->code . '.png') }}"
-                                        class="mr-2">
+                                        class="mr-2" onerror="this.onerror=null;this.remove();">
                                     <span class="language">{{ $language->name }}</span>
                                 </a>
                             </li>

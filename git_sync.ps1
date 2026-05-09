@@ -27,7 +27,7 @@ if ($buildChoice -eq "y" -or $buildChoice -eq "yes") {
 Write-Host "--- Starting Sync Process ---" -ForegroundColor Cyan
 
 # 2. Get changed files from Git
-$gitFiles = git status --porcelain | ForEach-Object { 
+$gitFiles = @(git status --porcelain | ForEach-Object { 
     $line = $_.Trim()
     if ($line -notmatch '^D ') { 
         $parts = $line -split '\s+', 2
@@ -42,13 +42,12 @@ $gitFiles = git status --porcelain | ForEach-Object {
             if (-not $exclude) { $file }
         }
     }
-}
+})
 
 # Always include the licensing fix
 $licensingFix = "vendor/mehedi-iitdu/core-component-repository/src/CoreComponentRepository.php"
 if ($gitFiles -notcontains $licensingFix) {
-    if ($null -eq $gitFiles) { $gitFiles = @($licensingFix) }
-    else { $gitFiles += $licensingFix }
+    $gitFiles = @($gitFiles) + $licensingFix
 }
 
 Write-Host "1. Bundling changes..." -ForegroundColor Yellow

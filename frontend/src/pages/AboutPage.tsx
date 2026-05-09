@@ -4,6 +4,7 @@ import { usePageQuery } from '@/features/cms/api';
 import { PageLoader } from '@/components/ui/Spinner';
 import { sanitizeHtml } from '@/lib/sanitizeHtml';
 
+
 export function AboutPage() {
   const { data, isLoading } = usePageQuery('about');
   const page = data?.data?.data;

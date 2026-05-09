@@ -718,6 +718,13 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'admin', 'prevent-ba
 
     // uploaded files
     Route::resource('/uploaded-files', AizUploadController::class);
+    Route::post('/aiz-uploader', [AizUploadController::class, 'show_uploader'])->name('aiz-uploader.show');
+    Route::get('/aiz-uploader', [AizUploadController::class, 'show_uploader']);
+    Route::post('/aiz-uploader/upload', [AizUploadController::class, 'upload'])->name('aiz-uploader.upload');
+    Route::get('/aiz-uploader/get-uploaded-files', [AizUploadController::class, 'get_uploaded_files'])->name('aiz-uploader.get_uploaded_files');
+    Route::post('/aiz-uploader/get_file_by_ids', [AizUploadController::class, 'get_preview_files'])->name('aiz-uploader.get_preview_files');
+    Route::get('/aiz-uploader/download/{id}', [AizUploadController::class, 'attachment_download'])->name('aiz-uploader.download');
+
     Route::controller(AizUploadController::class)->group(function () {
         Route::any('/uploaded-files/file-info', 'file_info')->name('uploaded-files.info');
         Route::get('/uploaded-files/destroy/{id}', 'destroy')->name('uploaded-files.destroy');

@@ -17,6 +17,7 @@ class AizUploadController extends Controller
     {
 
         $all_uploads = (auth()->user()->user_type == 'seller') ? Upload::where('user_id', auth()->user()->id) : Upload::query();
+        $all_uploads->whereNotNull('file_name');
         $search = null;
         $sort_by = null;
 
@@ -78,7 +79,9 @@ class AizUploadController extends Controller
             "png" => "image",
             "svg" => "image",
             "webp" => "image",
+            "avif" => "image",
             "gif" => "image",
+
             "mp4" => "video",
             "mpg" => "video",
             "mpeg" => "video",
@@ -227,9 +230,9 @@ class AizUploadController extends Controller
 
                                 // // --------watermark Image multiple times------
                                 // if ($width > 1999) {
-                                //     $watermark = 'watermark-2x.png';
+                                //     $watermark = 'watermark-2x.avif';
                                 // } else {
-                                //     $watermark = 'watermark-1x.png';
+                                //     $watermark = 'watermark-1x.avif';
                                 // }
                                 // $watermarkImg = Image::make('public/assets/img/'.$watermark);
                                 // $wmarkWidth=$watermarkImg->width();
@@ -324,7 +327,7 @@ class AizUploadController extends Controller
 
     public function get_uploaded_files(Request $request)
     {
-        $uploads = Upload::where('user_id', Auth::user()->id);
+        $uploads = Upload::where('user_id', Auth::user()->id)->whereNotNull('file_name');
         if ($request->search != null) {
             $uploads->where('file_original_name', 'like', '%' . $request->search . '%');
         }

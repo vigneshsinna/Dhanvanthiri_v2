@@ -1,44 +1,92 @@
 <IfModule mod_rewrite.c>
-    <IfModule mod_negotiation.c>
-        Options -MultiViews -Indexes
-    </IfModule>
-
     RewriteEngine On
+    RewriteBase /
 
-    # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-    # Redirect Trailing Slashes If Not A Folder...
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_URI} (.+)/$
-    RewriteRule ^ %1 [L,R=301]
+    # Block direct access to sensitive Laravel directories
+    RewriteRule ^core/(app|bootstrap|config|database|resources|routes|storage|vendor|\.env) - [F,L]
 
-    # Handle Front Controller...
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteRule ^ index.php [L]
+    # If the request matches an existing file or directory in the root, serve it directly
+    RewriteCond %{REQUEST_URI} !^/$
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Serve React frontend assets first. Vite builds to /assets/*.
+    RewriteCond %{DOCUMENT_ROOT}/app/$1 -f [OR]
+    RewriteCond %{DOCUMENT_ROOT}/app/$1 -d
+    RewriteRule ^(.*)$ app/$1 [L]
+
+    # Special case: If an upload exists in root public/uploads, serve it from there
+    RewriteCond %{DOCUMENT_ROOT}/public/uploads/$1 -f
+    RewriteRule ^uploads/(.*)$ public/uploads/$1 [L]
+
+    # Storage and Laravel public asset rewrites (Fallbacks to core)
+    RewriteRule ^storage/(.*)$ core/storage/app/public/$1 [L]
+    RewriteRule ^public/(assets|addons|css|js|img|fonts|font|download|temp_uploads)/(.*)$ core/public/$1/$2 [L]
+    RewriteRule ^public/uploads/(.*)$ core/public/uploads/$1 [L]
+    RewriteRule ^uploads/(.*)$ core/public/uploads/$1 [L]
+
+
+    # Admin panel, auth, API, and all Laravel-only routes go to Laravel backend
+    RewriteCond %{REQUEST_URI} ^/admin [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/login$ [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/logout [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/seller [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/api [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/aiz-uploader [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/sanctum [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/currency [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/language [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/get-states [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/get-cities [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/get-area [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/get-cities-by-country [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/invoice [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/paypal [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/stripe [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/rozer [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/paystack [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/sslcommerz [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/instamojo [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/iyzico [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/bkash [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/nagad [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/aamarpay [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/payhere [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/ngenius [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/mercadopago [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/tap [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/paymob [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/payku [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/dopay [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/authorizenet [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/vogue-pay [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/cyber-source [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/size-charts-show [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/refresh-csrf [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/verification-confirmation [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/social-login [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/apple-callback [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/email [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/up/?$ [NC]
+    RewriteRule ^ index.php [L,QSA]
+
+    # Fallback: serve React SPA
+    RewriteRule ^ app/index.html [L]
 </IfModule>
 
-# Disable index view
-Options -Indexes
-
-# Hide a specific file
-<Files ~ "\.(env|json|config.js|md|gitignore|gitattributes|lock)$">
-    Order allow,deny
-    Deny from all
-</Files>
-
-## EXPIRES CACHING ##
-<IfModule mod_expires.c>
-    ExpiresActive On
-    ExpiresByType image/jpg "access plus 1 year"
-    ExpiresByType image/jpeg "access plus 1 year"
-    ExpiresByType image/gif "access plus 1 year"
-    ExpiresByType image/png "access plus 1 year"
-    ExpiresByType text/css "access plus 1 month"
-    ExpiresByType text/x-javascript "access plus 1 month"
-    ExpiresByType application/x-shockwave-flash "access plus 1 month"
-    ExpiresByType image/x-icon "access plus 1 year"
-    ExpiresDefault "access plus 1 days"
+<IfModule mod_mime.c>
+    AddType application/javascript .js .mjs
+    AddType text/css .css
+    AddType image/svg+xml .svg
+    AddType image/webp .webp
+    AddType image/png .png
+    AddType image/jpeg .jpg .jpeg
+    AddType image/gif .gif
+    AddType application/json .json
+    AddType font/woff .woff
+    AddType font/woff2 .woff2
 </IfModule>

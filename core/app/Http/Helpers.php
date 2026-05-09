@@ -1507,6 +1507,7 @@ if (!function_exists('build_upload_preview_files')) {
 
                 $payload = $file->toArray();
                 $payload['file_name'] = $file->external_link ?: my_asset($file->file_name);
+                $payload['file_size'] = (int) ($file->file_size ?? 0);
 
                 return $payload;
             }
@@ -1524,6 +1525,7 @@ if (!function_exists('build_upload_preview_files')) {
                 'file_name' => uploaded_asset($reference),
                 'extension' => pathinfo($basename, PATHINFO_EXTENSION),
                 'type' => null,
+                'file_size' => 0,
                 'external_link' => filter_var($reference, FILTER_VALIDATE_URL) ? $reference : null,
             ];
         })->filter()->values()->all();

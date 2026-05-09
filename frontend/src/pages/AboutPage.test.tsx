@@ -41,4 +41,18 @@ describe('AboutPage', () => {
     expect(screen.getByAltText(/admin brand story/i)).toHaveAttribute('src', '/uploads/all/about/brand-story.png');
     expect(screen.getByAltText(/admin mission vision/i)).toHaveAttribute('src', '/uploads/all/about/mission-vision.png');
   });
+
+  it('renders configured message when the page is not found in API', async () => {
+    server.use(
+      http.get('/api/v2/pages/about', () => HttpResponse.json({
+        success: false,
+        data: null,
+      }))
+    );
+
+    renderWithProviders(<AboutPage />);
+
+    expect(await screen.findByRole('heading', { name: /about page not configured/i })).toBeInTheDocument();
+    expect(screen.getByText(/add the about page content from admin pages/i)).toBeInTheDocument();
+  });
 });

@@ -164,6 +164,190 @@
     <script src="{{ static_asset('assets/js/aiz-core.js?v=') }}{{ rand(1000,9999) }}"></script>
     <script src="{{ static_asset('assets/js/aiz-form-submission.js?v=') }}{{ rand(1000,9999) }}"></script>
 
+    <script type="text/javascript">
+        (function($) {
+            if (!window.AIZ || !AIZ.uploader) {
+                return;
+            }
+
+            var invalidMediaRefs = [
+                '',
+                'undefined',
+                'null',
+                'nan',
+                'not defined',
+                '[object object]',
+                'uploads',
+                'uploads/all',
+                'public/uploads/all',
+                'core/public/uploads/all'
+            ];
+
+            function normalizeMediaRef(value) {
+                return value
+                    .toString()
+                    .trim()
+                    .replace(/\\/g, '/')
+                    .replace(/^https?:\/\/[^/]+/i, '')
+                    .replace(/^\/+|\/+$/g, '')
+                    .toLowerCase();
+            }
+
+            function parseSelectedFiles(value) {
+                if (!value) {
+                    return [];
+                }
+
+                var seen = {};
+                return value
+                    .toString()
+                    .split(',')
+                    .map(function(item) {
+                        return item.trim();
+                    })
+                    .filter(function(item) {
+                        var normalized = normalizeMediaRef(item);
+                        if (normalized.indexOf('public/') === 0) {
+                            normalized = normalized.substring(7);
+                        }
+
+                        if (
+                            invalidMediaRefs.indexOf(normalized) !== -1 ||
+                            item.slice(-1) === '/' ||
+                            seen[item]
+                        ) {
+                            return false;
+                        }
+
+                        seen[item] = true;
+                        return /^\d+$/.test(item) || /\.[a-z0-9]{2,5}($|\?)/i.test(item);
+                    });
+            }
+
+            function isMultipleUploader($uploader) {
+                var multiple = $uploader.data('multiple');
+                return multiple === true || multiple === 'true' || multiple === 1 || multiple === '1';
+            }
+
+            function sanitizeUploader($uploader) {
+                var $input = $uploader.find('.selected-files');
+                var selected = parseSelectedFiles($input.val());
+
+                if (!isMultipleUploader($uploader)) {
+                    selected = selected.slice(0, 1);
+                }
+
+                $input.val(selected.join(','));
+
+                if (selected.length === 0) {
+                    $uploader.find('.file-amount').html(AIZ.local.choose_file);
+                    $uploader.next('.file-preview').html(null);
+                }
+
+                return selected;
+            }
+
+            function normalizePreviewFile(file) {
+                if (!file || !file.file_name) {
+                    return null;
+                }
+
+                var fileName = file.file_name.toString();
+                var basename = fileName.split('?')[0].split('/').pop() || '';
+                var extension = (file.extension || basename.split('.').pop() || '').toString();
+                var originalName = (file.file_original_name || basename.replace(new RegExp('\\.' + extension + '$', 'i'), '') || basename).toString();
+
+                if (!originalName || normalizeMediaRef(originalName) === 'undefined') {
+                    return null;
+                }
+
+                file.file_original_name = originalName;
+                file.extension = extension;
+                file.file_size = Number(file.file_size) || 0;
+
+                if (!file.type && /^(jpg|jpeg|png|gif|webp|avif|svg)$/i.test(extension)) {
+                    file.type = 'image';
+                }
+
+                return file;
+            }
+
+            function renderPreview($uploader, files) {
+                var $preview = $uploader.next('.file-preview');
+                $preview.html(null);
+
+                if (files.length === 0) {
+                    $uploader.find('.file-amount').html(AIZ.local.choose_file);
+                    return;
+                }
+
+                $uploader.find('.file-amount').html(AIZ.uploader.updateFileHtml(files));
+
+                files.forEach(function(file) {
+                    var thumb = '<i class="la la-file-text"></i>';
+                    if (file.type === 'image') {
+                        thumb = '<img src="' + file.file_name + '" class="img-fit" onerror="this.onerror=null;this.closest(\'.file-preview-item\').remove();">';
+                    } else if (file.type === 'video') {
+                        thumb = '<video width="320" height="240" controls><source src="' + file.file_name + '" type="video/mp4"></video>';
+                    }
+
+                    $preview.append(
+                        '<div class="d-flex justify-content-between align-items-center mt-2 file-preview-item" data-id="' + file.id + '" title="' + file.file_original_name + '.' + file.extension + '">' +
+                            '<div class="align-items-center align-self-stretch d-flex justify-content-center thumb">' + thumb + '</div>' +
+                            '<div class="col body">' +
+                                '<h6 class="d-flex"><span class="text-truncate title">' + file.file_original_name + '</span><span class="ext flex-shrink-0">.' + file.extension + '</span></h6>' +
+                                '<p>' + AIZ.extra.bytesToSize(file.file_size) + '</p>' +
+                            '</div>' +
+                            '<div class="remove"><button class="btn btn-sm btn-link remove-attachment" type="button"><i class="la la-close"></i></button></div>' +
+                        '</div>'
+                    );
+                });
+            }
+
+            AIZ.uploader.parseSelectedFileReferences = parseSelectedFiles;
+            AIZ.extra.bytesToSize = function(bytes) {
+                bytes = Number(bytes) || 0;
+                if (bytes <= 0) {
+                    return '0 Byte';
+                }
+                var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+                var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+                return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+            };
+            AIZ.uploader.previewGenerate = function() {
+                $('[data-toggle="aizuploader"]').each(function() {
+                    var $uploader = $(this);
+                    var selected = sanitizeUploader($uploader);
+                    if (selected.length === 0) {
+                        return;
+                    }
+
+                    $.post(AIZ.data.appUrl + '/aiz-uploader/get_file_by_ids', {
+                        _token: AIZ.data.csrf,
+                        ids: selected.join(',')
+                    }, function(data) {
+                        var files = (Array.isArray(data) ? data : [])
+                            .map(normalizePreviewFile)
+                            .filter(Boolean);
+
+                        if (!isMultipleUploader($uploader)) {
+                            files = files.slice(0, 1);
+                        }
+
+                        $uploader.find('.selected-files').val(files.map(function(file) { return file.id; }).join(','));
+                        renderPreview($uploader, files);
+                    });
+                });
+            };
+
+            $(function() {
+                AIZ.uploader.previewGenerate();
+                setTimeout(AIZ.uploader.previewGenerate, 500);
+                setTimeout(AIZ.uploader.previewGenerate, 1500);
+            });
+        })(jQuery);
+    </script>
+
     @yield('script')
 
     <script type="text/javascript">
